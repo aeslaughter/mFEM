@@ -5,15 +5,15 @@ classdef Mesh < handle
         element_type = '';
         n_dim = [];        
         type = 'CG';
+        elem_map = uint32([]);
         node_map = [];
-        n_nodes = [];
         dof_map = uint32([]);
         initialized = false;
     end
     
-
     properties (Access = private)
-        elements_ = {};
+        elements = {};
+        CG_dof_map = uint32([]); % needed to compute neighbors for both CG and DG
     end
     
     methods (Access = public)
@@ -31,13 +31,14 @@ classdef Mesh < handle
         end
         
         function initialize(obj)
+           obj.n_elements = length(obj.elements); 
            obj.compute_dof_map();
-           % obj.find_neighbors();
+           obj.find_neighbors();
            obj.initialized = true;
         end
         
         function e = element(obj, id)
-            e = obj.elements_{id};
+            e = obj.elements{id};
         end
         
         
@@ -52,11 +53,38 @@ classdef Mesh < handle
         end
        
         function compute_dof_map(obj)
-           
+            
             switch obj.type;
                 case 'CG'; obj.CG_compute_dof_map();
                 case 'DG'; obj.DG_compute_dof_map();
             end
+        end
+        
+        % This needs to be improved for working with 2D and 3D
+        function plot(obj)
+           
+            figure; hold on;
+            for e = 1:obj.n_elements;
+                elem = obj.element(e);
+                patch(elem.x, elem.y, 'b', 'FaceColor','none');
+                text(mean(elem.x(1:2)),mean(elem.y(2:3)),num2str(e),...
+                    'FontSize',14,...
+                    'BackgroundColor','k','FontWeight','Bold',...
+                    'HorizontalAlignment','center','Color','w');
+            end
+            
+            N = length(unique(obj.dof_map));
+            for i = 1:N;
+                idx = obj.dof_map == i;
+                x = unique(obj.node_map(idx,:),'rows');
+               % plot(x(1),x(2),'ko');
+                text(x(1),x(2),num2str(i),'FontSize',12,...
+                    'BackgroundColor','b',...
+                    'HorizontalAlignment','center','Color','w');
+                 
+             end
+
+            
         end
         
         
@@ -74,20 +102,20 @@ classdef Mesh < handle
             % Loop through the grid, creating elements for each cell
             k = 0;
             %dof = 0;
-            for i = 1:m-1;
-                for j = 1:n-1;
+            for j = 1:m-1;
+                for i = 1:n-1;
                     x = [X(i,j), X(i,j+1), X(i+1, j+1), X(i+1,j)];
                     y = [Y(i,j), Y(i,j+1), Y(i+1, j+1), Y(i+1,j)];
                     [x,y] = obj.cell2nodes2D(x,y);
-                    n = length(x); % no. of nodes on element
+                    nn = length(x); % no. of nodes on element
                     
                     for e = 1:size(x,1);
                  
                         k = k + 1;
-                        obj.elements_{k} = feval(obj.element_type, k, x(e,:), y(e,:));
+                        obj.elements{k} = feval(obj.element_type, k, x(e,:), y(e,:));
+                        obj.elem_map(end+1:end+nn,:) = k;
+                        obj.node_map(end+1:end+nn,:) = [x', y'];
                         
-                        obj.node_map(end+1:end+n,:) = [x', y'];
-
 %                         n_dof = elem.n_shape*elem.n_dof;
 %                         elem.global_dof = dof+1:dof+n_dof;
 %                         dof = dof + n_dof;      
@@ -96,12 +124,8 @@ classdef Mesh < handle
                 end
             end
             
-            % Define no. of elements
-            obj.n_elements = k;
-            
-            % Compute dof map
-            obj.compute_dof_map;
-           % obj.initialized = true;  
+            % Initialize
+            obj.initialize();
 
         end 
         
@@ -142,16 +166,87 @@ classdef Mesh < handle
                 obj.dof_map(idx == mc,1) = uint32(i);
             end
             
-            % Assigns the total no. of nodes to the object property
-            obj.n_nodes = n;
+            obj.CG_dof_map = obj.dof_map;
         end
         
         function DG_compute_dof_map(obj)
             % Computes global dof map for discontinous elements
 
+            CG_compute_dof_map(obj)
+            
             % Each node is treated independantly
             obj.dof_map = (1:size(obj.node_map,1))';
+            
+            
         end
+        
+        function find_neighbors(obj)
+            
+
+            for e = 1:1%obj.n_elements;
+  
+                elem = obj.element(e);
+                
+                dof = unique(obj.dof_map(obj.elem_map == e,:),'stable');
+                
+                
+                
+                for s = 1:elem.n_sides;
+                  % elem.neighbor_elements{s} = NaN;
+                   % elem.neighbor_sides(s,:) = zeros(
+                    
+                    side_dof = dof(elem.side_nodes(s,:));
+                  
+                    idx = zeros(size(obj.CG_dof_map));
+
+                    for i = 1:length(side_dof);
+                        idx = idx + (obj.CG_dof_map == side_dof(i));
+                        idx(obj.elem_map == e) = 0;
+                    end
+   
+                    share = obj.elem_map(logical(idx));
+                    for j = 1:length(share);
+                        share_idx = share==share(j);
+                        cnt = sum(share_idx);
+                        if cnt == length(side_dof);
+                            neighbor = obj.element(share(j));
+                            elem.neighbor_elements{s} = neighbor;
+                            side_nodes = (1:neighbor.n_sides);
+                            side_nodes = side_nodes(share_idx);
+                            
+                            A = neighbor.side_nodes
+                            idx = find(A(:,1) == side_nodes(1) & A(:,2) == side_nodes(2),1,'first')
+                            elem.neighbor_sides(s,:) = A(idx,:);
+                            
+                            
+                            
+                            break;
+                        end
+                    end
+                end
+                
+                elem
+                elem.neighbor_elements
+            end
+            
+            
+            
+        end
+        
+%         function idx = locate_neighbor_elements(obj, x, e)
+%             
+%             e_idx = obj.elem_map == e;
+%             
+%             idx = zeros(size(obj.dof_map));
+%             
+%             for i = 1:length(x);
+%                 idx = idx + (obj.node_map(:,i) == x(i));
+%             end
+% 
+%             idx(e_idx) = 0;
+%             
+%         end
+        
         
   
     end

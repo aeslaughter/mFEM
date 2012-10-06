@@ -2,9 +2,10 @@ function test2
 
 
 
-mesh = Mesh('Quad4','DG');
-mesh.gen2D(0,1,0,1,2,1);
-%mesh.map;
+mesh = Mesh('Quad4','CG');
+mesh.gen2D(0,1,0,1,3,3);
+%mesh.plot();
+%mesh.dof_map;
 
 % elem = Quad4(1,x,y,'vector');
 % 

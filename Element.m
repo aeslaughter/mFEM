@@ -14,6 +14,7 @@ classdef Element < handle
       n_shape;     % no. of shape functions
       n_sides;     % no. of sides
       sides;       % array of xi, eta values for sides
+      side_nodes;  % array of local node ids for each side
     end
     
     % Abstract Methods (protected)
@@ -32,12 +33,13 @@ classdef Element < handle
         n_dim;            % no. of spatial dimensions
         type = 'scalar';  % scalar or vector
         n_dof = [];       % no. of degrees-of-freedom per node (1 = scalar)
-        neighbors = {};   % array o neighboring elements (n_side values; NaN = no neighbor) 
     end
     
-    % Public properties (read / write)
-    properties (SetAccess = public, GetAccess = public)
-        global_dof = [];  % vector of global dof for the nodes of this element
+    % Public properties (read only; except Mesh)
+    properties (SetAccess = {?Mesh}, SetAccess = protected, GetAccess = public)
+        neighbor_elements = {};   % array of neighboring elements (n_side values; NaN = no neighbor) 
+        neighbor_sides = [];      % array listng the side indices that match 
+        global_dof = [];          % vector of global dof for the nodes of this element
     end
     
     % Public Methods
@@ -107,6 +109,11 @@ classdef Element < handle
             else
                 error('Element type must be ''vector'' or ''scalar''');
             end
+            
+            % Initialize neighbor variables
+            obj.neighbor_elements = cell(obj.n_sides,1);
+            obj.neighbor_sides = zeros(size(obj.sides));
+            
         end
         
         function N = side_shape(obj, id, beta)

@@ -2,7 +2,7 @@ classdef Quad4 < Element
     %Quad4 4-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)
-    %         3---------2
+    %         4---------3
     %         |         |
     %      (4)|         |(2)
     %         |         |
@@ -15,6 +15,7 @@ classdef Quad4 < Element
         n_shape = 4; % no. of shape functions
         n_sides = 4; % no. of sides
         sides   = [NaN, -1; 1, NaN; NaN, 1; -1, NaN]; % xi, eta valus for sides
+        side_nodes = [1,2; 2,3; 3,4; 4,1]; 
     end
     
     % Define the Quad4 constructor
