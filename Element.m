@@ -7,7 +7,7 @@ classdef Element < handle
     % The abstract properties and methods must be redifined in the
     % subclass, see Quad4.m for an example.
     %
-    % see 'doc Element'
+    % see Quad4
     
     % Abstract Properties
     properties (Abstract = true, SetAccess = protected, GetAccess = public)  
@@ -20,8 +20,8 @@ classdef Element < handle
     % Abstract Methods (protected)
     % (the user must redfine this in subclasses, e.g. Quad4)
     methods (Abstract, Access = protected)
-         N = basis(~, xi, eta)          % local basis functions
-        GN = grad_basis(~, xi, eta)     % local basis function derivatives
+         N = basis(~, varargin)          % local basis functions
+        GN = grad_basis(~, varargin)     % local basis function derivatives
     end
     
     % Public properties (read only)
@@ -29,33 +29,40 @@ classdef Element < handle
         id = [];          % element id   
         nodes = [];       % global coordinates [no. nodes, no. dim]
         n_nodes = [];     % no. of nodes
-        n_dim;            % no. of spatial dimensions
+        n_dim = []        % no. of spatial dimensions
         space = 'scalar'; % scalar or vector space
-        n_dof = [];       % no. of degrees-of-freedom per node (1 = scalar)
     end
     
-    % Public properties (read only; except Mesh)
-    properties (SetAccess = {?Mesh}, SetAccess = protected, GetAccess = public)
+    % Public properties (read only; except FEmesh)
+    properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
         % structure containing neighbor information
         neighbor = struct('element',[],'side_index',[]);                
-        global_dof = [];         % vector of global dof for the nodes of this element
     end
+   
+     % Private properties (except FEmesh)
+     properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
+     	global_dof = []; % vector of global dof for the nodes of this element
+     end
     
     % Public Methods
     % These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters
     methods
         function obj = Element(id, nodes, varargin)
-            % Class constructor
+            % Class constructor.
             %
+            % This is an abstract class, it must be inherited by a subclass
+            % to operate, see Quad4.m for example.
+            %
+            % Syntax:
             %   Element(id, nodes)
             %   Element(id, nodes, type)
             %
             % Creates an element given:
-            % - id: unique identification number for this element
-            % - nodes: matrix of node coordinates (global), it should be 
+            %   id: unique identification number for this element
+            %   nodes: matrix of node coordinates (global), it should be 
             %          arranged as a column matrix [no. nodes x no. dims]
-            % - type (optional): string that is 'scalar' (default) or
+            %   type (optional): string that is 'scalar' (default) or
             %       'vector', which indicates the type of solution
             %
             
@@ -67,32 +74,14 @@ classdef Element < handle
             % User supplied the space
             if nargin == 3;
                 obj.space = varargin{1};
-            end
-            
-            % Set no. of degrees-of-freedom
-            if strcmpi(obj.space, 'vector');
-                obj.n_dof = obj.n_dim;
-            elseif strcmpi(obj.space, 'scalar');
-                obj.n_dof = 1;
-            else
-                error('Element type must be ''vector'' or ''scalar''');
-            end
-            
+            end           
         end
         
-        function N = side_shape(obj, id, beta)
-            % Returns the shape functions the side identified by id
-            side = obj.sides(id, :);
-            side(isnan(side)) = beta;
-            side = num2cell(side);
-            N = obj.shape(side{:});
-        end
-            
-        function N = shape(obj, xi, eta)
+        function N = shape(obj, varargin)
             % Returns the shape functions
             
             % Scalar field basis functions
-            N = obj.basis(xi, eta);
+            N = obj.basis(varargin{:});
             
             % Vector
             if strcmpi(obj.type, 'vector');
@@ -108,11 +97,11 @@ classdef Element < handle
             end            
         end
         
-        function B = shape_deriv(obj, xi, eta)
+        function B = shape_deriv(obj, varargin)
             % Returns the shape function derivatives in x,y system
             
             % Scalar field basis functin derivatives
-            B = inv(obj.jacobian(xi,eta)) * obj.grad_basis(xi,eta);
+            B = inv(obj.jacobian(xi,eta)) * obj.grad_basis(varargin{:});
             
             % Vector
             if strcmpi(obj.type, 'vector');
@@ -129,14 +118,45 @@ classdef Element < handle
             end
         end
         
-        function J = detJ(obj, xi, eta)
+        function N = side_shape(obj, id, varargin)
+            % Returns the shape functions the side identified by id
+            side = obj.sides(id, :);
+            side(isnan(side)) = varargin{:};
+            side = num2cell(side);
+            N = obj.shape(side{:});
+        end
+            
+        function dof = get_dof(obj)
+            % The global degrees of freedom, account for type of space
+            
+            % Scalar FE space
+            if strcmpi(obj.space,'scalar');
+                dof = obj.global_dof;
+                
+            % Vector FE space
+            elseif strcmpi(obj.space,'vector');
+                D = obj.global_dof;
+                dof = [];
+                for i = 1:length(D);
+                    d0 = 2*(D(i) - 1) + 1;
+                    dn = d0 + obj.n_dim-1;
+                    dof = [dof; (d0:dn)'];
+                end
+                
+            else
+                error('ERROR: Unknown finite elment space (%s) for element %d\n', obj.space, obj.id);
+                
+            end
+        end
+        
+        function J = detJ(obj, varargin)
             % Returns the determinate of the jacobian matrix
-            J = det(obj.jacobian(xi, eta));
+            J = det(obj.jacobian(varargin{:}));
         end 
       
-        function J = jacobian(obj, xi, eta)
+        function J = jacobian(obj, varargin)
             % Returns the jacobian matrix
-            J = obj.grad_basis(xi,eta)*obj.nodes;                    
+            J = obj.grad_basis(varargin{:})*obj.nodes;                    
         end       
     end
 end
