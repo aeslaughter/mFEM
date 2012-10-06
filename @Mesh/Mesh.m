@@ -30,6 +30,11 @@ classdef Mesh < handle
             
         end
         
+        function add_element(obj, varargin)
+            obj.elements{end+1} = feval(obj.element_type, varargin{:});
+        end
+        
+        
         function initialize(obj)
            obj.n_elements = length(obj.elements); 
            obj.compute_dof_map();
