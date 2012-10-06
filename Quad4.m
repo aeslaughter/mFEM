@@ -20,9 +20,9 @@ classdef Quad4 < Element
     
     % Define the Quad4 constructor
     methods 
-        function obj = Quad4(id, x, y, varargin)
+        function obj = Quad4(id, nodes, varargin)
            % Class constructor; calls base class constructor
-           obj = obj@Element(id, x, y, varargin{:}); 
+           obj = obj@Element(id, nodes, varargin{:}); 
         end
     end
     

@@ -1,10 +1,11 @@
 function test2
+clear all;
+close all;
 
-
-
-mesh = Mesh('Quad4','CG');
+mesh = Mesh('Quad4');
 mesh.gen2D(0,1,0,1,3,3);
-%mesh.plot();
+mesh.plot();
+%mesh
 %mesh.dof_map;
 
 % elem = Quad4(1,x,y,'vector');

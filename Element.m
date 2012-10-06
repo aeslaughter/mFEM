@@ -26,93 +26,57 @@ classdef Element < handle
     
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
-        id = [];          %element id   
-        x = [];           % global x-coordinates for this element
-        y = [];           % global y-coordinates for this element
-        z = [];           % global z-coordinates for this element 
+        id = [];          % element id   
+        nodes = [];       % global coordinates [no. nodes, no. dim]
+        n_nodes = [];     % no. of nodes
         n_dim;            % no. of spatial dimensions
-        type = 'scalar';  % scalar or vector
+        space = 'scalar'; % scalar or vector space
         n_dof = [];       % no. of degrees-of-freedom per node (1 = scalar)
     end
     
     % Public properties (read only; except Mesh)
     properties (SetAccess = {?Mesh}, SetAccess = protected, GetAccess = public)
-        neighbor_elements = {};   % array of neighboring elements (n_side values; NaN = no neighbor) 
-        neighbor_sides = [];      % array listng the side indices that match 
-        global_dof = [];          % vector of global dof for the nodes of this element
+        % structure containing neighbor information
+        neighbor = struct('element',[],'side_index',[]);                
+        global_dof = [];         % vector of global dof for the nodes of this element
     end
     
     % Public Methods
     % These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters
     methods
-        function obj = Element(id, x, varargin)
+        function obj = Element(id, nodes, varargin)
             % Class constructor
             %
-            %   Element(id, x)
-            %   Element(id, x, y)
-            %   Element(id, x, y, z)
-            %   Element(..., type)
+            %   Element(id, nodes)
+            %   Element(id, nodes, type)
             %
             % Creates an element given:
             % - id: unique identification number for this element
-            % - x: vector containing the x-coordinate of the nodes, in order
-            % - y (optional): vector containing the y-coordinate of the nodes,
-            %   in order
-            % - z:(optional): vector containing the y-coordinate of the nodes, in
-            %   order
+            % - nodes: matrix of node coordinates (global), it should be 
+            %          arranged as a column matrix [no. nodes x no. dims]
             % - type (optional): string that is 'scalar' (default) or
             %       'vector', which indicates the type of solution
             %
             
             % Insert required values into object properties
             obj.id = id;
-            obj.x = x;
-            obj.n_dim = 1;
+            obj.nodes = nodes;
+            [obj.n_nodes, obj.n_dim] = size(nodes);
     
-            % Insert y coordinates or type
-            switch length(varargin)
-                case 1;
-                    if ischar(varargin{1});
-                        obj.type = varargin{1};
-                    else
-                        obj.y = varargin{1};
-                        obj.n_dim = 2;
-                    end
-                    
-                case 2;
-                    if ischar(varargin{2});
-                        obj.y = varargin{1};
-                        obj.type = varargin{2};
-                        obj.n_dim = 2;
-                    else
-                        obj.y = varargin{1};
-                        obj.z = varargin{2};
-                        obj.n_dim = 3;
-                    end
-                    
-                case 3;
-                    obj.y = varargin{1};
-                    obj.z = varargin{2};
-                    obj.type = varargin{3};
-                    obj.n_dim = 3;
-                    
-                otherwise;
-                    error('ERROR: Input error, wrong number of inputs.');
+            % User supplied the space
+            if nargin == 3;
+                obj.space = varargin{1};
             end
             
             % Set no. of degrees-of-freedom
-            if strcmpi(obj.type, 'vector');
+            if strcmpi(obj.space, 'vector');
                 obj.n_dof = obj.n_dim;
-            elseif strcmpi(obj.type, 'scalar');
+            elseif strcmpi(obj.space, 'scalar');
                 obj.n_dof = 1;
             else
                 error('Element type must be ''vector'' or ''scalar''');
             end
-            
-            % Initialize neighbor variables
-            obj.neighbor_elements = cell(obj.n_sides,1);
-            obj.neighbor_sides = zeros(size(obj.sides));
             
         end
         
@@ -172,14 +136,7 @@ classdef Element < handle
       
         function J = jacobian(obj, xi, eta)
             % Returns the jacobian matrix
-            switch obj.n_dim;
-                case 1;
-                    J = obj.grad_basis(xi,eta)*obj.x';                    
-                case 2;
-                    J = obj.grad_basis(xi,eta)*[obj.x', obj.y'] ; 
-                case 3;
-                    J = obj.grad_basis(xi,eta)*[obj.x', obj.y', obj.z']; 
-            end
+            J = obj.grad_basis(xi,eta)*obj.nodes;                    
         end       
     end
 end
