@@ -14,7 +14,7 @@ classdef Element < handle
       n_shape;     % no. of shape functions
       n_sides;     % no. of sides
       sides;       % array of xi, eta values for sides
-      side_nodes;  % array of local node ids for each side
+      side_dof;    % array of local node ids for each side
     end
     
     % Abstract Methods (protected)
@@ -35,13 +35,13 @@ classdef Element < handle
     
     % Public properties (read only; except FEmesh)
     properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
-        % structure containing neighbor information
-        neighbor = struct('element',[],'side_index',[]);                
+        neighbor = struct('element',{},'side_index',{}); % structure containing neighbor information (computed by FEmesh)
     end
    
      % Private properties (except FEmesh)
      properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
      	global_dof = []; % vector of global dof for the nodes of this element
+        global_side_dof = []; % array of global node ids for each side (computed by FEmesh)
      end
     
     % Public Methods

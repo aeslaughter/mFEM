@@ -22,6 +22,7 @@ classdef FEmesh < handle
     
     % Public methods
     methods (Access = public)
+        % Constructor
         function obj = FEmesh(varargin)
             % Class constructor
             % 
@@ -59,6 +60,7 @@ classdef FEmesh < handle
             obj.element = feval([obj.element_type,'.empty']);
         end
         
+        % Adds an element to the mesh
         function add_element(obj, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
@@ -83,8 +85,14 @@ classdef FEmesh < handle
             % Add the element(s)
             id = length(obj.element) + 1;
             obj.element(id) = feval(obj.element_type, id, nodes, obj.space);
+            
+            % Append the element and node maps                    
+            nn = obj.element(end).n_nodes;
+            obj.map.elem(end+1:end+nn,:) = id;
+            obj.map.node(end+1:end+nn,:) = nodes;
         end
         
+        % Initializes by computing degree-of-freedom maps
         function initialize(obj)
             % Initialization function.
             %
@@ -111,6 +119,7 @@ classdef FEmesh < handle
             obj.initialized = true;
         end
                 
+        % Tool for generating a 2D mesh
         function gen2D(obj, x0, x1, y0, y1, xn, yn)  
             % Create a 2D mesh
             % 
@@ -131,8 +140,7 @@ classdef FEmesh < handle
             end
         end
        
-
-        
+        % Tool for plotting the mesh with element and node labels
         function plot(obj)
             % Plots the mesh with element and node numbers (global)
             % (currently this only works with 2D and 3D (not tested in 3D)
@@ -173,13 +181,15 @@ classdef FEmesh < handle
         end 
     end
     
+    % Private methods
     methods (Access = private)
+        % Computes the dof maps
         function compute_dof_map(obj)
             % Calculates the global degree-of-freedom map
             % (this is used by both CG and DG for finding neighbors)
             
             % Compute the CG dof map
-            [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows','stable');
+            [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows');
             
             % Place the correct type of map in public property
             switch obj.type;
@@ -188,7 +198,7 @@ classdef FEmesh < handle
                 case 'DG'; 
                     obj.map.dof = (1:size(obj.map.node,1))';
             end
-            
+
             % Update the elements with the global dof
             for e = 1:obj.n_elements;
                 elem = obj.element(e);
@@ -196,6 +206,7 @@ classdef FEmesh < handle
             end
         end
         
+        % 2d mesh generation
         function gen2Dmesh(obj, x0, x1, y0, y1, xn, yn)
             % Generate the 2D mesh (see gen2D)
 
@@ -204,9 +215,8 @@ classdef FEmesh < handle
             y = y0 : (y1-y0)/yn : y1;
 
             % Loop through the grid, creating elements for each cell
-            k = 0;
-            for j = 1:length(y)-1;           
-                for i = 1:length(x)-1;
+            for i = 1:length(x)-1;           
+                for j = 1:length(y)-1;
                     % Define the nodes of the cell
                     nodes(1,:) = [x(i), y(j)];
                     nodes(2,:) = [x(i+1), y(j)];
@@ -215,11 +225,6 @@ classdef FEmesh < handle
                    
                     % Add the element(s)
                     obj.add_element(nodes);
-
-                    % Append the element and node maps                    
-                    nn = obj.element(end).n_nodes;
-                    obj.map.elem(end+1:end+nn,:) = k;
-                    obj.map.node(end+1:end+nn,:) = nodes;
                 end
             end
             
@@ -227,37 +232,66 @@ classdef FEmesh < handle
             obj.initialize();
         end 
                      
+        % Finds element neighbors
         function find_neighbors(obj)
             % Locates elements that share a side
-            % (this could probably be written better)
+           
+            % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
-                elem = obj.element(e);
-                elem_dof  = elem.global_dof
+                elem = obj.element(e); % current element
+                elem_dof  = elem.global_dof; % global dof for this element
+                side_dof = zeros(size(elem.side_dof)); % storage for side dof of this element
                 
+                % Loop through the sides of element
                 for s = 1:elem.n_sides
-                    s
-                    % Determine side dof
-                    side_dof = elem_dof(elem.side_nodes(s,:));
                     
+                    % Append to the global dof for the current side
+                    side_dof(s,:) = elem_dof(elem.side_dof(s,:));
+
                     % Collects index of neighbor elements (including corners)
                     idx = zeros(size(obj.CG_dof_map));
-                    for i = 1:length(side_dof);
-                        idx = idx + (obj.CG_dof_map == side_dof(i));
+                    for i = 1:length(side_dof(s,:));
+                        idx = idx + (obj.CG_dof_map == side_dof(s,i));
                     end
                     idx(obj.map.elem == e) = 0; %exclude current element
 
                     % Gathers neighbor element ids, only include as a neighbor
                     % if it shares multiple nodes (i.e., corners don't count)
+                    % Also, a side can have multiple neighbors, this is
+                    % allowed for adding adaptivity in the future
                     x = obj.map.elem(logical(idx));
                     count = zeros(size(x));
                     for i = 1:length(x);
                         count(i) = sum(x(i) == x);
                     end
-                    elem.neighbor(s).element = unique(x(count > 1));
-                    
+                    elem.neighbor(1).element{s} = unique(x(count > 1));
                 end
                 
-                %
+                 % Assign global dof for the sides
+                elem.global_side_dof = side_dof;             
+            end
+            
+           % Loop through all elements and identify which sides are shared
+            for e = 1:obj.n_elements;
+                elem = obj.element(e); % current element
+
+                % Global dof for the sides of the current element, it must
+                % be sorted because the node order for each side differs
+                % for the element vs. its neighbors for the same dofs
+                a = sort(elem.global_side_dof, 2);
+
+                % Loop through all neighboring elements
+                ne = elem.neighbor.element; 
+                for s = 1:length(ne); % loop through sides
+                    for i = 1:length(ne{s}); % loop through neighbor elements on current side
+                        elem_n = obj.element(ne{s}(i)); % current neighbor element
+                        b = sort(elem_n.global_side_dof, 2); % neighbor element global side dofs
+                        [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
+                        elem.neighbor.side_index{s}(i) = ib; % update current element
+                    end
+                end
+                    
+
             end
         end  
     end
