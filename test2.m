@@ -2,11 +2,11 @@ function test2
 clear all;
 
 mesh = FEmesh('Quad4','vector');
-mesh.gen2D(0,1,0,1,2,2);
+mesh.gen2D(0,1,0,1,5,5);
 
 mesh.element(2).neighbor
 
-% mesh.plot();
+ mesh.plot();
 %mesh.dof_map;
 
 % elem = Quad4(1,x,y,'vector');

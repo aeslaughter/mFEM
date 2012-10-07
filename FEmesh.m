@@ -264,7 +264,17 @@ classdef FEmesh < handle
                     for i = 1:length(x);
                         count(i) = sum(x(i) == x);
                     end
-                    elem.neighbor(1).element{s} = unique(x(count > 1));
+                    id = unique(x(count > 1));
+                    elem.neighbor(1).element{s} = id;
+                    
+                    % Initialize side_index, so it will be sided the same
+                    elem.neighbor(1).side_index{s} = [];
+                    
+                    % An empty id is a side without a neighbor, which must
+                    % be on the boundary
+                    if isempty(id);
+                        elem.on_boundary = true;
+                    end
                 end
                 
                  % Assign global dof for the sides
@@ -289,9 +299,7 @@ classdef FEmesh < handle
                         [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
                         elem.neighbor.side_index{s}(i) = ib; % update current element
                     end
-                end
-                    
-
+                end  
             end
         end  
     end

@@ -26,16 +26,17 @@ classdef Element < handle
     
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
-        id = [];          % element id   
-        nodes = [];       % global coordinates [no. nodes, no. dim]
-        n_nodes = [];     % no. of nodes
-        n_dim = []        % no. of spatial dimensions
-        space = 'scalar'; % scalar or vector space
+        id = [];          % element id [double]
+        nodes = [];       % global coordinates (no. nodes, no. dim) [double]
+        n_nodes = [];     % no. of nodes [double]
+        n_dim = []        % no. of spatial dimensions [double]
+        space = 'scalar'; % scalar or vector space [string]
     end
     
     % Public properties (read only; except FEmesh)
     properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
         neighbor = struct('element',{},'side_index',{}); % structure containing neighbor information (computed by FEmesh)
+        on_boundary;      % flag if element is on a boundary [bool]
     end
    
      % Private properties (except FEmesh)
