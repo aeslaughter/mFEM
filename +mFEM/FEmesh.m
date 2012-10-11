@@ -274,6 +274,8 @@ classdef FEmesh < handle
             
             % Check the current element type is supported
             switch obj.element_type;
+                case 'Linear2';
+                    
                 case 'Quad4';
                     obj.gen2Dmesh(x0, x1, y0, y1, xn, yn);
                 otherwise

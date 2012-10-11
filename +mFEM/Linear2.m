@@ -7,22 +7,17 @@ classdef Linear2 < Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 2; % no. of shape functions
-        n_sides = [];
-        side_elem = '';
-        side_dof = [];
+        n_shape = 2;                % no. of shape functions
+        n_sides = 2;                % no. "sides" (nodes are sides in 1D)
+        side_dof = [1, 2];          % local dofs of the "sides"
+        side_defn = [1,-1; 1, 1];   % xi definitions for "sides"
     end
     
-    % Define the Quad4 constructor
+    % Define the Linear2 constructor
     methods 
         function obj = Linear2(id, nodes, varargin)
            % Class constructor; calls base class constructor
            obj = obj@Element(id, nodes, varargin{:}); 
-        end
-        
-        function build_side(~,~)
-           % Class for building a side element
-           error('ERROR: Side not defined for Linear2 element'); 
         end
     end
     

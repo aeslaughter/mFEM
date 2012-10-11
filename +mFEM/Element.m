@@ -54,7 +54,7 @@ classdef Element < handle
     end
    
     % Private properties (except FEmesh)
-    properties (SetAccess = {?mFEM.FEmesh}, SetAccess = protected, GetAccess = public)
+    properties (Access = {?mFEM.FEmesh, ?Element}, Access = protected)
      	global_dof = []; % vector of global dof for the nodes of this element
      end
     
@@ -215,9 +215,8 @@ classdef Element < handle
         function J = jacobian(obj, varargin)
             % Returns the jacobian matrix   
             J = obj.grad_basis(varargin{:})*obj.nodes;                    
-        end      
+        end
         
-        % Generates input for shape and shape_deriv for sides
         function in = side_input(obj, id, varargin)
             % Parses side input for use in shape and shape_deriv
             
