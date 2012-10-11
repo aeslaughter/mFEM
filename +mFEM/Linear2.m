@@ -1,4 +1,4 @@
-classdef Linear2 < Element
+classdef Linear2 < mFEM.Element
     %Linear 2-node 1D linear element
     %
     %      (-1)   (1)   (1)
@@ -9,7 +9,7 @@ classdef Linear2 < Element
     properties (SetAccess = protected, GetAccess = public)
         n_shape = 2;                % no. of shape functions
         n_sides = 2;                % no. "sides" (nodes are sides in 1D)
-        side_dof = [1, 2];          % local dofs of the "sides"
+        side_dof = [1; 2];          % local dofs of the "sides"
         side_defn = [1,-1; 1, 1];   % xi definitions for "sides"
     end
     
@@ -17,7 +17,7 @@ classdef Linear2 < Element
     methods 
         function obj = Linear2(id, nodes, varargin)
            % Class constructor; calls base class constructor
-           obj = obj@Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.Element(id, nodes, varargin{:}); 
         end
     end
     

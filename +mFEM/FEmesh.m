@@ -261,23 +261,26 @@ classdef FEmesh < handle
         end
             
         % Tool for generating a 2D mesh
-        function grid(obj, x0, x1, y0, y1, xn, yn)  
-            % Create a 2D mesh
+        function grid(obj, varargin)  
+            % Create a mesh (1D, 2D, or 3D)
             % 
             % Syntax:
-            %   gen2d(x0, x1, y0, y1, xn, yn)
+            %   grid(x0, x1, xn)
+            %   grid(x0, x1, y0, y1, xn, yn)
+            %   grid(x0, x1, y0, y1, z0, z1, xn, yn, zn)
             %
             % Input:
             %   x0,x1 = Mesh limits in x-direction
             %   y0,y1 = Mesh limits in y-direction
-            %   xn,yn = Num. of elements in x,y direction
+            %   z0,z1 = Mesh limits in z-direction
+            %   xn,yn,zn = Num. of elements in x,y,z direction
             
             % Check the current element type is supported
             switch obj.element_type;
                 case 'Linear2';
-                    
+                    obj.gen1Dgrid(varargin{:});
                 case 'Quad4';
-                    obj.gen2Dmesh(x0, x1, y0, y1, xn, yn);
+                    obj.gen2Dgrid(varargin{:});
                 otherwise
                     error('FEmesh:grid','Grid generation is not supported for the %s element', obj.element_type);
             end
@@ -338,7 +341,7 @@ classdef FEmesh < handle
             
             % Compute the CG dof map
             [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows','stable');
-            
+
             % Place the correct type of map in public property
             switch obj.type;
                 case 'CG'; 
@@ -354,9 +357,30 @@ classdef FEmesh < handle
             end
         end
         
-        % 2d mesh generation
+        % 1D mesh generation
+        function gen1Dgrid(obj, x0, x1, xn)
+            % Generate the 1D mesh (see grid)
+
+            % Generate the generic grid points
+            x = x0 : (x1-x0)/xn : x1;
+
+            % Loop through the grid, creating elements for each cell
+            for i = 1:length(x)-1;           
+                % Define the nodes of the cell
+                nodes(1) = x(i);
+                nodes(2) = x(i+1);
+
+                % Add the element(s)
+                obj.add_element(nodes');
+            end
+            
+            % Initialize
+            obj.initialize();       
+        end
+        
+        % 2D mesh generation
         function gen2Dgrid(obj, x0, x1, y0, y1, xn, yn)
-            % Generate the 2D mesh (see gen2D)
+            % Generate the 2D mesh (see grid)
 
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
@@ -395,7 +419,6 @@ classdef FEmesh < handle
                 for s = 1:elem.n_sides
                     
                     % Append to the global dof for the current side
-                    % side_dof(s,:) = elem_dof(elem.side_dof(s,:));
                     elem.side(s).global_dof = elem_dof(elem.side_dof(s,:));
 
                     % Collects index of neighbor elements (including corners)
@@ -414,7 +437,9 @@ classdef FEmesh < handle
                     for i = 1:length(x);
                         count(i) = sum(x(i) == x);
                     end
-                    id = unique(x(count > 1));
+                    
+                    % Identify to shared id's
+                    id = unique(x(count >= (obj.n_dim - 1)));
                     elem.side(s).neighbor.element = id;
                     
                     % Initilize the side index array
