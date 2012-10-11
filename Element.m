@@ -9,11 +9,24 @@ classdef Element < handle
     %
     % see Quad4
     
-    % Abstract Properties
+    % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public)  
       n_shape;     % no. of shape functions
       n_sides;     % no. of sides
+      
+      % Array of local node ids for each side, should be an m x n array,
+      % where m = number of sides and n = number of nodes on the side. See
+      % Quad4.m for an example
       side_dof;    % array of local node ids for each side
+      
+      % An array defining the values of the local coordinate system that
+      % are fixed for the sides. It should be an m x 2 array, where m is
+      % the number of sides. The first column gives the index of the local
+      % coordinate system (e.g., 1 = xi and 2 = eta; see Quad4.m). The
+      % second column defines the value that the coordinate is fixed. For
+      % example, a row of [1,-1] indiates that the side is defined when xi
+      % = -1 (see Quad4.m)
+      side_defn;   % array defining the values of xi or eta that are fixed
     end
     
     % Abstract Methods (protected)
@@ -21,12 +34,6 @@ classdef Element < handle
     methods (Abstract, Access = protected)
          N = basis(~, varargin)          % local basis functions
         GN = grad_basis(~, varargin)     % local basis function derivatives
-    end
-    
-    % Abstract Methods (public)
-    % (the user must redfine this in subclasses, e.g. Quad4)
-    methods (Abstract, Access = public)
-        side = build_side(obj, id)         % returns an element object for the side
     end
     
     % Public properties (read only)
@@ -46,15 +53,15 @@ classdef Element < handle
         boundary_id = uint32([]); % list of all boundary ids for the element
     end
    
-     % Private properties (except FEmesh)
-     properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
+    % Private properties (except FEmesh)
+    properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
      	global_dof = []; % vector of global dof for the nodes of this element
      end
     
     % Public Methods
     % These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters
-    methods
+    methods (Access = public)
         function obj = Element(id, nodes, varargin)
             % Class constructor.
             %
@@ -138,6 +145,47 @@ classdef Element < handle
             end
         end
         
+        function J = detJ(obj, varargin)
+            % Returns the determinate of the jacobian matrix
+            J = det(obj.jacobian(varargin{:}));
+        end 
+        
+        function N = side_shape(obj, id, varargin)
+            % Returns the shape functions the side identified by id
+            in = obj.side_input(id, varargin{:});
+            N = obj.shape(in{:});
+        end
+        
+        function B = side_shape_deriv(obj, id, varargin)
+           % Returns the shape function derivatives for the specified side
+           in = obj.side_input(id, varargin{:});
+           B = obj.shape_deriv(in{:});
+        end
+        
+        function J = side_detJ(obj, id, varargin)
+            % Return derterminant of Jacobian for the specified side
+            
+            % Collect input in proper form
+            in = obj.side_input(id, varargin{:});
+            idx = obj.side_defn(id,1);
+            
+            % 1D: Not defined 
+            if obj.n_dim == 1;
+                error('Element:side_detJ','The side Jacobian is not defined for 1D elements');
+            
+            % 2D: Length of side    
+            elseif obj.n_dim == 2;
+                warning('Element:side_detJ', 'The side_detJ function was only tested on Quad4.m');
+                J = max(pdist(obj.nodes(:,idx)))/2;
+                
+            % 3D (not tested)    
+            else
+                warning('Element:side_detJ', 'The side_detJ function was not tested in 3D.');
+                GN = obj.grad_basis(in{:});
+                J = GN(idx,:)*obj.nodes(:,idx);
+            end
+        end
+        
         function dof = get_dof(obj)
             % The global degrees of freedom, account for type of space
             
@@ -156,19 +204,37 @@ classdef Element < handle
                 end
                 
             else
-                error('ERROR: Unknown finite elment space (%s) for element %d\n', obj.space, obj.id); 
+                error('Element:get_dof', 'Unknown finite elment space (%s) for element %d\n', obj.space, obj.id); 
             end
-        end
-        
-        function J = detJ(obj, varargin)
-            % Returns the determinate of the jacobian matrix
-            J = det(obj.jacobian(varargin{:}));
-        end 
+        end  
+    end
+    
+    % Private methods
+    methods (Access = private)
         
         function J = jacobian(obj, varargin)
             % Returns the jacobian matrix   
             J = obj.grad_basis(varargin{:})*obj.nodes;                    
-        end       
+        end      
+        
+        % Generates input for shape and shape_deriv for sides
+        function in = side_input(obj, id, varargin)
+            % Parses side input for use in shape and shape_deriv
+            
+            % Create correctly sized index vector and input vector 
+            idx = 1:obj.n_dim;
+            in(idx) = 0;
+            
+            % Extract index and value for current side
+            s = obj.side_defn(id, :);
+  
+            % Insert correct values 
+            in(idx ~= s(1)) = varargin{:};
+            in(s(1)) = s(2);
+ 
+            % Convert numeric array to cell array
+            in = num2cell(in);
+        end
     end
 end
     

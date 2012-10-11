@@ -259,7 +259,7 @@ classdef FEmesh < handle
         end
             
         % Tool for generating a 2D mesh
-        function gen2D(obj, x0, x1, y0, y1, xn, yn)  
+        function grid(obj, x0, x1, y0, y1, xn, yn)  
             % Create a 2D mesh
             % 
             % Syntax:
@@ -275,7 +275,7 @@ classdef FEmesh < handle
                 case 'Quad4';
                     obj.gen2Dmesh(x0, x1, y0, y1, xn, yn);
                 otherwise
-                    error('Mesh.gen2D is not supported for this element');
+                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.element_type);
             end
         end
        
@@ -351,7 +351,7 @@ classdef FEmesh < handle
         end
         
         % 2d mesh generation
-        function gen2Dmesh(obj, x0, x1, y0, y1, xn, yn)
+        function gen2Dgrid(obj, x0, x1, y0, y1, xn, yn)
             % Generate the 2D mesh (see gen2D)
 
             % Generate the generic grid points

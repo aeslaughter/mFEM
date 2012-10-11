@@ -14,7 +14,8 @@ classdef Quad4 < Element
     properties (SetAccess = protected, GetAccess = public)
         n_shape = 4; % no. of shape functions
         n_sides = 4; % no. of sides
-        side_dof = [1,2; 2,3; 3,4; 4,1];  
+        side_dof = [1,2; 2,3; 3,4; 4,1]; % define the side dofs 
+        side_defn = [2,-1; 1,1; 2,1; 1,-1]; % xi,eta definitions for sides
      end
     
     % Define the Quad4 constructor
@@ -22,24 +23,6 @@ classdef Quad4 < Element
         function obj = Quad4(id, nodes, varargin)
            % Class constructor; calls base class constructor
            obj = obj@Element(id, nodes, varargin{:}); 
-        end
-        
-        % (...automate this...)
-        function side = build_side(obj, id)
-            % Creates a Linear2 element for the specified side
-
-            % Extract the nodes for the side
-            idx = obj.side_dof(id, :);
-            nodes = obj.nodes(idx,:);       
-
-            % Build a local coordinate system (0 to length of side)
-            n = [0; norm(nodes(1,:) - nodes(2,:))]; 
-
-            % Create the element
-            side = Linear2(id, n, obj.space);
-            
-            % Add boundary_ids to the created side
-            side.boundary_id = obj.side(id).boundary_id;
         end
     end
     
@@ -58,7 +41,5 @@ classdef Quad4 < Element
             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
                       xi-1, -xi-1, 1+xi, 1-xi];
         end
-        
-
     end
 end
