@@ -1,5 +1,6 @@
 function test2
-clear all;
+clear classes;
+import mFEM.*;
 
 
 elem = Quad4(1,[0,1; 0,0; 2,0.5; 2,1]);
