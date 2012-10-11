@@ -60,7 +60,7 @@ classdef FEmesh < handle
             end
             
             % Initialize the element property
-            obj.element = feval([obj.element_type,'.empty']);
+            obj.element = feval(['mFEM.',obj.element_type,'.empty']);
         end
         
         % Adds an element to the mesh
@@ -87,7 +87,9 @@ classdef FEmesh < handle
             
             % Add the element(s)
             id = length(obj.element) + 1;
-            obj.element(id) = feval(obj.element_type, id, nodes, obj.space);
+            
+            obj.element(id) = feval(['mFEM.', obj.element_type],...
+                id, nodes, obj.space);
             
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;

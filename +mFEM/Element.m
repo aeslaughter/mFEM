@@ -47,14 +47,14 @@ classdef Element < handle
     end
     
     % Public properties (read only; except FEmesh)
-    properties (SetAccess = {?FEmesh, ?Element}, SetAccess = protected, GetAccess = public)
+    properties (SetAccess = {?mFEM.FEmesh, ?Element}, SetAccess = protected, GetAccess = public)
         side = struct([]); % structure containing side information (computed by FEmesh)
         on_boundary; % flag if element is on a boundary (has a side w/o neighbor) [bool]
         boundary_id = uint32([]); % list of all boundary ids for the element
     end
    
     % Private properties (except FEmesh)
-    properties (SetAccess = {?FEmesh}, SetAccess = protected, GetAccess = public)
+    properties (SetAccess = {?mFEM.FEmesh}, SetAccess = protected, GetAccess = public)
      	global_dof = []; % vector of global dof for the nodes of this element
      end
     
