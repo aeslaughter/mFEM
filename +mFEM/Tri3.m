@@ -1,19 +1,23 @@
 classdef Tri3 < mFEM.Element
     %Tri3 3-node triangle element
-    %   
+    % 
+    %        xi2  
+    %         ^
+    %         |  
+    %
     %         2
-    %         |\       
-    %      (3)| \(2)      
+    %         |\            On side 3: xi1 + xi2 = 1; 
+    %      (2)| \(3)        On node 3: xi3 = 1;
     %         |  \       
-    %         3---1
+    %         3---1  ---> xi1
     %          (1) 
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
         n_shape = 3; % no. of shape functions
         n_sides = 3; % no. of sides
-        side_dof = [1,2; 2,3; 3,1];         % define the side dofs 
-        side_defn = [2,-1; 1,1; 1,-1];      % xi1,xi2 definitions for sides
+        side_dof = [1,2; 2,3; 3,1];        % define the side dofs 
+        side_defn = [2,0; 1, 0; NaN, NaN];      % xi1,xi2 definitions for sides
      end
     
     % Define the Quad4 constructor

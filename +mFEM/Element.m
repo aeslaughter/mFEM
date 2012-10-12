@@ -182,8 +182,8 @@ classdef Element < handle
                 % Use max distance between any of the nodes
                 J = max(pdist(obj.nodes(idx,:)))/2;
                 
-                if ~strcmpi('mFEM.Quad4', class(obj));
-                    warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was only tested with a Quad4 element.');
+                if ~any(strcmpi(class(obj), {'mFEM.Quad4', 'mFEM.Tri3'}));
+                    warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was not tested for a %s element.', class(obj));
                 end
                 
             % 3D: The side is a face    

@@ -32,8 +32,8 @@ classdef Linear2 < mFEM.Element
     methods (Access = protected)      
         function N = basis(~, xi)
             % Returns a row vector of local shape functions
-            N(1) = 1/2*(1-xi);
-            N(2) = 1/2*(1+xi);
+            N(1) = 1/2*(1 - xi);
+            N(2) = 1/2*(1 + xi);
         end
 
         function B = grad_basis(obj, varargin) 

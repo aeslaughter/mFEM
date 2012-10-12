@@ -23,7 +23,7 @@ mesh.add_boundary_id(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2);
+q_elem = Gauss(2,'tri');
 [qp, W] = q_elem.rules();
 
 q_face = Gauss(1);
@@ -48,8 +48,8 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi,eta) elem.shape_deriv(xi,eta);
-    N = @(xi,eta) elem.shape(xi,eta);
+    N = @(xi1,xi2) elem.shape(xi1, xi2);    
+    B = @() elem.shape_deriv();
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
@@ -58,13 +58,11 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            fe = fe + W(j)*W(i)*s*N(qp(i),qp(j))'*elem.detJ(qp(i),qp(j));
-            Ke = Ke + W(j)*W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
-        end
+    for i = 1:size(qp,1);
+        fe = fe + W(i)*s*N(qp(i,1),qp(i,2))'*elem.detJ();
+        Ke = Ke + W(i)*B()'*D*B()*elem.detJ();
     end
-    Ke
+
     % Re-define the N short-hand function handle for use on sides
     N = @(id, beta) elem.side_shape(id, beta);
     
