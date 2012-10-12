@@ -73,7 +73,8 @@ for e = 1:mesh.n_elements;
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
             for i = 1:length(qp_side);
-               f = f + -q_top*W_side(i)*N(s,qp_side(i))'*elem.side_detJ(s,qp_side(i));              
+                elem.side_detJ(s,qp_side(i))
+                f = f + -q_top*W_side(i)*N(s,qp_side(i))'*elem.side_detJ(s,qp_side(i));              
             end
         end
     end      

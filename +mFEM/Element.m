@@ -167,22 +167,30 @@ classdef Element < handle
             
             % Collect input in proper form
             in = obj.side_input(id, varargin{:});
-            idx = obj.side_defn(id,1);
             
-            % 1D: Not defined 
+            % Local dofs for the current side
+            idx = obj.side_dof(id,:);
+          
+            % Perform calculation based on dimension of system
             if obj.n_dim == 1;
-                error('Element:side_detJ','The side Jacobian is not defined for 1D elements');
-            
-            % 2D: Length of side    
+                error('Element:side_detJ', 'Not defined for 1D elements.');
+
+            % 2D: The side is a line, so detJ = length/2
             elseif obj.n_dim == 2;
-                warning('Element:side_detJ', 'The side_detJ function was only tested on Quad4.m');
+                % Use max distance between any of the nodes
                 J = max(pdist(obj.nodes(:,idx)))/2;
                 
-            % 3D (not tested)    
+                if ~strcmpi('Quad4', obj.element_type);
+                    warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was only tested with a Quad4 element.');
+                end
+                
+            % 3D: The side is a face    
             else
-                warning('Element:side_detJ', 'The side_detJ function was not tested in 3D.');
+                % Compute Jacobain for the side
                 GN = obj.grad_basis(in{:});
-                J = GN(idx,:)*obj.nodes(:,idx);
+                J = det(GN(idx,:)*obj.nodes(:,idx));
+                
+                warning('Element:side_detJ', 'The method for computing the Jacobian on sides of 3D elements was not tested.');
             end
         end
         
@@ -213,20 +221,26 @@ classdef Element < handle
     methods (Access = private)
         
         function J = jacobian(obj, varargin)
-            % Returns the jacobian matrix   
+            % Returns the jacobian matrix  
             J = obj.grad_basis(varargin{:})*obj.nodes;                    
         end
         
         function in = side_input(obj, id, varargin)
             % Parses side input for use in shape and shape_deriv
             
+            % Extract index and value for current side
+            s = obj.side_defn(id, :);
+            
+            % 1D case, there is no input
+            if obj.n_dim == 1;
+               in = num2cell(s(2)); 
+               return;
+            end
+            
             % Create correctly sized index vector and input vector 
             idx = 1:obj.n_dim;
             in(idx) = 0;
             
-            % Extract index and value for current side
-            s = obj.side_defn(id, :);
-  
             % Insert correct values 
             in(idx ~= s(1)) = varargin{:};
             in(s(1)) = s(2);
