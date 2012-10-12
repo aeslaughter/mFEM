@@ -75,7 +75,6 @@ for e = 1:mesh.n_elements;
             end
         end
     end      
-
 end
 
 % Define dof indices for the essential dofs and non-essential dofs

@@ -27,20 +27,14 @@ classdef Element < handle
       % example, a row of [1,-1] indiates that the side is defined when xi
       % = -1 (see Quad4.m)
       side_defn;   % array defining the values of xi or eta that are fixed
-      
-      % It is possible to create an element with nodes that are the same,
-      % as in the case when triangle element is generated from a
-      % quadraleral. The collapsed_nodes array indicates which nodes are
-      % the same. See Tri3 for an example. If all nodes are unqiue make
-      % this an empty array.
-      collapsed_nodes;   % lists the nodes that are collapsed (see Tri3)
     end
     
     % Abstract Methods (protected)
     % (the user must redfine this in subclasses, e.g. Quad4)
     methods (Abstract, Access = protected)
-         N = basis(~, varargin)          % local basis functions
-        GN = grad_basis(~, varargin)     % local basis function derivatives
+        N = basis(obj, varargin)          % local basis functions
+        B = grad_basis(obj, varargin)     % local basis function derivatives
+        J = jacobian(obj, varargin)       % the Jacobian matrix for the element
     end
     
     % Public properties (read only)
@@ -135,16 +129,8 @@ classdef Element < handle
             % Returns the shape function derivatives in x,y system
 
             % Scalar field basis functin derivatives
-            B = inv(obj.jacobian(varargin{:})) * obj.grad_basis(varargin{:});
+            B = obj.grad_basis(varargin{:});
             
-            % Adjust for collapsed nodes
-            if ~isempty(obj.collapsed_nodes);
-                idx = true(size(B,2),1);
-                c = obj.collapsed_nodes(:,1);
-                idx(c) = false;
-                B = B(:,idx);
-            end
-             
             % Vector
             if strcmpi(obj.space, 'vector');
                 b = B;                      % Re-assign scalar basis
@@ -183,9 +169,6 @@ classdef Element < handle
             % Collect input in proper form
             in = obj.side_input(id, varargin{:});
             
-            % Get the nodes for the system
-            nodes = obj.get_nodes();
-            
             % Local dofs for the current side
             idx = obj.side_dof(id,:);
           
@@ -195,8 +178,9 @@ classdef Element < handle
 
             % 2D: The side is a line, so detJ = length/2
             elseif obj.n_dim == 2;
+                
                 % Use max distance between any of the nodes
-                J = max(pdist(nodes(idx,:)))/2;
+                J = max(pdist(obj.nodes(idx,:)))/2;
                 
                 if ~strcmpi('mFEM.Quad4', class(obj));
                     warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was only tested with a Quad4 element.');
@@ -205,8 +189,7 @@ classdef Element < handle
             % 3D: The side is a face    
             else
                 % Compute Jacobain for the side
-                GN = obj.grad_basis(in{:});
-                J = det(GN(:,idx)*nodes(idx,:));
+                J = det(obj.jacobian(idx,idx));
                 
                 warning('Element:side_detJ', 'The method for computing the Jacobian on sides of 3D elements was not tested.');
             end
@@ -237,28 +220,6 @@ classdef Element < handle
     
     % Private methods
     methods (Access = private)
-        
-        function nodes = get_nodes(obj)
-            % Retrn a matrix of the nodes, accounting for collapsed nodes
-            
-            % The unique nodes for the element
-            nodes = obj.nodes;
-            
-            
-            % Account for  collapsed nodes
-            if ~isempty(obj.collapsed_nodes);
-                ix1 = obj.collapsed_nodes(:,1);
-                ix2 = obj.collapsed_nodes(:,2);
-                nodes(ix1,:) = obj.nodes(ix2,:);
-            end  
-        end
-        
-        function J = jacobian(obj, varargin)
-            % Returns the jacobian matrix  
-            
-            J = obj.grad_basis(varargin{:})*obj.get_nodes();                    
-        end
-        
         function in = side_input(obj, id, varargin)
             % Parses side input for use in shape and shape_deriv
             

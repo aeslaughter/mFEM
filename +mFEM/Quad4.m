@@ -16,7 +16,6 @@ classdef Quad4 < mFEM.Element
         n_sides = 4; % no. of sides
         side_dof = [1,2; 2,3; 3,4; 4,1]; % define the side dofs 
         side_defn = [2,-1; 1,1; 2,1; 1,-1]; % xi,eta definitions for sides
-        collapsed_nodes = []; % all nodes are unique
      end
     
     % Define the Quad4 constructor
@@ -44,8 +43,19 @@ classdef Quad4 < mFEM.Element
             N(4) = 1/4*(1-xi)*(1+eta);
         end
 
-        function GN = grad_basis(~, xi, eta) 
+        function B = grad_basis(obj, xi, eta) 
             % Gradient of shape functions
+            B = inv(obj.jacobian(xi, eta)) * obj.local_grad_basis(xi, eta);
+        end
+        
+        function J = jacobian(obj, xi, eta)
+            % Returns the jacobian matrix  
+            J = obj.local_grad_basis(xi, eta)*obj.nodes;                 
+        end
+        
+        function GN = local_grad_basis(~, xi, eta)
+            % Returns gradient, in xi and eta, of the shape functions
+            
             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
                       xi-1, -xi-1, 1+xi, 1-xi];
         end

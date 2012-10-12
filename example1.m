@@ -51,7 +51,7 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi) elem.shape_deriv(xi);
+    B = @(xi) elem.shape_deriv();
     N = @(xi) elem.shape(xi);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
@@ -64,10 +64,10 @@ for e = 1:mesh.n_elements;
     for i = 1:length(qp);
 
         % Account for the source term
-        fe = fe + W(i)*N(qp(i))'*b*elem.detJ(qp(i));
+        fe = fe + W(i)*N(qp(i))'*b*elem.detJ();
         
         % Build stiffness matrix
-        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ(qp(i));
+        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ();
     end
     
     % Re-define the N short-hand function handle for use on sides

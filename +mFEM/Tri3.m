@@ -1,24 +1,19 @@
 classdef Tri3 < mFEM.Element
     %Tri3 3-node triangle element
-    %
-    % This element is a Quad4 with nodes 3 and 4 shared.
-    %
-    %   (-1,1)   
-    %         (3)
+    %   
+    %         2
     %         |\       
     %      (3)| \(2)      
     %         |  \       
-    %         1---2
-    %  (-1,-1) (1)  (1,-1)
-    %
+    %         3---1
+    %          (1) 
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 4; % no. of shape functions
+        n_shape = 3; % no. of shape functions
         n_sides = 3; % no. of sides
         side_dof = [1,2; 2,3; 3,1];         % define the side dofs 
-        side_defn = [2,-1; 1,1; 1,-1];      % xi,eta definitions for sides
-        collapsed_nodes = [4,3];            % node 4 is collapsed to node 3
+        side_defn = [2,-1; 1,1; 1,-1];      % xi1,xi2 definitions for sides
      end
     
     % Define the Quad4 constructor
@@ -37,19 +32,48 @@ classdef Tri3 < mFEM.Element
     end
     
     % Define the inherited abstract methods (protected)
-    methods (Access = protected)      
-        function N = basis(~, xi, eta)
-            % Returns a row vector of local shape functions
-            N(1) = 1/4*(1-xi)*(1-eta);
-            N(2) = 1/4*(1+xi)*(1-eta);
-            N(3) = 1/4*(1+xi)*(1+eta);
-        %    N(4) = 1/4*(1-xi)*(1+eta);
+    methods (Access = protected)    
+        
+        function J = jacobian(obj, varargin)
+            % Define the Jacobain (see Fish p. 180)
+            
+            % The Jacobian is constant, produce a warning for agruements
+            if nargin > 1;
+                warning('Tri3:jacobian', 'The Jacobian for the Tri3 element is constant, thus no spatial coordinates are needed.');
+            end
+            
+            % Define short-hand for difference between two points
+            x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
+            y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);
+            
+            % Define the Jacobian matrix
+            J = [x(1,3), y(1,3); x(2,3), y(2,3)];
         end
+        
+        function N = basis(~, xi1, xi2)
+            % Returns a row vector of local shape functions
+            N(1) = xi1;
+            N(2) = xi2;
+            N(3) = 1 - xi2 - xi1;
+          end
 
-        function GN = grad_basis(~, xi, eta) 
-            % Gradient of shape functions
-            GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
-                      xi-1, -xi-1, 1+xi, 1-xi];
+        function B = grad_basis(obj, varargin) 
+            % Gradient of shape functions (Fish, p. 174)
+            
+            % The Jacobian is constant, produce a warning for agruements
+            if nargin > 1;
+                warning('Tri3:grad_basis', 'The shape functin dervatives for the Tri3 element are constant, thus no spatial coordinates are needed.');
+            end
+            % Define short-hand for difference between two points
+            x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
+            y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);
+        
+            % Define twice the area of element
+            M = [ones(obj.n_nodes,1), obj.nodes]; % 2A
+
+            % The shape function derivatives
+            B = 1/det(M)*[y(2,3), y(3,1), y(1,2);
+                           x(3,2), x(1,3), x(2,1)];
         end
     end
 end

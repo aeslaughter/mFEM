@@ -11,7 +11,6 @@ classdef Linear2 < mFEM.Element
         n_sides = 2;                % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];          % local dofs of the "sides"
         side_defn = [1,-1; 1,1];    % xi definitions for "sides"
-        collapsed_nodes = [];       % all nodes are unique
     end
     
     % Define the Linear2 constructor
@@ -37,9 +36,28 @@ classdef Linear2 < mFEM.Element
             N(2) = 1/2*(1+xi);
         end
 
-        function GN = grad_basis(~, ~) 
+        function B = grad_basis(obj, varargin) 
             % Gradient of shape functions
-            GN = [-1/2, 1/2];
+            
+            % grad(B) is constant, produce a warning for agruements
+            if nargin > 1;
+                warning('Tri3:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
+            end
+            
+            % Proper gradient
+            B = inv(obj.jacobian()) * [-1/2, 1/2];
+        end
+             
+        function J = jacobian(obj, varargin)
+            % Returns the jacobian matrix  
+            
+            % The Jacobian is constant, produce a warning for agruements
+            if nargin > 1;
+                warning('Tri3:jacobian', 'The Jacobian for the Linear2 element is constant, thus no spatial coordinates are needed.');
+            end
+
+            % Return the Jacobian matrix
+            J = [-1/2, 1/2]*obj.nodes;                 
         end
     end
 end
