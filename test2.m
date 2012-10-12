@@ -3,9 +3,9 @@ clear classes;
 import mFEM.*;
 
 
-e1 = Tri3(1,[0,0; 2,2; 0,4]);
-e1.detJ()
-e1.shape_deriv()
+e1 = Tri3(1,[0,0; 0.5,-0.5; 0.5,0.5]);
+
+s = e1.build_side(1)
 
 
 % e1 = Linear2(1,[0; 5]);

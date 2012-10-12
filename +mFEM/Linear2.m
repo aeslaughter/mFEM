@@ -7,10 +7,11 @@ classdef Linear2 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 2;                % no. of shape functions
+        n_shape = 2;                % no. shape functions
         n_sides = 2;                % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];          % local dofs of the "sides"
         side_defn = [1,-1; 1,1];    % xi definitions for "sides"
+        side_type = '';
     end
     
     % Define the Linear2 constructor

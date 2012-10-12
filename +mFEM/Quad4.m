@@ -16,6 +16,7 @@ classdef Quad4 < mFEM.Element
         n_sides = 4; % no. of sides
         side_dof = [1,2; 2,3; 3,4; 4,1]; % define the side dofs 
         side_defn = [2,-1; 1,1; 2,1; 1,-1]; % xi,eta definitions for sides
+        side_type = 'Linear2';
      end
     
     % Define the Quad4 constructor

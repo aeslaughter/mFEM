@@ -61,7 +61,7 @@ for e = 1:mesh.n_elements;
     end
     
     % Re-define the N short-hand function handle for use on sides
-    N = @(id, beta) elem.side_shape(id, beta);
+    N = @(xi) side.shape(xi);
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
@@ -69,10 +69,13 @@ for e = 1:mesh.n_elements;
     % side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
+            side = elem.build_side(s);
+            N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
-                elem.side_detJ(s,qp_side(i))
-                f = f + -q_top*W_side(i)*N(s,qp_side(i))'*elem.side_detJ(s,qp_side(i));              
+                side.detJ()
+                f = f + -q_top*W_side(i)*N(qp_side(i))'*side.detJ();              
             end
+            delete(side)
         end
     end      
 end

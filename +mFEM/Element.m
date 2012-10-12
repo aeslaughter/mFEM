@@ -11,7 +11,6 @@ classdef Element < handle
     
     % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public)  
-      n_shape;     % no. of shape functions
       n_sides;     % no. of sides
       
       % Array of local node ids for each side, should be an m x n array,
@@ -27,6 +26,8 @@ classdef Element < handle
       % example, a row of [1,-1] indiates that the side is defined when xi
       % = -1 (see Quad4.m)
       side_defn;   % array defining the values of xi or eta that are fixed
+      
+      side_type;
     end
     
     % Abstract Methods (protected)
@@ -48,15 +49,17 @@ classdef Element < handle
     end
     
     % Public properties (read only; except FEmesh)
-    properties (SetAccess = {?mFEM.FEmesh, ?Element}, SetAccess = protected, GetAccess = public)
+    properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         side = struct([]); % structure containing side information (computed by FEmesh)
         on_boundary; % flag if element is on a boundary (has a side w/o neighbor) [bool]
         boundary_id = uint32([]); % list of all boundary ids for the element
     end
    
-    % Private properties (except FEmesh)
-    properties (Access = {?mFEM.FEmesh, ?Element}, Access = protected)
-     	global_dof = [];        % vector of global dof for the nodes of this element
+    % Pprotected properties (except FEmesh)
+    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
+     	global_dof = [];  % vector of global dof for nodes of this element
+        is_side = false;
+        side_idx = [];
      end
     
     % Public Methods
@@ -71,13 +74,13 @@ classdef Element < handle
             %
             % Syntax:
             %   Element(id, nodes)
-            %   Element(id, nodes, type)
+            %   Element(id, nodes, space)
             %
             % Creates an element given:
             %   id: unique identification number for this element
             %   nodes: matrix of node coordinates (global), it should be 
             %          arranged as a column matrix [no. nodes x no. dims]
-            %   type (optional): string that is 'scalar' (default) or
+            %   space (optional): string that is 'scalar' (default) or
             %       'vector', which indicates the type of solution
             %
             
@@ -111,6 +114,14 @@ classdef Element < handle
             % Scalar field basis functions
             N = obj.basis(varargin{:});
             
+            % If the element is a side, the shape functions must be resized
+            % and filled with zeros
+            if obj.is_side;
+               n = N;
+               N = zeros(1,length(obj.side_idx));
+               N(obj.side_idx) = n;
+            end
+            
             % Vector
             if strcmpi(obj.space, 'vector');
                 n = N;                      % Re-assign scalar basis
@@ -131,6 +142,12 @@ classdef Element < handle
             % Scalar field basis functin derivatives
             B = obj.grad_basis(varargin{:});
             
+            % If the element is a side, the shape functions must be resized
+            % and filled with zeros
+            if obj.is_side;
+                error('Element:shape_deriv', 'Not yet supported for side elements');
+            end
+            
             % Vector
             if strcmpi(obj.space, 'vector');
                 b = B;                      % Re-assign scalar basis
@@ -150,6 +167,28 @@ classdef Element < handle
             % Returns the determinate of the jacobian matrix
             J = det(obj.jacobian(varargin{:}));
         end 
+        
+        function side = build_side(obj, id)
+            % Build an element for the side
+            
+            dof = obj.side_dof(id,:);
+            node = obj.nodes(dof,:);
+            
+            % Loop through nodes (node 1 is 0,0) and create a map to the
+            % line/plane
+            mapped = zeros(size(node),1);
+            for i = 2:size(node,1);
+                mapped(i,:) = norm(node(i,:) - node(1,:));
+            end
+            
+            side = feval(['mFEM.',obj.side_type], NaN, mapped, obj.space);
+            side.is_side = true;
+            
+            idx = false(obj.n_shape,1);
+            idx(dof) = true;
+            side.side_idx = idx;
+            
+        end
         
         function N = side_shape(obj, id, varargin)
             % Returns the shape functions the side identified by id

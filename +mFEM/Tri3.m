@@ -6,17 +6,18 @@ classdef Tri3 < mFEM.Element
     %         |  
     %
     %         2
-    %         |\            On side 3: xi1 + xi2 = 1; 
-    %      (2)| \(3)        On node 3: xi3 = 1;
+    %         |\            On side 1: xi1 + xi2 = 1; 
+    %      (2)| \(1)        On node 3: xi3 = 1;
     %         |  \       
     %         3---1  ---> xi1
-    %          (1) 
+    %          (3) 
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 3; % no. of shape functions
+        n_shape = 3; % no. of shape functoins
         n_sides = 3; % no. of sides
-        side_dof = [1,2; 2,3; 3,1];        % define the side dofs 
+        side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
+        side_type = 'Linear2';
         side_defn = [2,0; 1, 0; NaN, NaN];      % xi1,xi2 definitions for sides
      end
     
