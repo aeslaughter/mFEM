@@ -1,15 +1,12 @@
 % Example 8.2 of Fish & Belytschko (2007).
 %
 % Syntax:
-%   example1
+%   example3
 %
 % Description:
-%   example1 solves a simple 1 element heat conduction problem.
-function example1
+%   example3 solves a simple single element heat conduction problem.
+function example3
    
-% Clear all variables, including classes
-clear;
-
 % Import the mFEM library
 import mFEM.*;
 

@@ -27,6 +27,13 @@ classdef Element < handle
       % example, a row of [1,-1] indiates that the side is defined when xi
       % = -1 (see Quad4.m)
       side_defn;   % array defining the values of xi or eta that are fixed
+      
+      % It is possible to create an element with nodes that are the same,
+      % as in the case when triangle element is generated from a
+      % quadraleral. The collapsed_nodes array indicates which nodes are
+      % the same. See Tri3 for an example. If all nodes are unqiue make
+      % this an empty array.
+      collapsed_nodes;   % lists the nodes that are collapsed (see Tri3)
     end
     
     % Abstract Methods (protected)
@@ -55,7 +62,7 @@ classdef Element < handle
    
     % Private properties (except FEmesh)
     properties (Access = {?mFEM.FEmesh, ?Element}, Access = protected)
-     	global_dof = []; % vector of global dof for the nodes of this element
+     	global_dof = [];        % vector of global dof for the nodes of this element
      end
     
     % Public Methods
@@ -130,6 +137,14 @@ classdef Element < handle
             % Scalar field basis functin derivatives
             B = inv(obj.jacobian(varargin{:})) * obj.grad_basis(varargin{:});
             
+            % Adjust for collapsed nodes
+            if ~isempty(obj.collapsed_nodes);
+                idx = true(size(B,2),1);
+                c = obj.collapsed_nodes(:,1);
+                idx(c) = false;
+                B = B(:,idx);
+            end
+             
             % Vector
             if strcmpi(obj.space, 'vector');
                 b = B;                      % Re-assign scalar basis
@@ -168,6 +183,9 @@ classdef Element < handle
             % Collect input in proper form
             in = obj.side_input(id, varargin{:});
             
+            % Get the nodes for the system
+            nodes = obj.get_nodes();
+            
             % Local dofs for the current side
             idx = obj.side_dof(id,:);
           
@@ -178,9 +196,9 @@ classdef Element < handle
             % 2D: The side is a line, so detJ = length/2
             elseif obj.n_dim == 2;
                 % Use max distance between any of the nodes
-                J = max(pdist(obj.nodes(:,idx)))/2;
+                J = max(pdist(nodes(idx,:)))/2;
                 
-                if ~strcmpi('Quad4', obj.element_type);
+                if ~strcmpi('mFEM.Quad4', class(obj));
                     warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was only tested with a Quad4 element.');
                 end
                 
@@ -188,7 +206,7 @@ classdef Element < handle
             else
                 % Compute Jacobain for the side
                 GN = obj.grad_basis(in{:});
-                J = det(GN(idx,:)*obj.nodes(:,idx));
+                J = det(GN(:,idx)*nodes(idx,:));
                 
                 warning('Element:side_detJ', 'The method for computing the Jacobian on sides of 3D elements was not tested.');
             end
@@ -220,9 +238,25 @@ classdef Element < handle
     % Private methods
     methods (Access = private)
         
+        function nodes = get_nodes(obj)
+            % Retrn a matrix of the nodes, accounting for collapsed nodes
+            
+            % The unique nodes for the element
+            nodes = obj.nodes;
+            
+            
+            % Account for  collapsed nodes
+            if ~isempty(obj.collapsed_nodes);
+                ix1 = obj.collapsed_nodes(:,1);
+                ix2 = obj.collapsed_nodes(:,2);
+                nodes(ix1,:) = obj.nodes(ix2,:);
+            end  
+        end
+        
         function J = jacobian(obj, varargin)
             % Returns the jacobian matrix  
-            J = obj.grad_basis(varargin{:})*obj.nodes;                    
+            
+            J = obj.grad_basis(varargin{:})*obj.get_nodes();                    
         end
         
         function in = side_input(obj, id, varargin)

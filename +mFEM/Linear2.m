@@ -10,13 +10,21 @@ classdef Linear2 < mFEM.Element
         n_shape = 2;                % no. of shape functions
         n_sides = 2;                % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];          % local dofs of the "sides"
-        side_defn = [1,-1; 1,1];   % xi definitions for "sides"
+        side_defn = [1,-1; 1,1];    % xi definitions for "sides"
+        collapsed_nodes = [];       % all nodes are unique
     end
     
     % Define the Linear2 constructor
     methods 
         function obj = Linear2(id, nodes, varargin)
            % Class constructor; calls base class constructor
+           
+           % Test that nodes is sized correctly
+           if ~all(size(nodes) == [2,1]);
+                error('Linear2:Linear2','Nodes not specified correctly; expected a [2 x 1] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
+           end
+           
+           % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
         end
     end

@@ -94,7 +94,7 @@ classdef FEmesh < handle
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;
             obj.map.elem(end+1:end+nn,:) = id;
-            obj.map.node(end+1:end+nn,:) = nodes;
+            obj.map.node(end+1:end+nn,:) = obj.element(id).nodes;
         end
         
         % Initializes by computing degree-of-freedom maps
@@ -396,7 +396,14 @@ classdef FEmesh < handle
                     nodes(4,:) = [x(i), y(j+1)];
                    
                     % Add the element(s)
-                    obj.add_element(nodes);
+                    switch obj.element_type;
+                        case {'Quad4'};
+                            obj.add_element(nodes);
+                            
+                        case {'Tri3'};
+                            obj.add_element(nodes(1:3,:));
+                            obj.add_element(nodes([1,3,4],:));
+                    end
                 end
             end
             
@@ -460,10 +467,9 @@ classdef FEmesh < handle
            % Loop through all elements and identify which sides are shared
             for e = 1:obj.n_elements;
                 elem = obj.element(e); % current element
-
+                
                 % Loop through all sides of current element
                 for s = 1:elem.n_sides;
-                    
                     % Global dofs for the current element and side
                     a = sort(elem.side(s).global_dof)';
                     
@@ -481,8 +487,10 @@ classdef FEmesh < handle
 
                         % Locate where a & b match
                         [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
-                        elem.side(s).neighbor.side(i) = ib; % update current element
-                    end  
+                        if ~isempty(ib);
+                            elem.side(s).neighbor.side(i) = ib; % update current element
+                        end  
+                    end
                 end
             end
         end  
