@@ -12,11 +12,10 @@ classdef Quad4 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 4; % no. of shape functions
         n_sides = 4; % no. of sides
+        lims = [-1, 1]; % limits of xi and eta
         side_dof = [1,2; 2,3; 3,4; 4,1]; % define the side dofs 
-        side_defn = [2,-1; 1,1; 2,1; 1,-1]; % xi,eta definitions for sides
-        side_type = 'Linear2';
+        side_type = 'Linear2'; % uses 2-node linear element for sides
      end
     
     % Define the Quad4 constructor

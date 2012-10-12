@@ -10,28 +10,15 @@ classdef Element < handle
     % see Quad4
     
     % Abstract Properties (must be redefined in subclass)
-    properties (Abstract = true, SetAccess = protected, GetAccess = public)  
-      n_sides;     % no. of sides
-      
-      % Array of local node ids for each side, should be an m x n array,
-      % where m = number of sides and n = number of nodes on the side. See
-      % Quad4.m for an example
-      side_dof;    % array of local node ids for each side
-      
-      % An array defining the values of the local coordinate system that
-      % are fixed for the sides. It should be an m x 2 array, where m is
-      % the number of sides. The first column gives the index of the local
-      % coordinate system (e.g., 1 = xi and 2 = eta; see Quad4.m). The
-      % second column defines the value that the coordinate is fixed. For
-      % example, a row of [1,-1] indiates that the side is defined when xi
-      % = -1 (see Quad4.m)
-      side_defn;   % array defining the values of xi or eta that are fixed
-      
-      side_type;
+    properties (Abstract = true, SetAccess = protected, GetAccess = public) 
+      n_sides;      % no. of sides
+      lims;         % limits of local coordinate; assumesall dim. vary the same
+      side_dof;     % array of local node ids for each side
+      side_type;    % defines the type of element that defines the sides.
     end
     
     % Abstract Methods (protected)
-    % (the user must redfine this in subclasses, e.g. Quad4)
+    % (the user must redfine these in subclasse, e.g. Quad4)
     methods (Abstract, Access = protected)
         N = basis(obj, varargin)          % local basis functions
         B = grad_basis(obj, varargin)     % local basis function derivatives
@@ -50,17 +37,11 @@ classdef Element < handle
     
     % Public properties (read only; except FEmesh)
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
-        side = struct([]); % structure containing side information (computed by FEmesh)
-        on_boundary; % flag if element is on a boundary (has a side w/o neighbor) [bool]
-        boundary_id = uint32([]); % list of all boundary ids for the element
+        side = struct([]);          % structure containing side info
+        on_boundary;                % flag if element is on a boundary
+        boundary_id = uint32([]);   % list of all boundary ids for element
+      	global_dof = [];            % global dof for nodes of element       
     end
-   
-    % Pprotected properties (except FEmesh)
-    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
-     	global_dof = [];  % vector of global dof for nodes of this element
-        is_side = false;
-        side_idx = [];
-     end
     
     % Public Methods
     % These methods are accessible by the user to create the element and
@@ -103,8 +84,9 @@ classdef Element < handle
             % Initialize side data structure
            	n = obj.n_nodes;
             obj.side(n).boundary_id = uint32([]);
-            obj.side(n).global_dof = uint32([]);
             obj.side(n).has_neighbor = [];
+            obj.side(n).dof = uint32([]);
+            obj.side(n).global_dof = uint32([]);
             obj.side(n).neighbor = struct('element', uint32([]), 'side', uint32([]));;
         end
         
@@ -113,15 +95,7 @@ classdef Element < handle
             
             % Scalar field basis functions
             N = obj.basis(varargin{:});
-            
-            % If the element is a side, the shape functions must be resized
-            % and filled with zeros
-            if obj.is_side;
-               n = N;
-               N = zeros(1,length(obj.side_idx));
-               N(obj.side_idx) = n;
-            end
-            
+
             % Vector
             if strcmpi(obj.space, 'vector');
                 n = N;                      % Re-assign scalar basis
@@ -141,13 +115,7 @@ classdef Element < handle
 
             % Scalar field basis functin derivatives
             B = obj.grad_basis(varargin{:});
-            
-            % If the element is a side, the shape functions must be resized
-            % and filled with zeros
-            if obj.is_side;
-                error('Element:shape_deriv', 'Not yet supported for side elements');
-            end
-            
+                        
             % Vector
             if strcmpi(obj.space, 'vector');
                 b = B;                      % Re-assign scalar basis
@@ -171,69 +139,24 @@ classdef Element < handle
         function side = build_side(obj, id)
             % Build an element for the side
             
+            if obj.n_dim == 3;
+                error('Element:build_side','Feature not yet supported');
+            end
+            
+            % Extract the nodes for the side
             dof = obj.side_dof(id,:);
             node = obj.nodes(dof,:);
             
-            % Loop through nodes (node 1 is 0,0) and create a map to the
-            % line/plane
+            % Create a map to the line/plane
             mapped = zeros(size(node),1);
             for i = 2:size(node,1);
                 mapped(i,:) = norm(node(i,:) - node(1,:));
             end
             
+            % Create the side element and flag it as a side
             side = feval(['mFEM.',obj.side_type], NaN, mapped, obj.space);
-            side.is_side = true;
-            
-            idx = false(obj.n_shape,1);
-            idx(dof) = true;
-            side.side_idx = idx;
-            
         end
-        
-        function N = side_shape(obj, id, varargin)
-            % Returns the shape functions the side identified by id
-            in = obj.side_input(id, varargin{:});
-            N = obj.shape(in{:});
-        end
-        
-        function B = side_shape_deriv(obj, id, varargin)
-           % Returns the shape function derivatives for the specified side
-           in = obj.side_input(id, varargin{:});
-           B = obj.shape_deriv(in{:});
-        end
-        
-        function J = side_detJ(obj, id, varargin)
-            % Return derterminant of Jacobian for the specified side
-            
-            % Collect input in proper form
-            in = obj.side_input(id, varargin{:});
-            
-            % Local dofs for the current side
-            idx = obj.side_dof(id,:);
-          
-            % Perform calculation based on dimension of system
-            if obj.n_dim == 1;
-                error('Element:side_detJ', 'Not defined for 1D elements.');
-
-            % 2D: The side is a line, so detJ = length/2
-            elseif obj.n_dim == 2;
-                
-                % Use max distance between any of the nodes
-                J = max(pdist(obj.nodes(idx,:)))/2;
-                
-                if ~any(strcmpi(class(obj), {'mFEM.Quad4', 'mFEM.Tri3'}));
-                    warning('Element:side_detJ', 'The method for computing the length/2 (Jacobian of line) was not tested for a %s element.', class(obj));
-                end
-                
-            % 3D: The side is a face    
-            else
-                % Compute Jacobain for the side
-                J = det(obj.jacobian(idx,idx));
-                
-                warning('Element:side_detJ', 'The method for computing the Jacobian on sides of 3D elements was not tested.');
-            end
-        end
-        
+               
         function dof = get_dof(obj)
             % The global degrees of freedom, account for type of space
             
@@ -255,33 +178,6 @@ classdef Element < handle
                 error('Element:get_dof', 'Unknown finite elment space (%s) for element %d\n', obj.space, obj.id); 
             end
         end  
-    end
-    
-    % Private methods
-    methods (Access = private)
-        function in = side_input(obj, id, varargin)
-            % Parses side input for use in shape and shape_deriv
-            
-            % Extract index and value for current side
-            s = obj.side_defn(id, :);
-            
-            % 1D case, there is no input
-            if obj.n_dim == 1;
-               in = num2cell(s(2)); 
-               return;
-            end
-            
-            % Create correctly sized index vector and input vector 
-            idx = 1:obj.n_dim;
-            in(idx) = 0;
-            
-            % Insert correct values 
-            in(idx ~= s(1)) = varargin{:};
-            in(s(1)) = s(2);
- 
-            % Convert numeric array to cell array
-            in = num2cell(in);
-        end
     end
 end
     

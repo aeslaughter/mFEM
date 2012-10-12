@@ -72,8 +72,8 @@ for e = 1:mesh.n_elements;
             side = elem.build_side(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
-                side.detJ()
-                f = f + -q_top*W_side(i)*N(qp_side(i))'*side.detJ();              
+                dof = elem.side(s).dof; % local dofs for the current side
+                f(dof) = f(dof) + -q_top*W_side(i)*N(qp_side(i))'*side.detJ();              
             end
             delete(side)
         end

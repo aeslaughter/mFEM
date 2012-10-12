@@ -71,7 +71,7 @@ for e = 1:mesh.n_elements;
     end
     
     % Re-define the N short-hand function handle for use on sides
-    N = @(id) elem.side_shape(id);
+    N = @(id) elem.shape(id);
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 2 (right), then add the prescribed flux term to force vector,
@@ -79,7 +79,8 @@ for e = 1:mesh.n_elements;
     % requires no integration.
     for s = 1:elem.n_sides; 
         if elem.side(s).boundary_id == 2;
-            fe = fe + -q_bar*A*N(s)';              
+            xi = elem.lims(elem.side(s).dof);    % xi value to evaluate at
+            fe = fe + -q_bar*A*N(xi)';              
         end
     end   
     

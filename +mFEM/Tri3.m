@@ -14,12 +14,11 @@ classdef Tri3 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_shape = 3; % no. of shape functoins
-        n_sides = 3; % no. of sides
+        n_sides = 3;                % no. of sides
+        lims = [0,1];               % limits of xi1 and xi2        
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
-        side_type = 'Linear2';
-        side_defn = [2,0; 1, 0; NaN, NaN];      % xi1,xi2 definitions for sides
-     end
+        side_type = 'Linear2';      % uses 2-node linear element for sides
+    end
     
     % Define the Quad4 constructor
     methods
