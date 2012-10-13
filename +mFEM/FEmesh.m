@@ -210,7 +210,7 @@ classdef FEmesh < handle
             %   get_dof();
             %   get_dof(boundary_id)
             %   get_dof(boundary_id, 'ne');
-            
+
             test = 'e';
             if nargin == 3;
                 test = varargin{2};
@@ -248,15 +248,10 @@ classdef FEmesh < handle
                 dof = unique(obj.map.dof);   
             end
 
-            % Vector FE space
-            if strcmpi(obj.space,'vector');
-                D = dof;
-                dof = [];
-                for i = 1:length(D);
-                    d0 = 2*(D(i) - 1) + 1;
-                    dn = d0 + obj.n_dim-1;
-                    dof = [dof; (d0:dn)'];
-                end
+            % Vector FE space (uses transform_dof of an element)
+            if strcmpi(obj.space, 'vector');
+                elem = obj.element(1);
+                dof = elem.transform_dof(dof);
             end
         end
             
@@ -425,6 +420,9 @@ classdef FEmesh < handle
                 % Loop through the sides of element
                 for s = 1:elem.n_sides
                     
+                    % Assume that side does not have nieghbor
+                    elem.side(s).has_neighbor = false; % initilize neighbor flag
+
                     % Set the local and global dof for the current side
                     dof = sort(elem.side_dof(s,:));
                     elem.side(s).dof = dof;
@@ -446,9 +444,9 @@ classdef FEmesh < handle
                     for i = 1:length(x);
                         count(i) = sum(x(i) == x);
                     end
-                    
-                    % Identify to shared id's
-                    id = unique(x(count >= (obj.n_dim - 1)));
+
+                    % Identify the shared id's
+                    id = unique(x(count > (obj.n_dim - 1)));
                     elem.side(s).neighbor.element = id;
                     
                     % Initilize the side index array
@@ -460,7 +458,6 @@ classdef FEmesh < handle
                     if ~isempty(id);
                         elem.side(s).has_neighbor = true;
                     else
-                        elem.side(s).has_neighbor = false;
                         elem.on_boundary = true;
                     end   
                 end
@@ -595,8 +592,6 @@ classdef FEmesh < handle
             
             % Update mesh level boundary_id matrix
             obj.boundary_id(end+1) = id;
-            
-            
         end 
     end
 end

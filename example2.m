@@ -31,7 +31,7 @@ q_face = Gauss(1);
 
 % Definethe constants for the problem
 D = 5*eye(2);   % thermal conductivity matrix
-s = 6;          % heat source (defined over entire domain)
+b = 6;          % heat source (defined over entire domain)
 q_top = 20;     % top boundary prescribed heat flux
 T_bar = 0;      % known temperatures
 
@@ -59,12 +59,9 @@ for e = 1:mesh.n_elements;
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
     for i = 1:size(qp,1);
-        fe = fe + W(i)*s*N(qp(i,1),qp(i,2))'*elem.detJ();
+        fe = fe + W(i)*b*N(qp(i,1),qp(i,2))'*elem.detJ();
         Ke = Ke + W(i)*B()'*D*B()*elem.detJ();
     end
-
-    % Re-define the N short-hand function handle for use on sides
-    N = @(id, beta) elem.side_shape(id, beta);
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
@@ -74,7 +71,7 @@ for e = 1:mesh.n_elements;
             side = elem.build_side(s);
             for i = 1:length(qp_side);
                 dof = elem.side(s).dof; % local dofs for the current side
-                f(dof) = f(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ();              
+                fe(dof) = fe(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ();              
             end
             delete(side)
         end
@@ -87,23 +84,38 @@ for e = 1:mesh.n_elements;
     f(dof) = f(dof) + fe;
 end
 
-full(K)
-f
+% Define dof indices for the essential dofs and non-essential dofs
+non = mesh.get_dof(3,'ne'); % 4
+ess = mesh.get_dof(3);      % 1,2,3
 
-% % Define dof indices for the essential dofs and non-essential dofs
-% non = mesh.get_dof(3,'ne'); % 4
-% ess = mesh.get_dof(3);      % 1,2,3
-% 
-% % Solve for the temperatures
-% T = zeros(size(f));         % initialize the temperature vector
-% T(ess) = T_bar;             % apply essential boundary condtions
-% T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
-% 
-% % Solve for the reaction fluxes
-% r = K*T - f;
-% 
-% % Display the results
-% T,r
+% Solve for the temperatures
+T = zeros(size(f));         % initialize the temperature vector
+T(ess) = T_bar;             % apply essential boundary condtions
+T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
+
+% Solve for the reaction fluxes
+r = K*T - f;
+
+% Display the results
+T,r
+
+% Compute the flux values for each element
+% Loop through the elements
+for e = 1:mesh.n_elements; 
+    
+    % Extract the current element from the mesh object
+    elem = mesh.element(e);
+    
+    % Collect the local values of T
+    d(:,1) = T(elem.get_dof());
+    
+    % Compute the flux at the Gauss points
+    q(:,e) = -D*B()*d;
+
+end    
+
+% Display the flux vectors
+q
 
 % Clean up
 clear classes;
