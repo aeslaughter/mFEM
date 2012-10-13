@@ -40,7 +40,12 @@ classdef Element < handle
         side = struct([]);          % structure containing side info
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-      	global_dof = [];            % global dof for nodes of element       
+    end
+    
+    % Protected properties
+    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
+       global_dof = []; % global dof for nodes of element    
+       n_dof_node = 1;  % no. of dofs per node 
     end
     
     % Public Methods
@@ -79,6 +84,7 @@ classdef Element < handle
             obj.n_dof = obj.n_nodes;
             if strcmpi(obj.space,'vector');
                 obj.n_dof = obj.n_dof * obj.n_dim;
+                obj.n_dof_node = obj.n_dim;
             end
             
             % Initialize side data structure
@@ -92,17 +98,17 @@ classdef Element < handle
         
         function N = shape(obj, varargin)
             % Returns the shape functions
-            
+
             % Scalar field basis functions
             N = obj.basis(varargin{:});
 
             % Vector
             if strcmpi(obj.space, 'vector');
-                n = N;                      % Re-assign scalar basis
-                r = obj.n_dim;              % no. of rows
-                c = obj.n_dim*length(N);    % no. of cols
-                N = zeros(r,c);             % size the vector basis
-                
+                n = N;                          % re-assign scalar basis
+                r = obj.n_dof_node;             % no. of rows
+                c = obj.n_dof_node*obj.n_nodes; % no. of cols
+                N = zeros(r,c);                 % size the vector basis
+    
                 % Loop through the rows and assign scalar basis
                 for i = 1:r;
                     N(i,i:r:c) = n;
@@ -140,21 +146,24 @@ classdef Element < handle
             % Build an element for the side
             
             if obj.n_dim == 3;
-                error('Element:build_side','Feature not yet supported');
+                error('Element:build_side','Feature not yet supported in 3D');
             end
             
             % Extract the nodes for the side
-            dof = obj.side_dof(id,:);
+            dof = obj.side(id).dof;
             node = obj.nodes(dof,:);
             
             % Create a map to the line/plane
-            mapped = zeros(size(node),1);
+            mapped = zeros(size(node,2),1);
             for i = 2:size(node,1);
                 mapped(i,:) = norm(node(i,:) - node(1,:));
             end
             
             % Create the side element and flag it as a side
             side = feval(['mFEM.',obj.side_type], NaN, mapped, obj.space);
+            
+            % Override the no. of dofs per node to match the parent element
+            side.n_dof_node = obj.n_dof_node;
         end
                
         function dof = get_dof(obj)
@@ -166,18 +175,38 @@ classdef Element < handle
                 
             % Vector FE space
             elseif strcmpi(obj.space,'vector');
-                D = obj.global_dof;
-                dof = [];
-                for i = 1:length(D);
-                    d0 = 2*(D(i) - 1) + 1;
-                    dn = d0 + obj.n_dim-1;
-                    dof = [dof; (d0:dn)'];
-                end
-                
+                dof = obj.transform_dof(obj.global_dof);
             else
-                error('Element:get_dof', 'Unknown finite elment space (%s) for element %d\n', obj.space, obj.id); 
+                error('Element:get_dof', 'Unknown finite elment space, %s, for element %d\n', obj.space, obj.id); 
             end
         end  
+        
+        function dof = get_side_dof(obj, s)
+            % Extract the local dofs for the specified side
+           
+            % Scalar FE space
+            if strcmpi(obj.space,'scalar');
+                dof = obj.side(s).dof;
+
+            % Vector FE space
+            elseif strcmpi(obj.space,'vector');
+                dof = obj.transform_dof(obj.side(s).dof);
+            else
+                error('Element:get_dof', 'Unknown finite elment space, %s, for element %d\n', obj.space, obj.id); 
+            end
+        end
+        
+        function D = transform_dof(obj, d)
+            % Converts the dofs for vector element space
+            
+            n = obj.n_dim;              % no. of dimensions
+            D = zeros(n*length(d),1);   % size of vector space dofs
+            
+            % Loop through dimensions and build vector
+            for i = 1:n;
+                D(i:n:end) = d*n - (n-i);
+            end 
+        end
     end
 end
     

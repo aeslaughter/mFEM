@@ -426,8 +426,9 @@ classdef FEmesh < handle
                 for s = 1:elem.n_sides
                     
                     % Set the local and global dof for the current side
-                    elem.side(s).dof = elem.side_dof(s,:);
-                    elem.side(s).global_dof = elem_dof(elem.side_dof(s,:));
+                    dof = sort(elem.side_dof(s,:));
+                    elem.side(s).dof = dof;
+                    elem.side(s).global_dof = elem_dof(dof);
 
                     % Collects index of neighbor elements (including corners)
                     idx = zeros(size(obj.CG_dof_map));

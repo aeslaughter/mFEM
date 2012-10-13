@@ -68,16 +68,17 @@ for e = 1:mesh.n_elements;
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
-    % using numeric integration via the quadrature points for the element
-    % side.
+    % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
+            side = elem.build_side(s);
             for i = 1:length(qp_side);
-                elem.side_detJ(s,qp_side(i))
-                fe = fe + -q_top*W_side(i)*N(s,qp_side(i))'*elem.side_detJ(s,qp_side(i));              
+                dof = elem.side(s).dof; % local dofs for the current side
+                f(dof) = f(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ();              
             end
+            delete(side)
         end
-    end   
+    end  
     
     % Add the local stiffness and force to the global 
     % (this method is slow, see example5 for faster method)
@@ -103,3 +104,6 @@ f
 % 
 % % Display the results
 % T,r
+
+% Clean up
+clear classes;

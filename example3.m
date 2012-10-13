@@ -65,8 +65,7 @@ for e = 1:mesh.n_elements;
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
-    % using numeric integration via the quadrature points for the element
-    % side.
+    % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
             side = elem.build_side(s);
@@ -117,3 +116,6 @@ end
 
 % Display the flux vectors
 q
+
+% Clean up
+clear classes;

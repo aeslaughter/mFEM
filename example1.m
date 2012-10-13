@@ -140,3 +140,6 @@ plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);
 legend({'Exact','FEM'},'location','best');
 xlabel('x (m)','interpreter','tex');
 ylabel('Temp. Gradient (\circC/m)','interpreter','tex');
+
+% Clean up
+clear classes;
