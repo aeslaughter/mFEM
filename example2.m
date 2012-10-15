@@ -77,8 +77,7 @@ for e = 1:mesh.n_elements;
         end
     end  
     
-    % Add the local stiffness and force to the global 
-    % (this method is slow, see example5 for faster method)
+    % Add the local stiffness and force to the global (this method is slow)
     dof = elem.get_dof();   
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;

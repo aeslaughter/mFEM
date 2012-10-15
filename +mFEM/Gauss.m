@@ -16,7 +16,7 @@ classdef Gauss
         
         function [qp, w] = rules(obj)
             switch obj.type
-                case {'quad', 'hex'};
+                case {'linear', 'quad', 'hex'};
                     [qp, w] = obj.quad_rules();
                     
                 case 'tri';
