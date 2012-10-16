@@ -128,7 +128,7 @@ classdef FEmesh < handle
             
             % Locates the neighbor elements for each element
             obj.find_neighbors();
-            
+
             % Set the initilization flag to true
             obj.initialized = true;
         end
