@@ -44,6 +44,9 @@ classdef FEmesh < handle
             %   obj = FEmesh(name, space, type) allows the type of element
             %         conectivity to be set: 'CG' or 'DG'
             
+            % Add the bin directory
+            addpath('./bin');
+            
             % Assign element name
             if nargin >= 1;
                 obj.element_type = varargin{1};
@@ -254,6 +257,11 @@ classdef FEmesh < handle
                 dof = elem.transform_dof(dof);
             end
         end
+        
+        % Return the spatial position of the nodes
+        function out = get_nodes(obj)
+           out = unique(obj.map.node, 'rows'); 
+        end
             
         % Tool for generating a 2D mesh
         function grid(obj, varargin)  
@@ -282,9 +290,23 @@ classdef FEmesh < handle
         end
        
         % Tool for plotting the mesh with element and node labels
-        function plot(obj)
+        function plot(obj, varargin)
             % Plots the mesh with element and node numbers (global)
             % (currently this only works with 2D and 3D (not tested in 3D)
+            %
+            % Syntax:
+            %   plot();
+            %   plot(data);
+            %   plot(...,'PropertyName',<PropertyValue>);
+            %
+            % Descrtiption:
+            %
+            % Properties:
+            %   'ElementLabels' = true or false
+            %   'NodeLabels' = true or false
+            
+            % Collect the input 
+            [data, opt] = obj.parse_plot_input(varargin{:});
 
             % Check that mesh is initialized
             if (~obj.initialized)
@@ -297,7 +319,9 @@ classdef FEmesh < handle
             end
             
             % Create the figure
-            figure; hold on;
+            if opt.newfigure;
+                figure; hold on;
+            end
             
             % Loop through each node
             for e = 1:obj.n_elements;
@@ -308,21 +332,30 @@ classdef FEmesh < handle
                 cntr = num2cell(mean(elem.nodes,1));% mean location of nodes
                 
                 % Create patch
-                patch(node{:}, 'b', 'FaceColor','none');
+                if ~isempty(data);
+                    dof = elem.get_dof();
+                    patch(node{:}, data(dof));
+                else
+                    patch(node{:}, 'b', 'FaceColor','none');
+                end
                 
                 % Show label
-                text(cntr{:},num2str(e),'FontSize',14,'BackgroundColor','k',...
-                    'FontWeight','Bold','Color','w',...
-                    'HorizontalAlignment','center');
+                if opt.elementlabels;
+                    text(cntr{:},num2str(e),'FontSize',14,...
+                        'BackgroundColor','k','FontWeight','Bold',...
+                        'Color','w','HorizontalAlignment','center');
+                end
+                        
             end
             
             % Loop through the unique nodes
-            N = unique(obj.map.node,'rows','stable');
-            for i = 1:length(N);
-               node = num2cell(N(i,:));
-                text(node{:},num2str(i),'FontSize',12,'Color','w',...
-                    'BackgroundColor','b','HorizontalAlignment','center');
-                 
+            if opt.nodelabels;
+                N = unique(obj.map.node,'rows','stable');
+                for i = 1:length(N);
+                   node = num2cell(N(i,:));
+                    text(node{:},num2str(i),'FontSize',12,'Color','w',...
+                        'BackgroundColor','b','HorizontalAlignment','center');
+                end
             end
         end 
     end
@@ -593,5 +626,43 @@ classdef FEmesh < handle
             % Update mesh level boundary_id matrix
             obj.boundary_id(end+1) = id;
         end 
+        
+        % Function for parsing the plot input data (see plot)
+        function [data, opt] = parse_plot_input(obj, varargin)
+            % Function for parsing input data to plot function
+            %
+            % See the help for the plot function for input detals
+            
+            % Assume empty data  input
+            data = [];
+            
+            % Define user properties
+            opt.elementlabels = true;
+            opt.nodelabels = true;
+            opt.newfigure = true;
+
+            % Parse the input
+            if nargin >= 2;
+                
+                % The first input is always the data
+                data = varargin{1};
+                
+                % Check that the data is sized correctly
+                if ~isnumeric(data) && length(data) ~= obj.n_dof;
+                    error('FEmesh:plot', 'Data not formated correctly, it must be a vector of numbers of length %d.', obj.n_dof);
+                end
+
+                % When using data, disable the labels by default and do not
+                % create a new figure with each call
+                opt.elementlabels = false;
+                opt.nodelabels = false;
+                opt.newfigure = false;
+                
+                % Collect options supplied by the user
+                if nargin >= 2;
+                    opt = gatheruseroptions(opt,varargin{2:end});
+                end
+            end
+        end
     end
 end

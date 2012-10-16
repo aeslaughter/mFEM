@@ -104,8 +104,8 @@ non = mesh.get_dof(3,'ne'); % 1,2
 ess = mesh.get_dof(3);      % 3,4
 
 % Solve for the temperatures
-T(:,1) = T_0 * ones(size(f));   % initialize the temperature vector
-T(ess,1) = T_s;                   % apply essential boundaries
+T(:,1) = T_0 * ones(size(f));       % initialize the temperature vector
+T(ess,1) = T_s;                     % apply essential boundaries
 
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries
@@ -133,5 +133,3 @@ T(ix,:)'
 
 % Clean up
 clear classes;
-
-
