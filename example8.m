@@ -1,11 +1,13 @@
 function example8
-
+clear;
 import mFEM.*
 
 d_0 = @(x,y) (x-0.5).^2 + (y-0.75).^2 - 0.15^2;
 
 mesh = FEmesh('Quad4','scalar','DG');
-mesh.grid(0,1,0,1,1,1);
+mesh.grid(0,1,0,1,3,3);
+%mesh.plot()
+
 
 d = d_0(mesh.get_nodes(1), mesh.get_nodes(2));
 
@@ -39,31 +41,37 @@ for e = 1:mesh.n_elements;
    
    for i = 1:length(qp);
        for j = 1:length(qp);
-          
-           
            [x,y] = elem.get_position(qp(i),qp(j));
            v = velocity(x,y,t);
-           
-           
-           
+      
            Me = Me + N(qp(i),qp(j))'*N(qp(i),qp(j))*detJ(qp(i),qp(j));
            Ke = Ke + (B(qp(i),qp(j))'*v)*N(qp(i),qp(j))*detJ(qp(i),qp(j));
-           
-   
        end
    end
-   
-   side = elem.build_side(1);
-   GN = elem.local_grad_basis(0,-1);
-   
-   a = [GN(1,:)*elem.nodes,0]
-   b = [GN(2,:)*elem.nodes,0]
-   cross(a,b)
-   
-   GN*elem.nodes
 
-%     Ke
-    
+
+   for i = 1:1%elem.n_neigbors;
+        neighbor = elem.neighbors(i);
+
+        
+        Kee = zeros(elem.n_dof);
+        Ken = zeros(elem.n_dof, neighbor.n_dof);
+        Kne = zeros(neighbor.n_dof, elem.n_dof);
+        Knn = zeros(neighbor.n_dof);
+       
+        Nn = @(xi,eta) neighbor.shape(xi,eta);
+        
+        [se, sn] = elem.match_sides(neighbor);
+        
+        side_e = elem.build_side(se);
+        side_n = neighbor.build_side(sn); 
+        
+        N_plus = @(beta) side_e.shape(beta);
+        N_minus = @(beta) side_n.shape(beta);
+
+   end
+   
+   
     
 end
 

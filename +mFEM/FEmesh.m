@@ -134,7 +134,7 @@ classdef FEmesh < handle
         end
                 
         % Adds identification to elements
-        function add_boundary_id(obj, varargin)
+        function add_boundary(obj, varargin)
             % Labels elements with numeric tabs.
             %
             % This should be called after initialization, and id = 0
@@ -258,9 +258,19 @@ classdef FEmesh < handle
             end
         end
         
-        % Return the spatial position of the nodes
-        function out = get_nodes(obj)
-           out = unique(obj.map.node, 'rows'); 
+        % Return the spatial position of nodes
+        function out = get_nodes(obj,varargin)
+            % Return the spatial position of the nodes for the mesh
+            %
+            % Syntax:
+            %   get_nodes()
+            %   get_nodes(dim)
+            %
+            
+            out = unique(obj.map.node, 'rows'); 
+            if nargin == 2 && isnumeric(varargin{1}) && varargin{1} <= obj.n_dim;
+               out = out(:,varargin{1});
+            end
         end
             
         % Tool for generating a 2D mesh
@@ -442,20 +452,23 @@ classdef FEmesh < handle
         % Finds element neighbors
         function find_neighbors(obj)
             % Locates elements that share a side
-           
+
+            
             % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
+
+                
                 elem = obj.element(e); % current element
-                elem_dof  = elem.global_dof; % global dof for this element
+                
+                elem.neighbors = feval(['mFEM.',obj.element_type,'.empty']);
+
+                elem_dof = elem.global_dof; % global dof for this element
                 side_dof = zeros(size(elem.side_dof)); % storage for side dof of this element
                 elem.on_boundary = false; % initilize on_boundary flag
                 
                 % Loop through the sides of element
                 for s = 1:elem.n_sides
                     
-                    % Assume that side does not have nieghbor
-                    elem.side(s).has_neighbor = false; % initilize neighbor flag
-
                     % Set the local and global dof for the current side
                     dof = sort(elem.side_dof(s,:));
                     elem.side(s).dof = dof;
@@ -480,51 +493,56 @@ classdef FEmesh < handle
 
                     % Identify the shared id's
                     id = unique(x(count > (obj.n_dim - 1)));
-                    elem.side(s).neighbor.element = id;
+                    elem.side(s).neighbor = id;
+                    
+                    elem.neighbors(end+1:end+length(id)) = obj.element(id);
                     
                     % Initilize the side index array
-                    elem.side(s).neighbor.side = NaN(size(id));
+                    %elem.side(s).neighbor.side = NaN(size(id));
                     
                     % Set the status of the neighbor flag for this element,
                     % if any side does not have a nieghbor then set the
                     % on_boundary flag to true for this elment
-                    if ~isempty(id);
-                        elem.side(s).has_neighbor = true;
-                    else
+                    if isempty(id);
                         elem.on_boundary = true;
+                        elem.side(s).on_boundary = true;
+                    else
+                        elem.side(s).on_boundary = false;
                     end   
                 end
-            end
-            
-           % Loop through all elements and identify which sides are shared
-            for e = 1:obj.n_elements;
-                elem = obj.element(e); % current element
                 
-                % Loop through all sides of current element
-                for s = 1:elem.n_sides;
-                    % Global dofs for the current element and side
-                    a = sort(elem.side(s).global_dof)';
-                    
-                    % List of neighboring elements
-                    ne = elem.side(s).neighbor.element;
-                    
-                    % Loop through neighbor elements on current side
-                    for i = 1:length(ne); 
-                        elem_n = obj.element(ne(i)); % current neighbor element
-                        
-                        % Build an array of the global side dofs
-                        for j = 1:elem_n.n_sides;
-                            b(j,:) = sort(elem_n.side(j).global_dof);
-                        end
-
-                        % Locate where a & b match
-                        [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
-                        if ~isempty(ib);
-                            elem.side(s).neighbor.side(i) = ib; % update current element
-                        end  
-                    end
-                end
+                elem.n_neighbors = length(elem.neighbors);
             end
+
+%             % Loop through all elements and identify which sides are shared
+%             for e = 1:obj.n_elements;
+%                 elem = obj.element(e); % current element
+%                 
+%                 % Loop through all sides of current element
+%                 for s = 1:elem.n_sides;
+%                     % Global dofs for the current element and side
+%                     a = sort(elem.side(s).global_dof)';
+%                     
+%                     % List of neighboring elements
+%                     ne = elem.side(s).neighbor.element;
+%                     
+%                     % Loop through neighbor elements on current side
+%                     for i = 1:length(ne); 
+%                         elem_n = obj.element(ne(i)); % current neighbor element
+%                         
+%                         % Build an array of the global side dofs
+%                         for j = 1:elem_n.n_sides;
+%                             b(j,:) = sort(elem_n.side(j).global_dof);
+%                         end
+% 
+%                         % Locate where a & b match
+%                         [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
+%                         if ~isempty(ib);
+%                             elem.side(s).neighbor.side(i) = ib; % update current element
+%                         end  
+%                     end
+%                 end
+%             end
         end  
         
         % Sub-method for parsing boundary_id input

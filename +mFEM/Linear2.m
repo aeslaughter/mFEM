@@ -45,7 +45,7 @@ classdef Linear2 < mFEM.Element
             end
             
             % Proper gradient
-            B = inv(obj.jacobian()) * [-1/2, 1/2];
+            B = inv(obj.jacobian()) * obj.local_grad_basis;
         end
              
         function J = jacobian(obj, varargin)
@@ -57,7 +57,11 @@ classdef Linear2 < mFEM.Element
             end
 
             % Return the Jacobian matrix
-            J = [-1/2, 1/2]*obj.nodes;                 
+            J = obj.local_grad_basis*obj.nodes;                 
+        end
+        
+        function GN = local_grad_basis(obj, varargin)
+            GN = [-1/2, 1/2];
         end
     end
 end
