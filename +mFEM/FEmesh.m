@@ -343,7 +343,7 @@ classdef FEmesh < handle
             %   'NodeLabels' = true or false
             
             % Collect the input 
-            [data, opt] = obj.parse_plot_input(varargin{:});
+            [data, options] = obj.parse_plot_input(varargin{:});
 
             % Check that mesh is initialized
             if (~obj.initialized)
@@ -356,7 +356,7 @@ classdef FEmesh < handle
             end
             
             % Create the figure
-            if opt.newfigure;
+            if options.newfigure;
                 figure; hold on;
             end
             
@@ -376,17 +376,43 @@ classdef FEmesh < handle
                     patch(node{:}, 'b', 'FaceColor','none');
                 end
                 
-                % Show label
-                if opt.elementlabels;
+                % Show element label
+                if options.elementlabels;
                     text(cntr{:},num2str(e),'FontSize',14,...
                         'BackgroundColor','k','FontWeight','Bold',...
                         'Color','w','HorizontalAlignment','center');
                 end
+                
+                % Show node labels (DG elements)
+                if options.nodelabels && strcmpi(obj.opt.type, 'DG');
+                    N = elem.nodes;
+                    dof = elem.get_dof();
+                    for i = 1:length(N);
+                        [x,y] = elem.get_position(elem.lims(1),elem.lims(2));
                         
+                        % Set location of label (x-direction)
+                        if N(i,1) == x; X = 'left';
+                        elseif N(i,1) == x; X = 'right';
+                        else X = 'center';
+                        end
+                        
+                        % Set location of label (y-direction)
+                        if N(i,2) == y; Y = 'top';
+                        elseif N(i,2) == y; Y = 'bottom';
+                        else Y = 'middle';
+                        end
+                        
+                        % Create label
+                        node = num2cell(N(i,:));
+                        text(node{:},num2str(dof(i)),'FontSize',12,'Color','w',...
+                            'BackgroundColor','b','HorizontalAlignment',X,...
+                            'VerticalAlignment',Y);
+                    end  
+                end       
             end
             
             % Loop through the unique nodes
-            if opt.nodelabels;
+            if options.nodelabels && strcmpi(obj.opt.type, 'CG');
                 N = unique(obj.map.node,'rows','stable');
                 for i = 1:length(N);
                    node = num2cell(N(i,:));
@@ -422,7 +448,7 @@ classdef FEmesh < handle
             % Update the elements with the global dof
             for e = 1:obj.n_elements;
                 elem = obj.element(e);
-                elem.global_dof = obj.CG_dof_map(obj.map.elem == e,:);
+                elem.global_dof = obj.map.dof(obj.map.elem == e,:);
             end
             
             % Complete message
@@ -491,47 +517,47 @@ classdef FEmesh < handle
                         
             % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
-
-                % Collect necessary data
                 elem = obj.element(e);                  % current element
-                elem_dof = elem.global_dof;             % global dof for this element
-                side_dof = zeros(size(elem.side_dof));  % storage for side dof of this element
                 elem.on_boundary = false;               % initilize on_boundary flag
                 
                 % Loop through the sides of element
                 for s = 1:elem.n_sides
                     
                     % Set the local and global dof for the current side
-                    dof = sort(elem.side_dof(s,:));
-                    elem.side(s).dof = dof;
-                    elem.side(s).global_dof = elem_dof(dof);
+                    dof = elem.side_dof(s,:);               % local dof for current side of element
+                    elem.side(s).dof = dof;                 % store local dof for elment side
+                    elem.side(s).global_dof = elem.global_dof(dof);% store the gloval
 
-                    % Collects index of neighbor elements (including corners)
-                    idx = zeros(size(obj.CG_dof_map));
-                    for i = 1:length(side_dof(s,:));
-                        idx = idx + (obj.CG_dof_map == elem.side(s).global_dof(i));
+                    % Define vectors of nodal values
+                    a = elem.nodes(dof,:);
+                    b = obj.map.node;
+                    
+                    % Remove the current element from the b vector
+                    b(obj.map.elem == e,:) = NaN;
+
+                    % Determine the rows of b that match with any rows of a 
+                    index = intersection(a,b);
+                    
+                    % Find the elements that are possible neighbors
+                    nieghbors = obj.map.elem(index);
+                    
+                    % Neighbors are defined when the complete edge or face
+                    % are shared (1D - pont; 2D - line; 3D - face)
+                    count = zeros(size(nieghbors));
+                    for i = 1:length(count);
+                        count(i) = sum(nieghbors(i) == nieghbors);
                     end
-                    idx(obj.map.elem == e) = 0; %exclude current element
-
-                    % Gathers neighbor element ids; a side can have 
-                    % multiple neighbors, this is allowed for adding 
-                    % adaptivity in the future
-                    x = obj.map.elem(logical(idx));
-                    count = zeros(size(x));
-                    for i = 1:length(x);
-                        count(i) = sum(x(i) == x);
-                    end
-
+                    
                     % Identify the shared id's, corners don't count for
                     % multi-dimensional elements
-                    id = unique(x(count > (obj.n_dim - 1)));
+                    id = unique(nieghbors(count > (obj.n_dim - 1)));
                     elem.side(s).neighbor = id;
                     
                     % Update the element data structure
                     elem.side(s).neighbor = obj.element(id);
                     
                     % Locate the matching side
-                    obj.match_sides(elem,s);
+                    obj.match_sides(elem, s);
                     
                     % Set the status of the neighbor flag for this element,
                     % if any side does not have a nieghbor then set the
@@ -558,14 +584,14 @@ classdef FEmesh < handle
                 neighbor = elem.side(s_e).neighbor(i);
             
                 % Collect the nodes
-                a = elem.nodes(elem.side_dof(s_e,:));   % current element
+                a = elem.nodes(elem.side_dof(s_e,:),:); % current element
                 b = neighbor.nodes;                     % neighbor element
-           
+
                 % Locate where a & b match
                 [~,~,ib] = intersect(a,b,'rows','R2012a');
 
                 % Locate the matching side on the neighbor element
-                C = b(sort(ib),:);             
+                C = b(sort(ib),:);    
                 for s_n = 1:neighbor.n_sides;
                     if isequal(C, neighbor.nodes(sort(neighbor.side_dof(s_n,:)),:));
                        elem.side(s_e).neighbor_side(i) = s_n;
@@ -712,5 +738,6 @@ classdef FEmesh < handle
                 end
             end
         end
+        
     end
 end

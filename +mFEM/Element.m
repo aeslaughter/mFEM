@@ -43,7 +43,6 @@ classdef Element < handle
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        neighbors;                  % list of all neighbor elements (will replace side.neighbor)
         side = ...                  % structure containing side info
             struct('on_boundary', [], 'boundary_id', uint32([]),...
                 'dof', uint32([]), 'global_dof', uint32([]), ...
@@ -91,7 +90,7 @@ classdef Element < handle
             obj.id = id;
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
-            
+
             % Collect the options from the user
             obj.opt = gather_user_options(obj.opt, varargin{:});
             
