@@ -46,8 +46,7 @@ classdef Element < handle
 
         % structure containing side info
         side = struct('on_boundary', [], 'boundary_id', uint32([]),...
-            'dof', uint32([]), 'global_dof', uint32([]), ...
-            'neighbor', uint32([]));          
+            'dof', uint32([]), 'global_dof', uint32([]));          
     end
     
     % Protected properties
