@@ -19,13 +19,13 @@ function opt =  gatheruseroptions(opt,varargin)
 %       struct('Prop1',true,'Prop2','install','Coeffient',1);.
 %__________________________________________________________________________
 
-% 1 - INTILIZE THE DATA
+% INTILIZE THE DATA
     q = varargin;           % User supplied input
     list = fieldnames(opt); % Fieldnames of default values
     k = 1;                  % Intilize the counter
     N = nargin - 1;         % Number of inputs
 
-% 2 - CONVERT DATA INPUT AS A STRUCTURE TO A CELL ARRAY
+% CONVERT DATA INPUT AS A STRUCTURE TO A CELL ARRAY
 if length(q) == 1 && isstruct(q{1});
     S = q{1}; q = {};
     fn = fieldnames(S); % Fieldnames from input structure
@@ -36,7 +36,7 @@ if length(q) == 1 && isstruct(q{1});
     N = length(q);      % Number of inputs
 end
 
-% 3 - COMPARE INPUT WITH THE DEFAULTS
+% COMPARE INPUT WITH THE DEFAULTS
 while k < N
     % Seperate the name from the value; increment counter
     itm = q{k}; value = q{k+1}; k = k + 2;

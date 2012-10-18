@@ -3,14 +3,15 @@ classdef FEmesh < handle
     
     % Read only properties
     properties (SetAccess = private, GetAccess = public)
-        n_elements = [];        % no. of elements in mesh [double]
-        element;                % empty array of elements [Element]
-        n_dim = [];             % no. of spatial dimensions [double]
-        n_dof = [];             % total number of global degrees of freedom [double]
-        initialized = false;    % initialization state [boolean]
-        opt = ...               % struct of default FEmesh user options
-            struct('elment', 'Quad4', 'space', 'scalar', 'type', 'CG');
-        map = ...               % struct  of node, elem, and dof maps 
+        n_elements = uint32([]);    % no. of elements in mesh
+        n_dim = uint32([]);         % no. of spatial dimensions
+        n_dof = uint32([]);         % total no. of global dofs
+        n_dof_node = uint32([]);    % no. of dofs per node      
+        element;                    % empty array of elements [Element]
+        initialized = false;        % initialization state
+        opt = ...                   % struct of default user options
+            struct('element', 'Quad4', 'space', 'scalar', 'type', 'CG');
+        map = ...                   % struct  of node, elem, and dof maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary_id', uint32([]));
     end
@@ -36,7 +37,9 @@ classdef FEmesh < handle
             %   obj = FEmesh() creates mesh object with default settings,
             %         equivalent to: 
             %           obj = FEmesh('Quad4','Space','scalar','Type','CG')
+            %
             %   obj = FEmesh(name) allows the element type to be set
+            %
             %   obj = FEmesh(..., 'PropertyName', PropertyValue) allows
             %           user to customize the behavior of the FE mesh.
             %
@@ -59,10 +62,9 @@ classdef FEmesh < handle
             
             % Prepare input
             if mod(nargin,2); % odd
-            	varargin = ['Element', varargin{:}];
+            	varargin = ['Element', varargin];
             end
             
-            obj.opt
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
             
@@ -95,8 +97,8 @@ classdef FEmesh < handle
             % Add the element(s)
             id = length(obj.element) + 1;
             
-            obj.element(id) = feval(['mFEM.', obj.element_type],...
-                id, nodes, obj.space);
+            obj.element(id) = feval(['mFEM.', obj.opt.element],...
+                id, nodes, 'Space', obj.opt.space);
             
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;
@@ -121,14 +123,25 @@ classdef FEmesh < handle
             % Spatial dimension
             obj.n_dim = obj.element(1).n_dim;
             
+            % Determine the no. of dofs per node
+            if strcmpi(obj.opt.space, 'scalar');
+                obj.n_dof_node = 1;
+                
+            elseif strcmpi(obj.opt.space, 'vector');
+                obj.n_dof_node = obj.n_dim;
+                
+            elseif isnumeric(obj.opt.space);
+                obj.n_dof_node = obj.opt.space;
+                
+            else
+                error('FEmesh:FEmesh', 'The element space, %s, was not recongnized.',obj.opt.space);
+            end
+            
             % Computes the global degree-of-freedom map
             obj.compute_dof_map();
             
             % Compute the total number of dofs
-            obj.n_dof = length(unique(obj.map.dof));
-            if strcmpi(obj.space,'vector');
-                obj.n_dof = obj.n_dof * obj.n_dim;
-            end
+            obj.n_dof = length(unique(obj.map.dof)) * obj.n_dof_node;
             
             % Locates the neighbor elements for each element
             obj.find_neighbors();
@@ -256,7 +269,7 @@ classdef FEmesh < handle
             end
 
             % Vector FE space (uses transform_dof of an element)
-            if strcmpi(obj.space, 'vector');
+            if obj.n_dof_node > 1;
                 elem = obj.element(1);
                 dof = elem.transform_dof(dof);
             end
@@ -297,7 +310,7 @@ classdef FEmesh < handle
             disp('Generating mesh...'); 
             
             % Check the current element type is supported
-            switch obj.element_type;
+            switch obj.opt.element;
                 case 'Linear2';
                     obj.gen1Dgrid(varargin{:});
                 case 'Quad4';
@@ -399,7 +412,7 @@ classdef FEmesh < handle
             [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows','stable');
 
             % Place the correct type of map in public property
-            switch obj.type;
+            switch obj.opt.type;
                 case 'CG'; 
                     obj.map.dof = obj.CG_dof_map;
                 case 'DG'; 
@@ -453,7 +466,7 @@ classdef FEmesh < handle
                     nodes(4,:) = [x(i), y(j+1)];
                    
                     % Add the element(s)
-                    switch obj.element_type;
+                    switch obj.opt.element;
                         case {'Quad4'};
                             obj.add_element(nodes);
                             
@@ -695,7 +708,7 @@ classdef FEmesh < handle
                 
                 % Collect options supplied by the user
                 if nargin >= 2;
-                    opt = gatheruseroptions(opt,varargin{2:end});
+                    opt = gather_user_options(opt,varargin{2:end});
                 end
             end
         end

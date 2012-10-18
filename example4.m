@@ -5,7 +5,7 @@ function example4
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Quad4','vector');
+mesh = FEmesh('Quad4','Space','vector');
 mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
 mesh.initialize();
 

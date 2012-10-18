@@ -33,9 +33,10 @@ classdef Element < handle
         n_nodes = [];     % no. of nodes [double]
         n_dim = []        % no. of spatial dimensions [double]
         n_dof = [];       % no. of global degrees of freedom
-        space = 'scalar'; % scalar or vector space [string]
+        n_dof_node = 1;   % no. of dofs per node (scalar = 1)       
         is_side = false;  % id's the element as a side or not
-        n_dof_node = [];  % no. of dofs per node (scalar = 1; vector = dim)
+        opt = ...         % struct of default user options
+            struct('space', 'scalar');
     end
     
     % Public properties (read only; except FEmesh)
@@ -67,37 +68,49 @@ classdef Element < handle
             %
             % Syntax:
             %   Element(id, nodes)
-            %   Element(id, nodes, space)
+            %   Element(id, nodes, 'PropertyName', PropertyValue)
             %
-            % Creates an element given:
-            %   id: unique identification number for this element
-            %   nodes: matrix of node coordinates (global), it should be 
-            %          arranged as a column matrix [no. nodes x no. dims]
-            %   space (optional): string that is 'scalar' (default) or
-            %       'vector', which indicates the type of solution
+            % Description:
+            %   Element(id, nodes) creates an element given:
+            %       id: unique identification number for this element
+            %       nodes: matrix of node coordinates (global), should be 
+            %              arranged as column matrix [no. nodes x no. dims]
             %
+            %   Element(id, nodes, 'PropertyName', PropertyValue) allows
+            %       customize the behavior of the element, the available
+            %       properties are listed below.
+            %
+            % Properties:
+            %   'Space' = 'scalar', 'vector', <number>
+            %               allows the type of FEM space to be set: scalar
+            %               sets the number of dofs per node to 1, vector
+            %               sets it to the no. of space dimension, and
+            %               specifing a number sets it to that value.
             
             % Insert required values into object properties
             obj.id = id;
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
-    
-            % User supplied the space
-            if nargin == 3;
-                obj.space = varargin{1};
+            
+            % Collect the options from the user
+            obj.opt = gather_user_options(obj.opt, varargin{:});
+            
+            % Determine the no. of dofs per node
+            if strcmpi(obj.opt.space, 'scalar');
+                obj.n_dof_node = 1;
+                
+            elseif strcmpi(obj.opt.space, 'vector');
+                obj.n_dof_node = obj.n_dim;
+                
+            elseif isnumeric(obj.opt.space);
+                obj.n_dof_node = obj.opt.space;
+                
+            else
+                error('FEmesh:FEmesh', 'The element space, %s, was not recongnized.',obj.opt.space);
             end         
             
-            % Determine the number of global dofs
-            obj.n_dof = obj.n_nodes;
-            if strcmpi(obj.space,'vector');
-                obj.n_dof = obj.n_dof * obj.n_dim;
-            end
-
-            % Set the number of degrees of freedom per node
-            obj.n_dof_node = 1;
-            if strcmpi(obj.space,'vector');
-                obj.n_dof_node = obj.n_dim;
-            end   
+            % Determine the total number of global dofs
+            obj.n_dof = obj.n_nodes * obj.n_dof_node;
         end
         
         function N = shape(obj, varargin)
@@ -106,8 +119,8 @@ classdef Element < handle
             % Scalar field basis functions
             N = obj.basis(varargin{:});
 
-            % Vector
-            if strcmpi(obj.space, 'vector');
+            % Non-scalar fields
+            if obj.n_dof_node > 1;
                 n = N;                          % re-assign scalar basis
                 r = obj.n_dof_node;             % no. of rows
                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
@@ -126,10 +139,10 @@ classdef Element < handle
             % Scalar field basis functin derivatives
             B = obj.grad_basis(varargin{:});
                         
-            % Vector
-            if strcmpi(obj.space, 'vector');
+            % Non-scalar fields
+            if obj.n_dof_node > 1;
                 b = B;                      % Re-assign scalar basis
-                r = obj.n_dim;              % no. of rows
+                r = obj.n_dof_node;         % no. of rows
                 c = r*size(b,2);            % no. of cols
                 B = zeros(r+1,c);           % size the vector basis
 
@@ -225,31 +238,28 @@ classdef Element < handle
                 mapped(i,:) = norm(node(i,:) - node(1,:));
             end
             
-            % Create the side element and flag it as a side
-            side = feval(['mFEM.',obj.side_type], NaN, mapped, obj.space);
+            % Create the side element, the FE space of side must be set
+            % to be the same as the parent element
+            side = feval(['mFEM.',obj.side_type], NaN, mapped,...
+                'Space', obj.n_dof_node);
             
             % Indicate that the element created was a side
             side.is_side = true;
             
             % Store the actual coordinates in the side element
             side.side_nodes = node;
-            
-            % Override the no. of dofs per node to match the parent element
-            side.n_dof_node = obj.n_dof_node;
         end
                
         function dof = get_dof(obj)
             % The global degrees of freedom, account for type of space
             
             % Scalar FE space
-            if strcmpi(obj.space,'scalar');
-                dof = obj.global_dof;
-                
-            % Vector FE space
-            elseif strcmpi(obj.space,'vector');
-                dof = obj.transform_dof(obj.global_dof);
+            if obj.n_dof_node == 1;
+                dof = obj.global_dof; 
+            
+            % Non-scalar fields
             else
-                error('Element:get_dof', 'Unknown finite elment space, %s, for element %d\n', obj.space, obj.id); 
+                dof = obj.transform_dof(obj.global_dof);
             end
         end  
         
@@ -257,14 +267,12 @@ classdef Element < handle
             % Extract the local dofs for the specified side
            
             % Scalar FE space
-            if strcmpi(obj.space,'scalar');
+            if obj.n_dof_node == 1;
                 dof = obj.side(s).dof;
 
-            % Vector FE space
-            elseif strcmpi(obj.space,'vector');
+            % Non-scalar FE space
+            else 
                 dof = obj.transform_dof(obj.side(s).dof);
-            else
-                error('Element:get_dof', 'Unknown finite elment space, %s, for element %d\n', obj.space, obj.id); 
             end
         end
                 
