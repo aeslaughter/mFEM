@@ -2,14 +2,9 @@ function test2
 clear;
 import mFEM.*;
 
-mesh = FEmesh('Quad4');
-mesh.grid(0,1,0,1,1,1);
+mesh = FEmesh('Quad4','scalar','DG');
+mesh.grid(0,1,0,1,100,100);
 
-elem = mesh.element(1);
-
-for i = 1:elem.n_sides();
-    side = elem.build_side(i);
-    n = side.get_normal()
-end
+% E = mesh.element(1:2)
 
 

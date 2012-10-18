@@ -126,8 +126,11 @@ classdef FEmesh < handle
                 obj.n_dof = obj.n_dof * obj.n_dim;
             end
             
-            % Locates the neighbor elements for each element
-            obj.find_neighbors();
+            % Locates the neighbor elements for each element, only called
+            % automatically for discontinous elements
+            if strcmpi(obj.type,'DG');
+                obj.find_neighbors();
+            end
 
             % Set the initilization flag to true
             obj.initialized = true;
@@ -287,6 +290,10 @@ classdef FEmesh < handle
             %   y0,y1 = Mesh limits in y-direction
             %   z0,z1 = Mesh limits in z-direction
             %   xn,yn,zn = Num. of elements in x,y,z direction
+           
+            % Display wait message
+            tic;
+            disp('Generating mesh...'); 
             
             % Check the current element type is supported
             switch obj.element_type;
@@ -297,6 +304,12 @@ classdef FEmesh < handle
                 otherwise
                     error('FEmesh:grid','Grid generation is not supported for the %s element', obj.element_type);
             end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+   
+            % Initialize
+            obj.initialize();
         end
        
         % Tool for plotting the mesh with element and node labels
@@ -368,6 +381,92 @@ classdef FEmesh < handle
                 end
             end
         end 
+        
+        % Finds element neighbors
+        function find_neighbors(obj, varargin)
+            % Locates elements that share a side
+            %
+            % Syntax:
+            %   find_neighbors()
+            %   find_neighbors(elem_ids)
+            %   find_neighbors(elem_handles)
+
+            % Display wait message
+            tic;
+            disp('Locating neighbor elements...');
+            
+            % Case when user provides element ids
+            if nargin == 2 && isnumeric(varargin{1});
+                E = obj.element(varargin{1});
+                
+            % Case when user provides element handles    
+            elseif nargin == 2 && isa(varargin{1}(1), ['mFEM.',obj.element_type]); 
+                E = varargin{1};
+                
+            % Case when all elements are considered    
+            else
+                E = obj.element(1:obj.n_elements);
+            end
+            
+            % Loop through elements and store ids of neighboring elements
+            for e = 1:length(E);
+
+                % Collect necessary data
+                elem = E(e);                            % current element
+                elem_dof = elem.global_dof;             % global dof for this element
+                side_dof = zeros(size(elem.side_dof));  % storage for side dof of this element
+                elem.on_boundary = false;               % initilize on_boundary flag
+                
+                % Loop through the sides of element
+                for s = 1:elem.n_sides
+                    
+                    % Set the local and global dof for the current side
+                    dof = sort(elem.side_dof(s,:));
+                    elem.side(s).dof = dof;
+                    elem.side(s).global_dof = elem_dof(dof);
+
+                    % Collects index of neighbor elements (including corners)
+                    idx = zeros(size(obj.CG_dof_map));
+                    for i = 1:length(side_dof(s,:));
+                        idx = idx + (obj.CG_dof_map == elem.side(s).global_dof(i));
+                    end
+                    idx(obj.map.elem == e) = 0; %exclude current element
+
+                    % Gathers neighbor element ids; a side can have 
+                    % multiple neighbors, this is allowed for adding 
+                    % adaptivity in the future
+                    x = obj.map.elem(logical(idx));
+                    count = zeros(size(x));
+                    for i = 1:length(x);
+                        count(i) = sum(x(i) == x);
+                    end
+
+                    % Identify the shared id's, corners don't count for
+                    % multi-dimensional elements
+                    id = unique(x(count > (obj.n_dim - 1)));
+                    elem.side(s).neighbor = id;
+                    
+                    % Update the element data structure
+                    elem.side(s).neighbor = obj.element(id);
+                    
+                    % Locate the matching side
+                    obj.match_sides(elem,s);
+                    
+                    % Set the status of the neighbor flag for this element,
+                    % if any side does not have a nieghbor then set the
+                    % on_boundary flag to true for this elment
+                    if isempty(id);
+                        elem.on_boundary = true;
+                        elem.side(s).on_boundary = true;
+                    else
+                        elem.side(s).on_boundary = false;
+                    end   
+                end
+            end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+        end 
     end
     
     % Private methods
@@ -376,6 +475,10 @@ classdef FEmesh < handle
         function compute_dof_map(obj)
             % Calculates the global degree-of-freedom map
             % (this is used by both CG and DG for finding neighbors)
+            
+            % Display wait message
+            tic;
+            disp('Computing the degree-of-freedom map...');
             
             % Compute the CG dof map
             [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows','stable');
@@ -393,6 +496,10 @@ classdef FEmesh < handle
                 elem = obj.element(e);
                 elem.global_dof = obj.CG_dof_map(obj.map.elem == e,:);
             end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+            
         end
         
         % 1D mesh generation
@@ -411,9 +518,6 @@ classdef FEmesh < handle
                 % Add the element(s)
                 obj.add_element(nodes');
             end
-            
-            % Initialize
-            obj.initialize();       
         end
         
         % 2D mesh generation
@@ -444,106 +548,33 @@ classdef FEmesh < handle
                     end
                 end
             end
+        end
+        
+        % Match elem and neighbor side ids
+        function match_sides(~, elem, s_e)
+            % Returns the side index of the neighbor that matches 
             
-            % Initialize
-            obj.initialize();
-        end 
-                     
-        % Finds element neighbors
-        function find_neighbors(obj)
-            % Locates elements that share a side
-
+            % Loop through the neighbors of the current side
+            for i = 1:length(elem.side(s_e).neighbor);
+                neighbor = elem.side(s_e).neighbor(i);
             
-            % Loop through elements and store ids of neighboring elements
-            for e = 1:obj.n_elements;
+                % Collect the nodes
+                a = elem.nodes(elem.side_dof(s_e,:));   % current element
+                b = neighbor.nodes;                     % neighbor element
+           
+                % Locate where a & b match
+                [~,~,ib] = intersect(a,b,'rows','R2012a');
 
-                
-                elem = obj.element(e); % current element
-                
-                elem.neighbors = feval(['mFEM.',obj.element_type,'.empty']);
-
-                elem_dof = elem.global_dof; % global dof for this element
-                side_dof = zeros(size(elem.side_dof)); % storage for side dof of this element
-                elem.on_boundary = false; % initilize on_boundary flag
-                
-                % Loop through the sides of element
-                for s = 1:elem.n_sides
-                    
-                    % Set the local and global dof for the current side
-                    dof = sort(elem.side_dof(s,:));
-                    elem.side(s).dof = dof;
-                    elem.side(s).global_dof = elem_dof(dof);
-
-                    % Collects index of neighbor elements (including corners)
-                    idx = zeros(size(obj.CG_dof_map));
-                    for i = 1:length(side_dof(s,:));
-                        idx = idx + (obj.CG_dof_map == elem.side(s).global_dof(i));
+                % Locate the matching side on the neighbor element
+                C = b(sort(ib),:);             
+                for s_n = 1:neighbor.n_sides;
+                    if isequal(C, neighbor.nodes(sort(neighbor.side_dof(s_n,:)),:));
+                       elem.side(s_e).neighbor_side(i) = s_n;
+                       break;
                     end
-                    idx(obj.map.elem == e) = 0; %exclude current element
-
-                    % Gathers neighbor element ids, only include as a neighbor
-                    % if it shares multiple nodes (i.e., corners don't count)
-                    % Also, a side can have multiple neighbors, this is
-                    % allowed for adding adaptivity in the future
-                    x = obj.map.elem(logical(idx));
-                    count = zeros(size(x));
-                    for i = 1:length(x);
-                        count(i) = sum(x(i) == x);
-                    end
-
-                    % Identify the shared id's
-                    id = unique(x(count > (obj.n_dim - 1)));
-                    elem.side(s).neighbor = id;
-                    
-                    elem.neighbors(end+1:end+length(id)) = obj.element(id);
-                    
-                    % Initilize the side index array
-                    %elem.side(s).neighbor.side = NaN(size(id));
-                    
-                    % Set the status of the neighbor flag for this element,
-                    % if any side does not have a nieghbor then set the
-                    % on_boundary flag to true for this elment
-                    if isempty(id);
-                        elem.on_boundary = true;
-                        elem.side(s).on_boundary = true;
-                    else
-                        elem.side(s).on_boundary = false;
-                    end   
-                end
-                
-                elem.n_neighbors = length(elem.neighbors);
-            end
-
-%             % Loop through all elements and identify which sides are shared
-%             for e = 1:obj.n_elements;
-%                 elem = obj.element(e); % current element
-%                 
-%                 % Loop through all sides of current element
-%                 for s = 1:elem.n_sides;
-%                     % Global dofs for the current element and side
-%                     a = sort(elem.side(s).global_dof)';
-%                     
-%                     % List of neighboring elements
-%                     ne = elem.side(s).neighbor.element;
-%                     
-%                     % Loop through neighbor elements on current side
-%                     for i = 1:length(ne); 
-%                         elem_n = obj.element(ne(i)); % current neighbor element
-%                         
-%                         % Build an array of the global side dofs
-%                         for j = 1:elem_n.n_sides;
-%                             b(j,:) = sort(elem_n.side(j).global_dof);
-%                         end
-% 
-%                         % Locate where a & b match
-%                         [~,~,ib] = intersect(a,b,'rows','R2012a'); % fine where a and b match
-%                         if ~isempty(ib);
-%                             elem.side(s).neighbor.side(i) = ib; % update current element
-%                         end  
-%                     end
-%                 end
-%             end
-        end  
+                end 
+            end  
+        end
         
         % Sub-method for parsing boundary_id input
         function [col, value, id] = parse_boundary_id_input(obj, varargin)

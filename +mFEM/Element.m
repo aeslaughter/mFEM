@@ -42,11 +42,11 @@ classdef Element < handle
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         neighbors;                  % list of all neighbor elements (will replace side.neighbor)
-        n_neighbors = [];           % no. of neighbor elements
 
         % structure containing side info
         side = struct('on_boundary', [], 'boundary_id', uint32([]),...
-            'dof', uint32([]), 'global_dof', uint32([]));          
+            'dof', uint32([]), 'global_dof', uint32([]), ...
+            'neighbor', [], 'neighbor_side', uint32([]));          
     end
     
     % Protected properties
@@ -99,10 +99,11 @@ classdef Element < handle
 %            	n = obj.n_nodes;
 %             obj.side(n).on_boundary = [];
 %             obj.side(n).boundary_id = uint32([]);
-%          %   obj.side(n).has_neighbor = [];
 %             obj.side(n).dof = uint32([]);
 %             obj.side(n).global_dof = uint32([]);
-%             obj.side(n).neighbor = uint32([]); %struct('element', uint32([]), 'side', uint32([]));;
+%             obj.side(n).neighbor = feval([class(obj),'.empty']);
+%             obj.side(n).nieghbor_side = uint32([]);
+%             obj.side(n)
         end
         
         function N = shape(obj, varargin)

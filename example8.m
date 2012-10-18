@@ -25,7 +25,7 @@ M = sparse(mesh.n_dof, mesh.n_dof);
 K = sparse(mesh.n_dof, mesh.n_dof);
 
 t = 0;
-
+return;
 
 for e = 1:mesh.n_elements;
     
