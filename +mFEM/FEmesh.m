@@ -126,12 +126,9 @@ classdef FEmesh < handle
                 obj.n_dof = obj.n_dof * obj.n_dim;
             end
             
-            % Locates the neighbor elements for each element, only called
-            % automatically for discontinous elements
-            if strcmpi(obj.type,'DG');
-                obj.find_neighbors();
-            end
-
+            % Locates the neighbor elements for each element
+            obj.find_neighbors();
+ 
             % Set the initilization flag to true
             obj.initialized = true;
         end
@@ -381,92 +378,6 @@ classdef FEmesh < handle
                 end
             end
         end 
-        
-        % Finds element neighbors
-        function find_neighbors(obj, varargin)
-            % Locates elements that share a side
-            %
-            % Syntax:
-            %   find_neighbors()
-            %   find_neighbors(elem_ids)
-            %   find_neighbors(elem_handles)
-
-            % Display wait message
-            tic;
-            disp('Locating neighbor elements...');
-            
-            % Case when user provides element ids
-            if nargin == 2 && isnumeric(varargin{1});
-                E = obj.element(varargin{1});
-                
-            % Case when user provides element handles    
-            elseif nargin == 2 && isa(varargin{1}(1), ['mFEM.',obj.element_type]); 
-                E = varargin{1};
-                
-            % Case when all elements are considered    
-            else
-                E = obj.element(1:obj.n_elements);
-            end
-            
-            % Loop through elements and store ids of neighboring elements
-            for e = 1:length(E);
-
-                % Collect necessary data
-                elem = E(e);                            % current element
-                elem_dof = elem.global_dof;             % global dof for this element
-                side_dof = zeros(size(elem.side_dof));  % storage for side dof of this element
-                elem.on_boundary = false;               % initilize on_boundary flag
-                
-                % Loop through the sides of element
-                for s = 1:elem.n_sides
-                    
-                    % Set the local and global dof for the current side
-                    dof = sort(elem.side_dof(s,:));
-                    elem.side(s).dof = dof;
-                    elem.side(s).global_dof = elem_dof(dof);
-
-                    % Collects index of neighbor elements (including corners)
-                    idx = zeros(size(obj.CG_dof_map));
-                    for i = 1:length(side_dof(s,:));
-                        idx = idx + (obj.CG_dof_map == elem.side(s).global_dof(i));
-                    end
-                    idx(obj.map.elem == e) = 0; %exclude current element
-
-                    % Gathers neighbor element ids; a side can have 
-                    % multiple neighbors, this is allowed for adding 
-                    % adaptivity in the future
-                    x = obj.map.elem(logical(idx));
-                    count = zeros(size(x));
-                    for i = 1:length(x);
-                        count(i) = sum(x(i) == x);
-                    end
-
-                    % Identify the shared id's, corners don't count for
-                    % multi-dimensional elements
-                    id = unique(x(count > (obj.n_dim - 1)));
-                    elem.side(s).neighbor = id;
-                    
-                    % Update the element data structure
-                    elem.side(s).neighbor = obj.element(id);
-                    
-                    % Locate the matching side
-                    obj.match_sides(elem,s);
-                    
-                    % Set the status of the neighbor flag for this element,
-                    % if any side does not have a nieghbor then set the
-                    % on_boundary flag to true for this elment
-                    if isempty(id);
-                        elem.on_boundary = true;
-                        elem.side(s).on_boundary = true;
-                    else
-                        elem.side(s).on_boundary = false;
-                    end   
-                end
-            end
-            
-            % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
-        end 
     end
     
     % Private methods
@@ -549,6 +460,77 @@ classdef FEmesh < handle
                 end
             end
         end
+        
+        % Finds element neighbors   
+        function find_neighbors(obj)
+            % Locates elements that share a side
+            %
+            % Syntax:
+            %   find_neighbors()
+
+            % Display wait message
+            tic;
+            disp('Locating neighbor elements...');
+                        
+            % Loop through elements and store ids of neighboring elements
+            for e = 1:obj.n_elements;
+
+                % Collect necessary data
+                elem = obj.element(e);                  % current element
+                elem_dof = elem.global_dof;             % global dof for this element
+                side_dof = zeros(size(elem.side_dof));  % storage for side dof of this element
+                elem.on_boundary = false;               % initilize on_boundary flag
+                
+                % Loop through the sides of element
+                for s = 1:elem.n_sides
+                    
+                    % Set the local and global dof for the current side
+                    dof = sort(elem.side_dof(s,:));
+                    elem.side(s).dof = dof;
+                    elem.side(s).global_dof = elem_dof(dof);
+
+                    % Collects index of neighbor elements (including corners)
+                    idx = zeros(size(obj.CG_dof_map));
+                    for i = 1:length(side_dof(s,:));
+                        idx = idx + (obj.CG_dof_map == elem.side(s).global_dof(i));
+                    end
+                    idx(obj.map.elem == e) = 0; %exclude current element
+
+                    % Gathers neighbor element ids; a side can have 
+                    % multiple neighbors, this is allowed for adding 
+                    % adaptivity in the future
+                    x = obj.map.elem(logical(idx));
+                    count = zeros(size(x));
+                    for i = 1:length(x);
+                        count(i) = sum(x(i) == x);
+                    end
+
+                    % Identify the shared id's, corners don't count for
+                    % multi-dimensional elements
+                    id = unique(x(count > (obj.n_dim - 1)));
+                    elem.side(s).neighbor = id;
+                    
+                    % Update the element data structure
+                    elem.side(s).neighbor = obj.element(id);
+                    
+                    % Locate the matching side
+                    obj.match_sides(elem,s);
+                    
+                    % Set the status of the neighbor flag for this element,
+                    % if any side does not have a nieghbor then set the
+                    % on_boundary flag to true for this elment
+                    if isempty(id);
+                        elem.on_boundary = true;
+                        elem.side(s).on_boundary = true;
+                    else
+                        elem.side(s).on_boundary = false;
+                    end   
+                end
+            end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+        end 
         
         % Match elem and neighbor side ids
         function match_sides(~, elem, s_e)
@@ -653,9 +635,9 @@ classdef FEmesh < handle
                     % Loop through the sides
                     for s = 1:elem.n_sides;
                         
-                        % If side has no neighbors or boundary ids, assign
-                        % the desired id
-                        if ~elem.side(s).has_neighbor...
+                        % If side is on the boundary and contains no
+                        % boundary ids, assign the desired id
+                        if elem.side(s).on_boundary ...
                                 && isempty(elem.side(s).boundary_id);
                             
                             % Apply the id to the element side data

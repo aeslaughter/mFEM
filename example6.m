@@ -51,7 +51,7 @@ mesh.grid(0,1,0,1,N,N);
 disp(['Mesh generation time: ', num2str(toc), ' sec.']);
 
 % Label the boundaries
-mesh.add_boundary_id(1); % essential boundaries (all)
+mesh.add_boundary(1); % essential boundaries (all)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.

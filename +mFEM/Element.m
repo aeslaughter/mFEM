@@ -20,10 +20,10 @@ classdef Element < handle
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Quad4)
     methods (Abstract, Access = protected)
-        N = basis(obj, varargin)          % basis functions
-        B = grad_basis(obj, varargin)     % basis function derivatives (dN/dx, ...)
+        N = basis(obj, varargin)            % basis functions
+        B = grad_basis(obj, varargin)       % basis function derivatives (dN/dx, ...)
         G = local_grad_basis(obj, varargin) % basis function derivatives (dN/dxi, ...)
-        J = jacobian(obj, varargin)       % the Jacobian matrix for the element
+        J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
     
     % Public properties (read only)
@@ -35,6 +35,7 @@ classdef Element < handle
         n_dof = [];       % no. of global degrees of freedom
         space = 'scalar'; % scalar or vector space [string]
         is_side = false;  % id's the element as a side or not
+        n_dof_node = [];  % no. of dofs per node (scalar = 1; vector = dim)
     end
     
     % Public properties (read only; except FEmesh)
@@ -42,18 +43,16 @@ classdef Element < handle
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         neighbors;                  % list of all neighbor elements (will replace side.neighbor)
-
-        % structure containing side info
-        side = struct('on_boundary', [], 'boundary_id', uint32([]),...
-            'dof', uint32([]), 'global_dof', uint32([]), ...
-            'neighbor', [], 'neighbor_side', uint32([]));          
+        side = ...                  % structure containing side info
+            struct('on_boundary', [], 'boundary_id', uint32([]),...
+                'dof', uint32([]), 'global_dof', uint32([]), ...
+                'neighbor', [], 'neighbor_side', uint32([]));          
     end
     
     % Protected properties
     properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
        global_dof = []; % global dof for nodes of element    
        side_nodes = []; % nodal coord. for side elements, see get_normal
-%       n_dof_node = 1;  % no. of dofs per node 
     end
     
     % Public Methods
@@ -92,18 +91,13 @@ classdef Element < handle
             obj.n_dof = obj.n_nodes;
             if strcmpi(obj.space,'vector');
                 obj.n_dof = obj.n_dof * obj.n_dim;
-                obj.n_dof_node = obj.n_dim;
             end
-            
-%             % Initialize side data structure
-%            	n = obj.n_nodes;
-%             obj.side(n).on_boundary = [];
-%             obj.side(n).boundary_id = uint32([]);
-%             obj.side(n).dof = uint32([]);
-%             obj.side(n).global_dof = uint32([]);
-%             obj.side(n).neighbor = feval([class(obj),'.empty']);
-%             obj.side(n).nieghbor_side = uint32([]);
-%             obj.side(n)
+
+            % Set the number of degrees of freedom per node
+            obj.n_dof_node = 1;
+            if strcmpi(obj.space,'vector');
+                obj.n_dof_node = obj.n_dim;
+            end   
         end
         
         function N = shape(obj, varargin)
@@ -241,7 +235,7 @@ classdef Element < handle
             side.side_nodes = node;
             
             % Override the no. of dofs per node to match the parent element
- %           side.n_dof_node = obj.n_dof_node;
+            side.n_dof_node = obj.n_dof_node;
         end
                
         function dof = get_dof(obj)
@@ -273,41 +267,7 @@ classdef Element < handle
                 error('Element:get_dof', 'Unknown finite elment space, %s, for element %d\n', obj.space, obj.id); 
             end
         end
-        
-        function [s_e, s_n] = match_sides(elem, neighbor)
-            % Returns the sides that match an element and its neighbor
-            
-            % Check that neighbor is a neighbor 
-            if ~any(neighbor == elem.neighbors);
-               error('Element:match_sides', 'The neighbor element (%d) supplied is not a neighbor of the current element (%d)', neighbor.id, elem.id); 
-            end
-            
-            % Extract the global dofs from the element
-            a = elem.nodes;
-            b = neighbor.nodes;
-           
-            % Locate where a & b match
-            [~,ia,ib] = intersect(a,b,'rows','R2012a');
-  
-            % Locate the matching side on the current element
-            C = a(sort(ia),:);
-            for s = 1:elem.n_sides;
-                if isequal(C, elem.nodes(sort(elem.side_dof(s,:)),:));
-                   s_e = s;
-                   break;
-                end
-            end
-            
-            % Locate the matching side on the neighbor element
-            C = b(sort(ib),:);             
-            for s = 1:neighbor.n_sides;
-                if isequal(C, neighbor.nodes(sort(neighbor.side_dof(s,:)),:));
-                   s_n = s;
-                   break;
-                end
-            end  
-        end
-        
+                
         function D = transform_dof(obj, d)
             % Converts the dofs for vector element space
             

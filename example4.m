@@ -10,8 +10,8 @@ mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
 mesh.initialize();
 
 % Label the boundaries
-mesh.add_boundary_id('left', 1);    % essential boundaries
-mesh.add_boundary_id('top', 2);     % distributed load (t = -20)
+mesh.add_boundary('left', 1);    % essential boundaries
+mesh.add_boundary('top', 2);     % distributed load (t = -20)
 
 % Create Gauss objects for performing integration on the element and sides
 q_elem = Gauss(2);
@@ -104,6 +104,3 @@ end
 
 % Display the stress and strain vectors
 strain, stress
-
-% Clean up
-clear classes;

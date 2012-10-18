@@ -79,5 +79,9 @@ classdef Tri3 < mFEM.Element
             B = 1/det(M)*[y(2,3), y(3,1), y(1,2);
                           x(3,2), x(1,3), x(2,1)];
         end
+        
+        function GN = local_grad_basis(obj, varargin)
+            error('Tri3:local_grad_basis', 'Function not defined for the %s element, the B matrix is computed directly.', class(obj));
+        end
     end
 end

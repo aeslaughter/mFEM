@@ -16,9 +16,9 @@ mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
 mesh.initialize();
 
 % Label the boundaries
-mesh.add_boundary_id('top', 1);     % q = 20 boundary
-mesh.add_boundary_id('right', 2);   % q = 0 boundary
-mesh.add_boundary_id(3);            % essential boundaries (all others)
+mesh.add_boundary('top', 1);     % q = 20 boundary
+mesh.add_boundary('right', 2);   % q = 0 boundary
+mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
@@ -116,6 +116,3 @@ end
 
 % Display the flux vectors
 q
-
-% Clean up
-clear classes;

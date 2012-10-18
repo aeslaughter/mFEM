@@ -24,8 +24,8 @@ mesh = FEmesh('Linear2');
 mesh.grid(0,4,nel); % the mesh is initialized automatically with grid function
 
 % Label the boundaries
-mesh.add_boundary_id('left', 1); % T = 0 boundary (essential)    
-mesh.add_boundary_id('right',2); % q = 20 boundary   
+mesh.add_boundary('left', 1); % T = 0 boundary (essential)    
+mesh.add_boundary('right',2); % q = 20 boundary   
 
 % Create Gauss objects for performing integration on the element
 q_elem = Gauss(1);
@@ -140,6 +140,3 @@ plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);
 legend({'Exact','FEM'},'location','best');
 xlabel('x (m)','interpreter','tex');
 ylabel('Temp. Gradient (\circC/m)','interpreter','tex');
-
-% Clean up
-clear classes;

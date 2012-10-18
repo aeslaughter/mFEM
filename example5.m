@@ -17,10 +17,10 @@ mesh.add_element(1/100*[0,0; 2,4; 0,2]);
 mesh.initialize();
 
 % Label the boundaries
-mesh.add_boundary_id('left',1);         % insulated (q = 0)
-mesh.add_boundary_id('right',1);        % insulated (q = 0)
-mesh.add_boundary_id('bottom',2);       % convective (q = h(T - Tinf))
-mesh.add_boundary_id(3);                % essential boundaries (all others)
+mesh.add_boundary('left',1);         % insulated (q = 0)
+mesh.add_boundary('right',1);        % insulated (q = 0)
+mesh.add_boundary('bottom',2);       % convective (q = h(T - Tinf))
+mesh.add_boundary(3);                % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
