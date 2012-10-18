@@ -5,15 +5,13 @@ classdef FEmesh < handle
     properties (SetAccess = private, GetAccess = public)
         n_elements = [];        % no. of elements in mesh [double]
         element;                % empty array of elements [Element]
-        element_type = 'Quad4'; % element type (default is Quad4) [string]
         n_dim = [];             % no. of spatial dimensions [double]
-        type = 'CG';            % FE type ('CG' or 'DG') [string]
-        space = 'scalar';       % 'scalar' or 'vector' space [string]
         n_dof = [];             % total number of global degrees of freedom [double]
         initialized = false;    % initialization state [boolean]
-        
-        % Structure containing node, elem, and dof maps for the mesh 
-        map = struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
+        opt = ...               % struct of default FEmesh user options
+            struct('elment', 'Quad4', 'space', 'scalar', 'type', 'CG');
+        map = ...               % struct  of node, elem, and dof maps 
+            struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary_id', uint32([]));
     end
     
@@ -32,38 +30,44 @@ classdef FEmesh < handle
             % Syntax:
             %   obj = FEmesh()
             %   obj = FEmesh(name)
-            %   obj = FEmesh(name, space)
-            %   obj = FEmesh(name, space, type)
+            %   obj = FEmesh(..., 'PropertyName', PropertyValue)
             %
             % Description:
             %   obj = FEmesh() creates mesh object with default settings,
-            %         equivalent: obj = FEmesh('Quad4','scalar','CG')
+            %         equivalent to: 
+            %           obj = FEmesh('Quad4','Space','scalar','Type','CG')
             %   obj = FEmesh(name) allows the element type to be set
-            %   obj = FEmesh(name, space) allows the type of FEM space
-            %         to be set: 'scalar' or 'vector'
-            %   obj = FEmesh(name, space, type) allows the type of element
-            %         conectivity to be set: 'CG' or 'DG'
+            %   obj = FEmesh(..., 'PropertyName', PropertyValue) allows
+            %           user to customize the behavior of the FE mesh.
+            %
+            % Options:
+            %   'Type' = 'CG' (default) or 'DG'
+            %             allows the type of element conectivity to be set
+            %             as continous (CG) or discontinous (DG)
+            %   'Space' = 'scalar', 'vector', <number>
+            %               allows the type of FEM space to be set: scalar
+            %               sets the number of dofs per node to 1, vector
+            %               sets it to the no. of space dimension, and
+            %               specifing a number sets it to that value.
+            %   'Element' = Any Element subclass (e.g., Quad4)
+            %               allows user to specify the element, this is the
+            %               same as using the name option, if both are set
+            %               this property takes presidnece.
             
             % Add the bin directory
             addpath('./bin');
             
-            % Assign element name
-            if nargin >= 1;
-                obj.element_type = varargin{1};
-            end
-
-            % User provided the FE space ('scalar'(default) or 'vector')
-            if nargin >= 2;
-                obj.space = varargin{2};
+            % Prepare input
+            if mod(nargin,2); % odd
+            	varargin = ['Element', varargin{:}];
             end
             
-            % User provided the FE type ('CG'(default) of 'DG')
-            if nargin == 3;
-                obj.type = varargin{3};
-            end
+            obj.opt
+            % Parse the user-defined options
+            obj.opt = gather_user_options(obj.opt, varargin{:});
             
             % Initialize the element property
-            obj.element = feval(['mFEM.',obj.element_type,'.empty']);
+            obj.element = feval(['mFEM.',obj.opt.element,'.empty']);
         end
         
         % Adds an element to the mesh
