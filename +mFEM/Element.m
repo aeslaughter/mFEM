@@ -86,6 +86,9 @@ classdef Element < handle
             %               sets it to the no. of space dimension, and
             %               specifing a number sets it to that value.
             
+            % Add the bin directory
+            addpath('./bin');
+            
             % Insert required values into object properties
             obj.id = id;
             obj.nodes = nodes;
