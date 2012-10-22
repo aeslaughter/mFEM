@@ -29,12 +29,11 @@ classdef Element < handle
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
         id = [];          % element id [double]
-        nodes = [];       % global coordinates (no. nodes, no. dim) [double]
         n_nodes = [];     % no. of nodes [double]
         n_dim = []        % no. of spatial dimensions [double]
         n_dof = [];       % no. of global degrees of freedom
-        n_dof_node = 1;   % no. of dofs per node (scalar = 1)       
-        is_side = false;  % id's the element as a side or not
+        n_dof_node = 1;   % no. of dofs per node (scalar = 1)  
+        nodes = [];       % global coordinates (no. nodes, no. dim) [double]
         opt = ...         % struct of default user options
             struct('space', 'scalar');
     end
@@ -52,8 +51,7 @@ classdef Element < handle
     % Protected properties
     properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
        global_dof = []; % global dof for nodes of element    
-       side_nodes = []; % nodal coord. for side elements, see get_normal
-    end
+    end    
     
     % Public Methods
     % These methods are accessible by the user to create the element and
@@ -174,18 +172,12 @@ classdef Element < handle
             % variable to give you the position of the point in the real
             % x,y,z coordinate system.
            
-            % Initialize the output
-            varargout = cell(obj.n_dim);
+            % The number of spatial dimensions available
+            n = obj.n_dim;
             
-            % Determine the nodes based on if the element is a side or not
-            if obj.is_side;
-                n = obj.n_dim + 1;
-                node = obj.side_nodes;
-            else
-                n = obj.n_dim;
-                node = obj.nodes;
-            end
-
+            % Initialize the output
+            varargout = cell(n);
+            
             % Loop through the dimensions and return the desired position
             for i = 1:n;
                varargout{i} = obj.shape(varargin{:})*node(:,i); 
@@ -195,17 +187,12 @@ classdef Element < handle
         
         function n = get_normal(obj, varargin)
             % Returns the normal vector at a given xi, eta, ...
-            %
-            % The element must be a side element created with build_side
-            % of a parent element for this function to be used.
-           
-            % Throw an error if the element is not a side
-            if ~obj.is_side;
-                error('Element:get_normal', 'Function only available for side elements');
-            end
             
-            % 1D: Side is defined by a line
-            if obj.n_dim == 1;
+            % The number of spatial dimensions available
+            n = obj.n_dim; 
+            
+            % 2D: Side is defined by a line
+            if n == 2;
                 % Compute the tangent at the point
                 n = obj.local_grad_basis(varargin{:}) * obj.side_nodes;
                 
@@ -213,13 +200,13 @@ classdef Element < handle
                 % element face is positive)
                 n = [n(2), -n(1)]/norm(n);
 
-            % 2D: Side is defined by a plane    
-            elseif obj.n_dim == 2;
+            % 3D: Side is defined by a plane    
+            elseif n == 3;
                 error('Element:get_normal', 'Not yet supported');
                 
             % Only defined for 1D and 2D sides
             else
-                error('Element:get_normal', 'Not defined for %d-D side element', obj.n_dim);
+                error('Element:get_normal', 'Not defined for an element with %d spatial coordinates', n);
             end 
         end
                 
@@ -233,55 +220,53 @@ classdef Element < handle
             % Extract the nodes for the side
             dof = obj.side_dof(id,:);
             node = obj.nodes(dof,:);
-            
-            % Create a map to the line/plane
-            mapped = zeros(size(node,2),1);
-            for i = 2:size(node,1);
-                mapped(i,:) = norm(node(i,:) - node(1,:));
-            end
-            
-            % Create the side element, the FE space of side must be set
-            % to be the same as the parent element
-            side = feval(['mFEM.',obj.side_type], NaN, mapped,...
+                       
+            % Create the side element
+            side = feval(['mFEM.',obj.side_type], NaN, node,...
                 'Space', obj.n_dof_node);
             
-            % Indicate that the element created was a side
-            side.is_side = true;
-            
-            % Store the actual coordinates in the side element
-            side.side_nodes = node;
+            % Set the global dofs
+            side.global_dof = obj.global_dof(dof);
         end
                
-        function dof = get_dof(obj)
+        function dof = get_dof(obj, varargin)
             % The global degrees of freedom, account for type of space
+            %
+            % Syntax:
+            %   get_dof()
+            %   get_dof(s)
+            %   get_dof(s,'global')
+            % 
+            % Description:            
+            %   get_dof() returns GLOBAL dofs for the element
+            %   get_dof(s) returns LOCAL dofs for the side s
+            %   get_dof(s,'global') returns GLOBAL dofs for the side s
             
-            % Scalar FE space
-            if obj.n_dof_node == 1;
-                dof = obj.global_dof; 
-            
-            % Non-scalar fields
-            else
-                dof = obj.transform_dof(obj.global_dof);
-            end
-        end  
-        
-        function dof = get_side_dof(obj, s)
-            % Extract the local dofs for the specified side
-           
-            % Scalar FE space
-            if obj.n_dof_node == 1;
-                dof = obj.side(s).dof;
-
-            % Non-scalar FE space
-            else 
-                dof = obj.transform_dof(obj.side(s).dof);
-            end
-        end
+            % Determine the type of dof to return
+            if nargin == 1; % global for entire element
+                dof = obj.global_dof;
                 
+            elseif nargin == 2; % local for  side
+                s = varargin{1};
+                dof = obj.side_dof(s,:);
+                
+            elseif nargin == 3 && strcmpi(varargin{2},'global');
+                s = varargin{1};
+                dof = obj.side_dof(s,:);
+                dof = obj.global_dof(dof);
+            end
+            
+            % Non-scalar FE space
+            if obj.n_dof_node > 1;
+                dof = obj.transform_dof(dof);
+            end
+
+        end  
+                        
         function D = transform_dof(obj, d)
             % Converts the dofs for vector element space
             
-            n = obj.n_dim;              % no. of dimensions
+            n = obj.n_dof_node;         % no. of dofs per node
             D = zeros(n*length(d),1);   % size of vector space dofs
             
             % Loop through dimensions and build vector

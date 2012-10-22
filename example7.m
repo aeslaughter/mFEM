@@ -1,0 +1,137 @@
+% A transient heat transfer example
+%
+% Syntax:
+%   example7
+%   example7(N)
+%
+% Description:
+%   example7 same as example6, but uses the Matrix class.
+%
+%   example7(N) specifies the number of division in the mesh, the default
+%   is 32, which creats a 32x32 element mesh.
+
+function example7(varargin)
+
+% Determine the number of elements to divide the mesh into
+N = 32;
+if nargin >= 1 && isnumeric(varargin{1});
+    N = ceil(varargin{1});
+end
+
+% Import the mFEM library
+import mFEM.*;
+
+% Create a FEmesh object, add the single element, and initialize it
+tic;
+mesh = FEmesh('Quad4');
+mesh.grid(0,1,0,1,N,N);
+
+% Display time for mesh creation
+disp(['Mesh generation time: ', num2str(toc), ' sec.']);
+
+% Label the boundaries
+mesh.add_boundary(1); % essential boundaries (all)
+
+% Create Gauss objects for performing integration on the element and
+% elements sides.
+q_elem = Gauss(2,'quad');
+[qp, W] = q_elem.rules();
+
+% Problem specifics
+D = 1 / (2*pi^2);           % thermal conductivity
+theta = 0.5;                % numerical intergration parameter
+dt = 0.1;                   % time-step
+
+% Initialize storage
+M = Matrix();
+K = Matrix();
+
+% Create mass and stiffness matrices by looping over elements
+tic;
+for e = 1:mesh.n_elements;
+
+    % Extract the current element from the mesh object
+    elem = mesh.element(e);
+    
+    % Define short-hand function handles for the element shape functions
+    % and shape function derivatives
+    B = @(xi,eta) elem.shape_deriv(xi, eta);
+    N = @(xi,eta) elem.shape(xi,eta);
+
+    % Initialize the local matrices and vector
+    Me = zeros(elem.n_dof);     % mass matrix
+    Ke = zeros(elem.n_dof);     % stiffness matrix
+    
+    % Loop over the quadrature points in the two dimensions to perform the
+    % numeric integration
+    for i = 1:length(qp);
+        for j = 1:length(qp);
+            Me = Me + W(i)*N(qp(i),qp(j))'*N(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
+            Ke = Ke + W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
+        end
+    end
+    
+    % Add the local to global
+    dof = elem.get_dof();
+    M.add_matrix(Me, dof);
+    K.add_matrix(Me, dof);
+end
+
+% Initialize the sparse matrices (these method deletes the Matrix objects)
+K = K.build();
+M = M.build();
+
+% Print assembly time
+disp(['Matrix assembly time: ', num2str(toc), ' sec.']);
+
+% Define dof indices for the essential dofs and non-essential dofs
+non = mesh.get_dof(1,'ne'); 
+ess = mesh.get_dof(1);      
+
+% Initialize the temperatures
+T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
+nodes = mesh.get_nodes();
+T = T_exact(nodes(:,1),nodes(:,2),0);
+
+% Collect the node positions for applying the essential boundary conditions
+x = nodes(:,1);
+y = nodes(:,2);
+
+% Plot the initial condition
+figure; hold on;
+mesh.plot(T);
+title('t = 0');
+xlabel('x');
+ylabel('y');
+cbar = colorbar;
+set(get(cbar,'YLabel'),'String','Temperature');
+
+% Compute residual for non-essential boundaries, the mass matrix does not
+% contribute because the dT/dt = 0 on the essential boundaries. This
+% problem also does not have a force term.
+R(:,1) = - K(non,ess)*T(ess);
+
+% Use a general time integration scheme
+K_hat = M(non,non) + theta*dt*K(non,non);
+f_K   = M(non,non) - (1-theta)*dt*K(non,non);
+
+% Perform 10 time-steps
+for t = dt:dt:1;
+
+    % Compute the force componenet using previous time step T
+    f_hat = dt*R + f_K*T(non);
+
+    % Solve for non-essential boundaries
+    T(non) = K_hat\f_hat;
+    
+    % Set values for the essential boundary conditions the next time step 
+    T(ess) = T_exact(x(ess), y(ess), t);
+
+    % Plot the results
+    pause(0.5);
+    mesh.plot(T);
+    title(['t = ', num2str(t)]);
+end
+
+% Clean up
+delete(mesh);

@@ -17,7 +17,7 @@ classdef Tri3 < mFEM.Element
         n_sides = 3;                % no. of sides
         lims = [0,1];               % limits of xi1 and xi2        
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
-        side_type = 'Linear2';      % uses 2-node linear element for sides
+        side_type = 'Truss2';       % 2-node Truss element for side
     end
     
     % Define the Quad4 constructor

@@ -12,10 +12,10 @@ classdef Quad4 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_sides = 4; % no. of sides
-        lims = [-1, 1]; % limits of xi and eta
-        side_dof = [1,2; 2,3; 3,4; 4,1]; % define the side dofs 
-        side_type = 'Linear2'; % uses 2-node linear element for sides
+        n_sides = 4;                        % no. of sides
+        lims = [-1, 1];                     % limits of xi and eta
+        side_dof = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
+        side_type = 'Truss2';               % side is 2-node truss element
      end
     
     % Define the Quad4 constructor
@@ -55,7 +55,6 @@ classdef Quad4 < mFEM.Element
         
         function GN = local_grad_basis(~, xi, eta)
             % Returns gradient, in xi and eta, of the shape functions
-            
             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
                       xi-1, -xi-1, 1+xi, 1-xi];
         end

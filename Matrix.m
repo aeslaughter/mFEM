@@ -4,9 +4,9 @@ classdef Matrix < handle
       I;
       J;
       Aij;
-      m;
-      n;
-      
+      m
+      n
+      initialized = false;
    end
    
    methods
@@ -20,37 +20,38 @@ classdef Matrix < handle
            else
                disp('error');
            end
-%            
-
+           
+         %  obj.A = sparse(obj.m, obj.n, 
+           
            
          
        end
        
-%        function varargout = size(obj, dim)
-% 
-%            if nargin == 1 && nargout <= 1;
-%                if nargout == 0;
-%                    [obj.m, obj.n]
-%                else
-%                     varargout{1} = [obj.m, obj.n];
-%                end
-%                
-%            elseif nargin == 1 && nargout == 2;
-%                varargout{1} = obj.m;
-%                varargout{2} = obj.n;
-%                
-%            elseif nargin == 2 && nargout <= 1;
-%                 out = [obj.m, obj.n];
-%                 
-%                 if nargout == 0;
-%                     out(dim)
-%                 else
-%                     varargout{1} = out(dim);
-%                 end
-%            else
-%                disp('error...');
-%            end
-%        end
+       function varargout = size(obj, dim)
+
+           if nargin == 1 && nargout <= 1;
+               if nargout == 0;
+                   [obj.m, obj.n]
+               else
+                    varargout{1} = [obj.m, obj.n];
+               end
+               
+           elseif nargin == 1 && nargout == 2;
+               varargout{1} = obj.m;
+               varargout{2} = obj.n;
+               
+           elseif nargin == 2 && nargout <= 1;
+                out = [obj.m, obj.n];
+                
+                if nargout == 0;
+                    out(dim)
+                else
+                    varargout{1} = out(dim);
+                end
+           else
+               disp('error...');
+           end
+       end
        
        function add_matrix(obj, B, varargin)
            
@@ -79,12 +80,10 @@ classdef Matrix < handle
 
        end
        
-       function A = build(obj)
-
-            	A = sparse(obj.I, obj.J, obj.Aij);
-
+       function A = init(obj)
+           A = sparse(obj.I, obj.J, obj.Aij);
+           obj.initialized = true;
        end
-       
        
 
        

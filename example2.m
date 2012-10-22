@@ -70,7 +70,7 @@ for e = 1:mesh.n_elements;
         if elem.side(s).boundary_id == 1;
             side = elem.build_side(s);
             for i = 1:length(qp_side);
-                dof = elem.side(s).dof; % local dofs for the current side
+                dof = elem.get_dof(s); % local dofs for the current side
                 fe(dof) = fe(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ();              
             end
             delete(side)

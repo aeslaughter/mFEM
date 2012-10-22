@@ -1,5 +1,5 @@
-classdef Linear2 < mFEM.Element
-    % A 2-node 1D linear element
+classdef Truss2 < mFEM.Element
+    % A 2-node 1D linear element, but located in 2D space
     %
     %      (-1)   (1)   (1)
     %         1---------2
@@ -15,12 +15,12 @@ classdef Linear2 < mFEM.Element
     
     % Define the Linear2 constructor
     methods 
-        function obj = Linear2(id, nodes, varargin)
+        function obj = Truss2(id, nodes, varargin)
            % Class constructor; calls base class constructor
            
            % Test that nodes is sized correctly
-           if ~all(size(nodes) == [2,1]);
-                error('Linear2:Linear2','Nodes not specified correctly; expected a [2 x 1] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
+           if ~all(size(nodes) == [2,2]);
+                error('Truss2:Truss2','Nodes not specified correctly; expected a [2x2] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Call the base class constructor
@@ -41,7 +41,7 @@ classdef Linear2 < mFEM.Element
             
             % grad(B) is constant, produce a warning for agruements
             if nargin > 1;
-                warning('Tri3:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
+                warning('Truss2:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
             end
             
             % Proper gradient
@@ -53,15 +53,15 @@ classdef Linear2 < mFEM.Element
             
             % The Jacobian is constant, produce a warning for agruements
             if nargin > 1;
-                warning('Tri3:jacobian', 'The Jacobian for the Linear2 element is constant, thus no spatial coordinates are needed.');
+                warning('Truss2:jacobian', 'The Jacobian for the Truss2 element is constant, thus no spatial coordinates are needed.');
             end
 
-            % Return the Jacobian matrix
-            J = obj.local_grad_basis*obj.nodes;                 
+            % Return the Jacobian matrix (1/2 the length)
+            J = 1/2 * norm(obj.nodes);               
         end
         
-        function GN = local_grad_basis(obj, varargin)
-            GN = [-1/2, 1/2];
+        function G = local_grad_basis(obj, varargin)
+            G = [-1/2, 1/2];
         end
     end
 end

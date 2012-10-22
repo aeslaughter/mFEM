@@ -8,15 +8,24 @@ function example8
 %         load('example8.mat');
 %     else
         mesh = FEmesh('Quad4','Type','DG');
-        mesh.grid(0,1,0,1,10,10);
+        mesh.grid(0,1,0,1,1,1);
         save('example8.mat','mesh');
 %    end
 
-    % Initialize
-    y0 = d_0(mesh.map.node(:,1), mesh.map.node(:,2));
-    mesh.plot(y0);
 
     M = mass_matrix(mesh);  % inverse of mass matrix
+    
+    K = stiffness_matrix(mesh,0);
+    full(K)
+    
+    
+        return;
+        
+        
+      % Initialize
+    y0 = d_0(mesh.map.node(:,1), mesh.map.node(:,2));
+    mesh.plot(y0);
+  
 
     dt = 0.001;
 
@@ -103,27 +112,27 @@ for e = 1:mesh.n_elements;
                 n = side_e.get_normal(qps(i));
 
                 if dot(v,n) >= 0;
-                    Ken(de,dn) = Ken(de,dn) + dot(n,n_ref)*Ws(i)*Np(qps(i))'*Nm(qps(i))*dot(v,n)*side_e.detJ();
-                    Knn(dn,dn) = Knn(dn,dn) + dot(n,n_ref)*Ws(i)*Nm(qps(i))'*Nm(qps(i))*dot(v,n)*side_e.detJ();
+                    Ken(de,dn) = Ken(de,dn) - dot(n,n_ref)*Ws(i)*Np(qps(i))'*Nm(qps(i))*dot(v,n)*side_e.detJ();
+                    Knn(dn,dn) = Knn(dn,dn) - dot(n,n_ref)*Ws(i)*Nm(qps(i))'*Nm(qps(i))*dot(v,n)*side_e.detJ();
                 else
-                    Kne(dn,de) = Kne(dn,de) + dot(n,n_ref)*Ws(i)*Nm(qps(i))'*Np(qps(i))*dot(v,n)*side_e.detJ();
-                    Kee(de,de) = Kee(de,de) + dot(n,n_ref)*Ws(i)*Np(qps(i))'*Np(qps(i))*dot(v,n)*side_e.detJ();  
+                    Kne(dn,de) = Kne(dn,de) - dot(n,n_ref)*Ws(i)*Nm(qps(i))'*Np(qps(i))*dot(v,n)*side_e.detJ();
+                    Kee(de,de) = Kee(de,de) - dot(n,n_ref)*Ws(i)*Np(qps(i))'*Np(qps(i))*dot(v,n)*side_e.detJ();  
                 end
             end
 
             De = elem.get_dof();
             Dn = neighbor.get_dof();
             
-            K.add_matrix(Kee, De, De);
-            K.add_matrix(Ken, De, Dn);
-            K.add_matrix(Kne, Dn, De);
-            K.add_matrix(Knn, Dn, Dn);
+%             K.add_matrix(Kee, De, De);
+%             K.add_matrix(Ken, De, Dn);
+%             K.add_matrix(Kne, Dn, De);
+%             K.add_matrix(Knn, Dn, Dn);
        end
    end 
 end
 
 % Compl
-K = K.build();
+K = K.init();
 
 
 disp(['   ...completed in ',num2str(toc),' sec.']);
@@ -160,10 +169,10 @@ parfor e = 1:mesh.n_elements;
    end
 
    De = elem.get_dof;
-   M.add_matrix(inv(Me), De);
+   M.add_matrix(Me, De);
 end
 
-M = M.build();
+M = M.init();
 
 
 end
