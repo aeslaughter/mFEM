@@ -2,7 +2,10 @@ function test
 
 import mFEM.*
 
-elem = Tri6(1,[0,0; 1,0; 0,1]);
+K = Matrix(6,7);
 
-N = elem.shape(0.5,0.5);
-B = elem.shape_deriv(0.5,0.5)
+K.add_matrix([22,24; 42,44], [2,4], [2,5]);
+
+K = K.build();
+
+full(K)

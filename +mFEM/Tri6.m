@@ -25,7 +25,7 @@ classdef Tri6 < mFEM.Element
         side_type = 'Linear2';      % uses 2-node linear element for sides
     end
     
-    % Define the Quad4 constructor
+    % Define the Tri6 constructor
     methods
         function obj = Tri6(id, nodes, varargin)
            % Class constructor; calls base class constructor
@@ -39,7 +39,7 @@ classdef Tri6 < mFEM.Element
            if all(size(nodes) == [3,2])
                nodes(4,:) = mean(nodes(1:2,:));
                nodes(5,:) = mean(nodes(2:3,:));
-               nodes(6,:) = mesh(nodes([3,1],:));
+               nodes(6,:) = mean(nodes([3,1],:));
            end
 
            % Call the base class constructor
@@ -99,14 +99,18 @@ classdef Tri6 < mFEM.Element
             Jx13 = xx(1,3) + 4*(Dx6*(xi3-xi1) + (Dx4-Dx5)*xi2);
             Jy12 = yy(1,2) + 4*(Dy4*(xi2-xi1) + (Dy6-Dy5)*xi3);
             Jy23 = yy(2,3) + 4*(Dy5*(xi3-xi2) + (Dy4-Dy6)*xi1);
-            Jy31 = yy(3,1) + 4*(Dy6*(xi1-xi3) + (Dy5-Dy4)*xi2);
+            Jy31 = yy(3,1) + 4*(Dy6*(xi1-xi3) + (Dy5-Dy4)*xi2);  
+            
+             J = 1/2*obj.detJ(xi1, xi2);
             
             B(:,1) = [(4*xi1-1)*Jy23, (4*xi1-1)*Jx32];
             B(:,2) = [(4*xi2-1)*Jy31, (4*xi2-1)*Jx13];   
             B(:,3) = [(4*xi3-1)*Jy12, (4*xi3-1)*Jx21];
             B(:,4) = [4*(xi2*Jy23+xi1*Jy31), 4*(xi2*Jx32+xi1*Jx13)];
             B(:,5) = [4*(xi3*Jy31+xi2*Jy12), 4*(xi3*Jx13+xi2*Jx21)]; 
-            B(:,6) = [4*(xi1*Jy12+xi3*Jy23), 4*(xi1*Jx21+xi3*Jx32)];              
+            B(:,6) = [4*(xi1*Jy12+xi3*Jy23), 4*(xi1*Jx21+xi3*Jx32)];  
+            
+            B = 1/(2*J)*B;
         end
         
         function GN = local_grad_basis(~, varargin)

@@ -313,10 +313,10 @@ classdef FEmesh < handle
             switch obj.opt.element;
                 case 'Linear2';
                     obj.gen1Dgrid(varargin{:});
-                case 'Quad4';
+                case {'Quad4', 'Tri3', 'Tri6'};
                     obj.gen2Dgrid(varargin{:});
                 otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.element_type);
+                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.opt.element);
             end
             
             % Complete message
@@ -496,7 +496,7 @@ classdef FEmesh < handle
                         case {'Quad4'};
                             obj.add_element(nodes);
                             
-                        case {'Tri3'};
+                        case {'Tri3', 'Tri6'};
                             obj.add_element(nodes(1:3,:));
                             obj.add_element(nodes([1,3,4],:));
                     end
