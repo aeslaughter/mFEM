@@ -128,8 +128,8 @@ end
 % be created using the I,J,Mij,Kij vectors
 if alt;
     % Assemble sparse matrices
-    % M = sparse(I,J,Mij);
-    % K = sparse(I,J,Kij);
+    M = sparse(I,J,Mij);
+    K = sparse(I,J,Kij);
 end
 
 % Print assembly time

@@ -3,13 +3,17 @@ profile on;
 import mFEM.*
 
 mesh = FEmesh('Quad4');
-mesh.grid(0,1,0,1,5,5);
+mesh.grid(0,1,0,1,100,100);
+% mesh.plot()
+% profile viewer
 
-elem = mesh.element(1);
-elem. hmax()
 
-% e = 1;
+% 
+% 
+% e = 5;
+% elem = mesh.element(e);
 % for i = 1:4;
+%     elem.side(i).neighbor.id
 %     elem.side(i)
 % end
 

@@ -25,9 +25,6 @@ classdef Truss2 < mFEM.Element
            
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
-           
-           % Indicate that the local dimension is different from spatial
-           obj.local_dim = 1;
         end
         
         % Define the size function

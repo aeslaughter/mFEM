@@ -80,7 +80,7 @@ for e = 1:mesh.n_elements;
     for s = 1:elem.n_sides; 
         if elem.side(s).boundary_id == 2;
             xi = elem.lims(elem.get_dof(s));    % xi value to evaluate at
-            fe = fe + -q_bar*A*N(xi)';              
+            fe = fe + -q_bar*A*N(xi)';  
         end
     end   
     

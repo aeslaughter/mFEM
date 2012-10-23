@@ -11,6 +11,7 @@ classdef Linear2 < mFEM.Element
         lims = [-1,1];              % limits xi
         side_dof = [1; 2];          % local dofs of the "sides"
         side_type = '';             % 1D elements do not have side elements
+        quad = mFEM.Gauss(1);       % Instance of Gauss quadrature class
     end
     
     % Define the Linear2 constructor
@@ -40,9 +41,9 @@ classdef Linear2 < mFEM.Element
             % Gradient of shape functions
             
             % grad(B) is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Tri3:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
-            end
+%             if nargin > 1;
+%                 warning('Tri3:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
+%             end
             
             % Proper gradient
             B = inv(obj.jacobian()) * obj.local_grad_basis;
@@ -52,9 +53,9 @@ classdef Linear2 < mFEM.Element
             % Returns the jacobian matrix  
             
             % The Jacobian is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Tri3:jacobian', 'The Jacobian for the Linear2 element is constant, thus no spatial coordinates are needed.');
-            end
+%             if nargin > 1;
+%                 warning('Tri3:jacobian', 'The Jacobian for the Linear2 element is constant, thus no spatial coordinates are needed.');
+%             end
 
             % Return the Jacobian matrix
             J = obj.local_grad_basis*obj.nodes;                 

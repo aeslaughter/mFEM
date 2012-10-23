@@ -14,7 +14,7 @@ classdef Element < handle
       n_sides;      % no. of sides
       lims;         % limits of local coordinate; assumes all vary the same
       side_dof;     % array of local node ids for each side
-      side_type;    % defines the type of element that defines the sides.
+      side_type;    % defines the type of element that defines the sides
     end
     
     % Abstract Methods (protected)
@@ -25,18 +25,12 @@ classdef Element < handle
         G = local_grad_basis(obj, varargin) % basis function derivatives (dN/dxi, ...)
         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
-    
-%     % Abstract Methods (public)
-%     methods (Abstract, Access = public)
-%        A = size(obj);   % returns element length, area, volume, etc. 
-%     end
-    
+        
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
         id = uint32([]);          % element id [double]
         n_nodes = uint32([]);     % no. of nodes [double]
         n_dim = uint32([]);       % no. of spatial dimensions
-%         local_dim = uint32([]);   % no. of local dims (defaults to n_dim)
         n_dof = uint32([]);       % no. of global degrees of freedom
         n_dof_node = uint32(1);   % no. of dofs per node (scalar = 1)  
         nodes = [];               % global coordinates (no. nodes, no. dim)
@@ -90,7 +84,6 @@ classdef Element < handle
             obj.id = id;
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
-%             obj.local_dim = obj.n_dim;
 
             % Change dofs per node
             if nargin == 3 && strcmpi(varargin{1},'vector');
@@ -272,7 +265,9 @@ classdef Element < handle
                 D(i:n:end) = d*n - (n-i);
             end 
         end
-        
+    end
+    
+    methods (Access = private)
         function d = distance(obj)
             % Compute distances between all points
            
