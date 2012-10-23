@@ -12,7 +12,7 @@ classdef Element < handle
     % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public) 
       n_sides;      % no. of sides
-      lims;         % limits of local coordinate; assumesall dim. vary the same
+      lims;         % limits of local coordinate; assumes all vary the same
       side_dof;     % array of local node ids for each side
       side_type;    % defines the type of element that defines the sides.
     end
@@ -26,14 +26,17 @@ classdef Element < handle
         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
     
-    
-    
+%     % Abstract Methods (public)
+%     methods (Abstract, Access = public)
+%        A = size(obj);   % returns element length, area, volume, etc. 
+%     end
     
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
         id = uint32([]);          % element id [double]
         n_nodes = uint32([]);     % no. of nodes [double]
-        n_dim = uint32([]);       % no. of spatial dimensions [double]
+        n_dim = uint32([]);       % no. of spatial dimensions
+%         local_dim = uint32([]);   % no. of local dims (defaults to n_dim)
         n_dof = uint32([]);       % no. of global degrees of freedom
         n_dof_node = uint32(1);   % no. of dofs per node (scalar = 1)  
         nodes = [];               % global coordinates (no. nodes, no. dim)
@@ -87,6 +90,7 @@ classdef Element < handle
             obj.id = id;
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
+%             obj.local_dim = obj.n_dim;
 
             % Change dofs per node
             if nargin == 3 && strcmpi(varargin{1},'vector');
@@ -140,15 +144,20 @@ classdef Element < handle
             end
         end
         
+        function L = hmax(obj)
+            % Return maximum length between ANY two points
+            L = max(obj.distance());
+        end
+        
+        function L = hmin(obj)
+            % Return maximum length between ANY two points
+            L = min(obj.distance());
+        end
+            
         function J = detJ(obj, varargin)
             % Returns the determinate of the jacobian matrix
             J = det(obj.jacobian(varargin{:}));
         end 
-        
-        function A = size(obj)
-            % Length, area, volume of element
-            A = product(diff(obj.nodes));
-        end
         
         function varargout = get_position(obj, varargin)
             % Returns the real coordinates given xi, eta, ...
@@ -262,6 +271,20 @@ classdef Element < handle
             for i = 1:n;
                 D(i:n:end) = d*n - (n-i);
             end 
+        end
+        
+        function d = distance(obj)
+            % Compute distances between all points
+           
+            d = zeros(factorial(obj.n_nodes-1),1);
+            k = 0;
+            for i = 1:obj.n_nodes;
+                for j = i+1:obj.n_nodes;
+                    k = k + 1;
+                    d(k) = norm(obj.nodes(i,:) - obj.nodes(j,:));
+                end
+            end
+
         end
     end
 end

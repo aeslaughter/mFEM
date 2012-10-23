@@ -25,6 +25,14 @@ classdef Truss2 < mFEM.Element
            
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+           
+           % Indicate that the local dimension is different from spatial
+           obj.local_dim = 1;
+        end
+        
+        % Define the size function
+        function L = size(obj)
+        	L = norm(obj.nodes);   
         end
     end
     
@@ -57,7 +65,7 @@ classdef Truss2 < mFEM.Element
             end
 
             % Return the Jacobian matrix (1/2 the length)
-            J = 1/2 * norm(obj.nodes);               
+            J = 1/2 * obj.size();               
         end
         
         function G = local_grad_basis(obj, varargin)
