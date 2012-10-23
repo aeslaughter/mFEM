@@ -35,7 +35,7 @@ end
 
 % Specify the type of assembly to use
 alt = false;
-if nargin >= 1 && ishcar(varargin{end}) && strcmpi(varargin{end},'alt');
+if nargin >= 1 && ischar(varargin{end}) && strcmpi(varargin{end},'alt');
     alt = true;
 end
 

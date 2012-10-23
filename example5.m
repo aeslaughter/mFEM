@@ -130,6 +130,3 @@ end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
 T(ix,:)'
-
-% Clean up
-clear classes;

@@ -34,8 +34,6 @@ classdef Element < handle
         n_dof = uint32([]);       % no. of global degrees of freedom
         n_dof_node = uint32(1);   % no. of dofs per node (scalar = 1)  
         nodes = [];               % global coordinates (no. nodes, no. dim)
-        opt = ...                 % struct of default user options
-            struct('space', 'scalar');
     end
     
     % Public properties (read only; except FEmesh)
@@ -43,9 +41,7 @@ classdef Element < handle
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         neighbor = struct([]);      % struct of neighboring element info
-        side;% = ...                % side info (see constructor)
-           % struct('on_boundary', [], 'boundary_id', uint32([]),...
-           %     'dof', uint32([]), 'global_dof', uint32([]));          
+        side = struct([]);          % side info         
     end
     
     % Protected properties
@@ -73,7 +69,7 @@ classdef Element < handle
             %       nodes: matrix of node coordinates (global), should be 
             %              arranged as column matrix [no. nodes x no. dims]
             %
-            %   Element(id, nodes, n_dof_node) allows
+            %   Element(id, nodes, space) allows the user to
             %       customize the behavior of the element, the available
             %       properties are listed below.
             %
@@ -90,7 +86,9 @@ classdef Element < handle
             [obj.n_nodes, obj.n_dim] = size(nodes);
 
             % Change dofs per node
-            if nargin == 3;
+            if nargin == 3 && strcmpi(varargin{1},'vector');
+                obj.n_dof_node = obj.n_dim;  
+            elseif nargin == 3 && isnumeric(varargin{1});
             	obj.n_dof_node = varargin{1};
             end   
             
@@ -207,8 +205,7 @@ classdef Element < handle
             node = obj.nodes(dof,:);
                        
             % Create the side element
-            side = feval(['mFEM.',obj.side_type], NaN, node,...
-                'Space', obj.n_dof_node);
+            side = feval(['mFEM.',obj.side_type], NaN, node, obj.n_dof_node);
             
             % Set the global dofs
             side.global_dof = obj.global_dof(dof);
@@ -240,12 +237,11 @@ classdef Element < handle
                 dof = obj.side_dof(s,:);
                 dof = obj.global_dof(dof);
             end
-            
+
             % Non-scalar FE space
             if obj.n_dof_node > 1;
                 dof = obj.transform_dof(dof);
             end
-
         end  
                         
         function D = transform_dof(obj, d)

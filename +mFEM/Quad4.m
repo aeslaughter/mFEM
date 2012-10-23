@@ -25,7 +25,7 @@ classdef Quad4 < mFEM.Element
            
            % Test that nodes is sized correctly
            if ~all(size(nodes) == [4,2]);
-                error('Quad4:Quad4','Nodes not specified correctly; expected a [4 x 2] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
+                error('Quad4:Quad4','Nodes not specified correctly; expected a [4x2] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Call the base class constructor

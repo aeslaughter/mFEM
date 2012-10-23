@@ -64,7 +64,7 @@ classdef FEmesh < handle
             
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
-            
+                     
             % Initialize the element property
             obj.element = feval(['mFEM.',obj.opt.element,'.empty']);
         end
@@ -93,17 +93,10 @@ classdef FEmesh < handle
             
             % Add the element(s)
             id = length(obj.element) + 1;
-            
-            % Parse the space option
-            if strcmpi(obj.opt.space,'vector');
-                obj.n_dof_node = obj.n_dim;
-            elseif isnumeric(obj.opt.space);
-                obj.n_dof_node = obj.opt.space;
-            end
-            
+
             % Create the element
             obj.element(id) = feval(['mFEM.', obj.opt.element],...
-                id, nodes, obj.n_dof_node);
+                id, nodes, obj.opt.space);
             
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;
@@ -219,7 +212,6 @@ classdef FEmesh < handle
                for s = 1:elem.n_sides;
                    dof_s = sort(elem.global_dof(elem.side_dof(s,:)));
                    if all(dof_s == dof)
-                       disp('on boundary')
                        elem.side(s).on_boundary = true;                       
                        elem.side(s).boundary_id = id;
                    end
@@ -564,9 +556,10 @@ classdef FEmesh < handle
                         
                     % If no neighbor, then it is a boundary    
                     else
+                        elem.on_boundary = true;
                         elem.side(s).on_boundary = true;
                         elem.side(s).boundary_id = 0;
-                        elem.side(s).neighbor = feval([class(elem),'.empty']);
+                        elem.side(s).neighbor = [];
                         elem.side(s).neighbor_dof = uint32([]);
                     end
                 end   
@@ -677,11 +670,11 @@ classdef FEmesh < handle
                     
                     % Loop through the sides
                     for s = 1:elem.n_sides;
-                        
+
                         % If side is on the boundary and contains no
                         % boundary ids, assign the desired id
                         if elem.side(s).on_boundary ...
-                                && isempty(elem.side(s).boundary_id);
+                                && elem.side(s).boundary_id == 0;
                             
                             % Apply the id to the element side data
                             elem.side(s).boundary_id = id;

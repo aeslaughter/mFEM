@@ -116,6 +116,3 @@ end
 
 % Display the flux vectors
 q
-
-% Clean up
-clear classes;
