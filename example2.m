@@ -84,6 +84,7 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
+mesh.map.boundary_id
 non = mesh.get_dof(3,'ne'); % 4
 ess = mesh.get_dof(3);      % 1,2,3
 

@@ -28,13 +28,13 @@ classdef Element < handle
     
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
-        id = [];          % element id [double]
-        n_nodes = [];     % no. of nodes [double]
-        n_dim = []        % no. of spatial dimensions [double]
-        n_dof = [];       % no. of global degrees of freedom
-        n_dof_node = 1;   % no. of dofs per node (scalar = 1)  
-        nodes = [];       % global coordinates (no. nodes, no. dim) [double]
-        opt = ...         % struct of default user options
+        id = uint32([]);          % element id [double]
+        n_nodes = uint32([]);     % no. of nodes [double]
+        n_dim = uint32([]);       % no. of spatial dimensions [double]
+        n_dof = uint32([]);       % no. of global degrees of freedom
+        n_dof_node = uint32(1);   % no. of dofs per node (scalar = 1)  
+        nodes = [];               % global coordinates (no. nodes, no. dim)
+        opt = ...                 % struct of default user options
             struct('space', 'scalar');
     end
     
@@ -42,10 +42,10 @@ classdef Element < handle
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        side = ...                  % structure containing side info
-            struct('on_boundary', [], 'boundary_id', uint32([]),...
-                'dof', uint32([]), 'global_dof', uint32([]), ...
-                'neighbor', [], 'neighbor_side', uint32([]));          
+        neighbor;                   % list of neighboring element ids
+        side;% = ...                % side info (see constructor)
+           % struct('on_boundary', [], 'boundary_id', uint32([]),...
+           %     'dof', uint32([]), 'global_dof', uint32([]));          
     end
     
     % Protected properties
@@ -83,10 +83,7 @@ classdef Element < handle
             %               sets the number of dofs per node to 1, vector
             %               sets it to the no. of space dimension, and
             %               specifing a number sets it to that value.
-            
-            % Add the bin directory
-            addpath('./bin');
-            
+
             % Insert required values into object properties
             obj.id = id;
             obj.nodes = nodes;
@@ -111,6 +108,14 @@ classdef Element < handle
             
             % Determine the total number of global dofs
             obj.n_dof = obj.n_nodes * obj.n_dof_node;
+            
+            % Initilize the side data structure
+            for i = 1:obj.n_sides;
+                obj.side(i).on_boundary = true; % assume true; set to false by FEmesh.find_neighbors
+                obj.side(i).boundary_id =  uint32([]);
+                obj.side(i).neighbor = struct('element', [], 'side', uint32([]));
+            end
+            
         end
         
         function N = shape(obj, varargin)

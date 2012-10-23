@@ -1,6 +1,6 @@
 % Returns the row index of b that matches any of the rows in a
 
-function idx = intersection(a,b)
+function idx = intersection(a, b)
 
 [R,C] = size(a);
 idx = [];
@@ -11,7 +11,6 @@ for r = 1:R;
     end
 
     idx = [idx; find(sum(index,2) == C)];
-    
 end
 
 

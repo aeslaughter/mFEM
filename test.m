@@ -2,10 +2,9 @@ function test
 
 import mFEM.*
 
-K = Matrix(6,7);
+mesh = FEmesh('Quad4');
+mesh.grid(0,1,0,1,100,100);
+% mesh.plot()
 
-K.add_matrix([22,24; 42,44], [2,4], [2,5]);
+elem = mesh.element(1);
 
-K = K.build();
-
-full(K)

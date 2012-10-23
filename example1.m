@@ -25,7 +25,7 @@ mesh.grid(0,4,nel); % the mesh is initialized automatically with grid function
 
 % Label the boundaries
 mesh.add_boundary('left', 1); % T = 0 boundary (essential)    
-mesh.add_boundary('right',2); % q = 20 boundary   
+mesh.add_boundary('right', 2); % q = 20 boundary   
 
 % Create Gauss objects for performing integration on the element
 q_elem = Gauss(1);
@@ -79,7 +79,7 @@ for e = 1:mesh.n_elements;
     % requires no integration.
     for s = 1:elem.n_sides; 
         if elem.side(s).boundary_id == 2;
-            xi = elem.lims(elem.side(s).dof);    % xi value to evaluate at
+            xi = elem.lims(elem.get_dof(s));    % xi value to evaluate at
             fe = fe + -q_bar*A*N(xi)';              
         end
     end   
