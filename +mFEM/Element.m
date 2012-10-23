@@ -26,6 +26,9 @@ classdef Element < handle
         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
     
+    
+    
+    
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
         id = uint32([]);          % element id [double]
@@ -40,7 +43,7 @@ classdef Element < handle
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        neighbor = struct([]);      % struct of neighboring element info
+        neighbors = struct([]);      % struct of neighboring element info
         side = struct([]);          % side info         
     end
     
@@ -141,6 +144,11 @@ classdef Element < handle
             % Returns the determinate of the jacobian matrix
             J = det(obj.jacobian(varargin{:}));
         end 
+        
+        function A = size(obj)
+            % Length, area, volume of element
+            A = product(diff(obj.nodes));
+        end
         
         function varargout = get_position(obj, varargin)
             % Returns the real coordinates given xi, eta, ...

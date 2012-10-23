@@ -31,6 +31,15 @@ classdef Quad4 < mFEM.Element
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
         end
+        
+        function A = size(obj)
+            A = polyarea(obj.nodes(:,1), obj.nodes(:,2));
+        end
+        
+        function r = radius(obj)
+        	r = sqrt(obj.size()/pi);
+        end
+        
     end
     
     % Define the inherited abstract methods (protected)
