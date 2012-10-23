@@ -42,7 +42,7 @@ classdef Element < handle
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        neighbor;                   % list of neighboring element ids
+        neighbor = struct([]);      % struct of neighboring element info
         side;% = ...                % side info (see constructor)
            % struct('on_boundary', [], 'boundary_id', uint32([]),...
            %     'dof', uint32([]), 'global_dof', uint32([]));          
@@ -65,7 +65,7 @@ classdef Element < handle
             %
             % Syntax:
             %   Element(id, nodes)
-            %   Element(id, nodes, 'PropertyName', PropertyValue)
+            %   Element(id, nodes, n_dof_node)
             %
             % Description:
             %   Element(id, nodes) creates an element given:
@@ -73,12 +73,12 @@ classdef Element < handle
             %       nodes: matrix of node coordinates (global), should be 
             %              arranged as column matrix [no. nodes x no. dims]
             %
-            %   Element(id, nodes, 'PropertyName', PropertyValue) allows
+            %   Element(id, nodes, n_dof_node) allows
             %       customize the behavior of the element, the available
             %       properties are listed below.
             %
             % Properties:
-            %   'Space' = 'scalar', 'vector', <number>
+            %   space = 'scalar', 'vector', <number>
             %               allows the type of FEM space to be set: scalar
             %               sets the number of dofs per node to 1, vector
             %               sets it to the no. of space dimension, and
@@ -89,33 +89,13 @@ classdef Element < handle
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
 
-            % Collect the options from the user
-            obj.opt = gather_user_options(obj.opt, varargin{:});
-            
-            % Determine the no. of dofs per node
-            if strcmpi(obj.opt.space, 'scalar');
-                obj.n_dof_node = 1;
-                
-            elseif strcmpi(obj.opt.space, 'vector');
-                obj.n_dof_node = obj.n_dim;
-                
-            elseif isnumeric(obj.opt.space);
-                obj.n_dof_node = obj.opt.space;
-                
-            else
-                error('FEmesh:FEmesh', 'The element space, %s, was not recongnized.',obj.opt.space);
-            end         
+            % Change dofs per node
+            if nargin == 3;
+            	obj.n_dof_node = varargin{1};
+            end   
             
             % Determine the total number of global dofs
             obj.n_dof = obj.n_nodes * obj.n_dof_node;
-            
-            % Initilize the side data structure
-            for i = 1:obj.n_sides;
-                obj.side(i).on_boundary = true; % assume true; set to false by FEmesh.find_neighbors
-                obj.side(i).boundary_id =  uint32([]);
-                obj.side(i).neighbor = struct('element', [], 'side', uint32([]));
-            end
-            
         end
         
         function N = shape(obj, varargin)

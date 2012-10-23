@@ -6,7 +6,7 @@ classdef FEmesh < handle
         n_elements = uint32([]);    % no. of elements in mesh
         n_dim = uint32([]);         % no. of spatial dimensions
         n_dof = uint32([]);         % total no. of global dofs
-        n_dof_node = uint32([]);    % no. of dofs per node      
+        n_dof_node = uint32(1);     % no. of dofs per node      
         element;                    % empty array of elements [Element]
         initialized = false;        % initialization state
         map = ...                   % struct  of node, elem, and dof maps 
@@ -94,8 +94,16 @@ classdef FEmesh < handle
             % Add the element(s)
             id = length(obj.element) + 1;
             
+            % Parse the space option
+            if strcmpi(obj.opt.space,'vector');
+                obj.n_dof_node = obj.n_dim;
+            elseif isnumeric(obj.opt.space);
+                obj.n_dof_node = obj.opt.space;
+            end
+            
+            % Create the element
             obj.element(id) = feval(['mFEM.', obj.opt.element],...
-                id, nodes, 'Space', obj.opt.space);
+                id, nodes, obj.n_dof_node);
             
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;
@@ -518,45 +526,50 @@ classdef FEmesh < handle
                         
             % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
-                elem = obj.element(e);                  % current element
-                elem.on_boundary = false;               % initilize on_boundary flag
+                elem = obj.element(e);      % current element
+                elem.on_boundary = false;   % initilize on_boundary flag
                 
-                % Define vectors of nodal values
-                a = elem.nodes;
-                b = obj.map.node;
-                
-                % Remove the current element from the b vector
-                b(obj.map.elem == e,:) = NaN;       
-                
-                % Determine ALL rows of b that match with any rows of a 
-                index = intersection(a,b);
+                % Loop through the sides
+                for s = 1:elem.n_sides;
 
-                % Find the elements that are possible neighbors
-                nieghbors = obj.map.elem(index);
-                
-                % Neighbors are defined when the complete edge or face
-                % are shared (1D - point; 2D - line; 3D - face)
-                count = zeros(size(nieghbors));
-                for i = 1:length(count);
-                    count(i) = sum(nieghbors(i) == nieghbors);
-                end
-                
-                % Identify the shared id's, corners don't count
-                id = unique(nieghbors(count > (obj.n_dim - 1)));
-                
-                % Collect side information for neighbors
-                for i = 1:length(id);
-                    neighbor = obj.element(id(i));
-                    [s_e, s_n] = obj.match_sides(elem, neighbor);
-                    elem.side(s_e).neigbhor(i).element = neighbor;
-                    elem.side(s_e).neighbor(i).side = s_n;
-                    elem.side(s_e).on_boundary = false;
-                end 
-                
-                % Update boundary flag
-                if length(id) < elem.n_sides;
-                    elem.on_boundary = true;
-                end
+                    % Define vectors of nodal values
+                    a = elem.nodes(elem.side_dof(s,:),:);
+                    b = obj.map.node;
+
+                    % Remove the current element from the b vector
+                    b(obj.map.elem == e,:) = NaN;       
+
+                    % Determine where the a and b vectors are the same
+                    [Lia, ~] = ismember(b,a,'rows','R2012a');
+                    all_neighbors = obj.map.elem(Lia);
+                    neighbors = unique(all_neighbors);
+                    
+                    % Locate the neighbor that shares all nodes on side
+                    occ = histc(all_neighbors, neighbors);
+                    id = neighbors(occ > obj.n_dim - 1);
+                    
+                    % Store side information, if there is a neighbor
+                    if ~isempty(id);
+                        % Store the neighbor element handle
+                        elem.side(s).neighbor = obj.element(id);
+
+                        % Store the local dofs for the neighbor
+                        idx = ismember(obj.map.elem, id);
+                        [~, ~, dof] = intersect(a, b(idx,:), 'rows', 'R2012a');
+                        elem.side(s).neighbor_dof = dof;
+                        
+                        % Set boundary flag and id
+                        elem.side(s).on_boundary = false;
+                        elem.side(s).boundary_id = [];
+                        
+                    % If no neighbor, then it is a boundary    
+                    else
+                        elem.side(s).on_boundary = true;
+                        elem.side(s).boundary_id = 0;
+                        elem.side(s).neighbor = feval([class(elem),'.empty']);
+                        elem.side(s).neighbor_dof = uint32([]);
+                    end
+                end   
             end
             
             % Complete message
@@ -576,6 +589,7 @@ classdef FEmesh < handle
             if ~isa(N,'mFEM.Element');
                 N = obj.element(N); % neighbor element
             end
+            
             
             % Locate the nodes that are common    
             [~, ie, in] = intersect(E.nodes, N.nodes, 'rows', 'R2012a');

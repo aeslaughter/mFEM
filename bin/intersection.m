@@ -3,15 +3,14 @@
 function idx = intersection(a, b)
 
 [R,C] = size(a);
-idx = [];
-index = false(size(b));
+index = zeros(length(b),R);
 for r = 1:R;
-    for c = 1:C;
-        index(:,c) = a(r,c) == b(:,c); 
-    end
-
-    idx = [idx; find(sum(index,2) == C)];
+        index(:,r) = a(r,1) == b(:,1) & a(r,2) == b(:,2);
 end
+
+index
+idx = []
+
 
 
 
