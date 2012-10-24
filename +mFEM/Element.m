@@ -173,7 +173,7 @@ classdef Element < mFEM.handle_hide
             
             % Loop through the dimensions and return the desired position
             for i = 1:n;
-               varargout{i} = obj.shape(varargin{:})*node(:,i); 
+               varargout{i} = obj.shape(varargin{:})*obj.nodes(:,i); 
             end
 
         end

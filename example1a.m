@@ -1,14 +1,18 @@
-% Example 5.1 of Fish & Belytschko (2007).
+%% Example1a
+% Reproduces Example 5.1 of Fish & Belytschko (2007) using direct assembly
+% of the stiffness matrix and force vector.
 % 
 % Syntax:
-%   example1
-%   example1(n)
+%   example1a
+%   example1a(n)
 %
 % Description
-%   example1 runs example exactly as done in textbook, with two elements
-%   example1(n) runs the example with n number of elements
+%   example1a runs example exactly as done in textbook, with two elements
+%   example1a(n) runs the example with n number of elements
+%
+% See also EXAMPLE1B
 
-function example1(varargin)
+function example1a(varargin)
 
 % Import the mFEM library
 import mFEM.*;
@@ -128,8 +132,8 @@ figure('Color','w','Name','Example 1 Results');
 
 % Create Temperature plot
 h = subplot(2,1,1);
-x = unique(mesh.map.node);
-plot(h,x0,Tex,'k-',x,T,'b-o','LineWidth',1);
+mesh.plot(T); hold on;
+plot(h,x0,Tex,'k-','LineWidth',1);
 legend({'Exact','FEM'},'location','best');
 xlabel('x (m)','interpreter','tex');
 ylabel('Temperature (\circC)','interpreter','tex');

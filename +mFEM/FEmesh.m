@@ -16,7 +16,7 @@ classdef FEmesh < mFEM.handle_hide
     end
     
     properties (Access = private)
-        boundary_id = uint32([]);   % appended each time add_boundary_id is called
+        boundary_id = uint32([]);   % appended when add_boundary is called
     end
     
     methods (Access = public)
@@ -320,99 +320,9 @@ classdef FEmesh < mFEM.handle_hide
         end
        
         function plot(obj, varargin)
-            % Plots the mesh with element and node numbers (global)
-            % (currently this only works with 2D and 3D (not tested in 3D)
-            %
-            % Syntax:
-            %   plot();
-            %   plot(data);
-            %   plot(...,'PropertyName',<PropertyValue>);
-            %
-            % Descrtiption:
-            %
-            % Properties:
-            %   'ElementLabels' = true or false
-            %   'NodeLabels' = true or false
-            
-            % Collect the input 
-            [data, options] = obj.parse_plot_input(varargin{:});
-
-            % Check that mesh is initialized
-            if (~obj.initialized)
-                error('ERROR: FEmesh must be initialized before plot() is called.');
-            end
-            
-            % Warning for 1D case
-            if all(obj.n_dim ~= [2,3]);
-               error('ERROR: FEmesh only works for 2D and 3D meshes'); 
-            end
-            
-            % Create the figure
-            if options.newfigure;
-                figure; hold on;
-            end
-            
-            % Loop through each node
-            for e = 1:obj.n_elements;
-                
-                % Gather nodes
-                elem = obj.element(e);              % current element          
-                node = num2cell(elem.nodes,1);      % col. cell of nodes
-                cntr = num2cell(mean(elem.nodes,1));% mean location of nodes
-                
-                % Create patch
-                if ~isempty(data);
-                    dof = elem.get_dof();
-                    patch(node{:}, data(dof));
-                else
-                    patch(node{:}, 'b', 'FaceColor','none');
-                end
-                
-                % Show element label
-                if options.elementlabels;
-                    text(cntr{:},num2str(e),'FontSize',14,...
-                        'BackgroundColor','k','FontWeight','Bold',...
-                        'Color','w','HorizontalAlignment','center');
-                end
-                
-                % Show node labels (DG elements)
-                if options.nodelabels && strcmpi(obj.opt.type, 'DG');
-                    N = elem.nodes;
-                    dof = elem.get_dof();
-                    for i = 1:length(N);
-                        [x,y] = elem.get_position(elem.lims(1),elem.lims(2));
-                        
-                        % Set location of label (x-direction)
-                        if N(i,1) == x; X = 'left';
-                        elseif N(i,1) == x; X = 'right';
-                        else X = 'center';
-                        end
-                        
-                        % Set location of label (y-direction)
-                        if N(i,2) == y; Y = 'top';
-                        elseif N(i,2) == y; Y = 'bottom';
-                        else Y = 'middle';
-                        end
-                        
-                        % Create label
-                        node = num2cell(N(i,:));
-                        text(node{:},num2str(dof(i)),'FontSize',12,'Color','w',...
-                            'BackgroundColor','b','HorizontalAlignment',X,...
-                            'VerticalAlignment',Y);
-                    end  
-                end       
-            end
-            
-            % Loop through the unique nodes
-            if options.nodelabels && strcmpi(obj.opt.type, 'CG');
-                N = unique(obj.map.node,'rows','stable');
-                for i = 1:length(N);
-                   node = num2cell(N(i,:));
-                    text(node{:},num2str(i),'FontSize',12,'Color','w',...
-                        'BackgroundColor','b','HorizontalAlignment','center');
-                end
-            end
-        end 
+            %PLOT Plots mesh and/or data (see FEplot function for details)
+            FEplot(obj,varargin{:});
+        end
     end
     
     methods (Access = private)
@@ -703,44 +613,6 @@ classdef FEmesh < mFEM.handle_hide
             
             % Update mesh level boundary_id matrix
             obj.boundary_id(end+1) = id;
-        end 
-        
-        function [data, opt] = parse_plot_input(obj, varargin)
-            % Function for parsing input data to plot function
-            %
-            % See the help for the plot function for input detals
-            
-            % Assume empty data  input
-            data = [];
-            
-            % Define user properties
-            opt.elementlabels = true;
-            opt.nodelabels = true;
-            opt.newfigure = true;
-
-            % Parse the input
-            if nargin >= 2;
-                
-                % The first input is always the data
-                data = varargin{1};
-                
-                % Check that the data is sized correctly
-                if ~isnumeric(data) && length(data) ~= obj.n_dof;
-                    error('FEmesh:plot', 'Data not formated correctly, it must be a vector of numbers of length %d.', obj.n_dof);
-                end
-
-                % When using data, disable the labels by default and do not
-                % create a new figure with each call
-                opt.elementlabels = false;
-                opt.nodelabels = false;
-                opt.newfigure = false;
-                
-                % Collect options supplied by the user
-                if nargin >= 2;
-                    opt = gather_user_options(opt,varargin{2:end});
-                end
-            end
-        end
-        
+        end         
     end
 end

@@ -2,18 +2,10 @@ function test
 profile on;
 import mFEM.*
 
-mesh = FEmesh('Quad4');
-mesh.grid(0,1,0,1,100,100);
-% mesh.plot()
-% profile viewer
+mesh = FEmesh('Quad4','Type','DG');
+mesh.grid(0,1,0,1,3,2);
+mesh.plot();
 
-
-% 
-% 
-% e = 5;
-% elem = mesh.element(e);
-% for i = 1:4;
-%     elem.side(i).neighbor.id
-%     elem.side(i)
-% end
-
+% x = mesh.map.node;
+% y = 2*x.^2;
+% mesh.plot(y,'ElementLabels',true,'NodeLabels',true);
