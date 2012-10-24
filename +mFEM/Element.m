@@ -1,7 +1,7 @@
-classdef Element < handle
-    %Element Base class for defining elements
-    % Inludes the general behavior of an element, including the node locations,
-    % id, shape functions, etc...
+classdef Element < mFEM.handle_hide
+    %ELEMENT Base class for defining elements.
+    % Inludes the general behavior of an element, including the node 
+    % locations, id, shape functions, etc...
     %
     % This is an abstract class, as such it must be inherited to function.
     % The abstract properties and methods must be redifined in the
@@ -50,8 +50,8 @@ classdef Element < handle
     end    
     
     % Public Methods
-    % These methods are accessible by the user to create the element and
-    % access the shape functions and other necessary parameters
+    % (These methods are accessible by the user to create the element and
+    % access the shape functions and other necessary parameters)
     methods (Access = public)
         function obj = Element(id, nodes, varargin)
             % Class constructor.

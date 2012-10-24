@@ -1,11 +1,16 @@
 classdef System < handle
-   
-    properties (Access = public)
-       time = []; 
-    end
-    
+    %SYSTEM A class for automatic assembly of finite element equations.
+    %
+    % Syntax:
+    %   sys = System(mesh)
+    %
+    % Description:
+    %
+    %
+
     properties(Access = private)
-       mesh; 
+        mesh = mFEM.mesh.empty;
+        reserved = {'N','B','x','y','z','xi','eta','zeta'};
         mat = struct('name', char, 'equation', char, 'func',char, 'matrix',sparse([]),'boundary_id', uint32([]));
         vec = struct('name', char, 'equation' ,char, 'func',char, 'vector',[],'boundary_id', uint32([]));
         const = struct('name', char, 'value',[]);
@@ -13,19 +18,29 @@ classdef System < handle
     
     methods 
         function obj = System(mesh)
+            %SYSTEM Class constructor.
             obj.mesh = mesh;
         end
         
         function add_constant(obj, varargin)
+            %ADD_CONSTANT Adds constant(s) variables to the system.
+            %
+            % Syntax:
+            %   add_constant('ConstantName', ConstantValue, ...)
             
-            n = nargin - 1;
-            for i = 1:2:n-1;
-               obj.add_const(varargin{i},varargin{i+1}); 
+            % Location of last ConstantName
+            n = nargin - 2;
+            
+            % Loop through each name and store in the const property
+            for i = 1:2:n;
+                obj.add_const(varargin{i}, varargin{i+1});
             end
         end
         
         function add_matrix(obj, name, eqn, varargin)  
+            %ADD_MATRIX Create a sparse finite element matrix
             
+            % Storate location in matrix array
             idx = length(obj.mat) + 1;
             
             obj.mat(idx).name = name;
@@ -36,102 +51,135 @@ classdef System < handle
         end
 
         function add_vector(obj, name, eqn, varargin)  
+            %ADD_VECTOR Create a finite element vector
             
             idx = length(obj.vec) + 1;
-            
             obj.vec(idx).name = name;
             obj.vec(idx).equation = eqn;
             obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
-            obj.vec(idx).boundary_id = varargin{:};
-            
+            obj.vec(idx).boundary_id = varargin{:};   
         end
         
-%         function M = get_matrix(obj, name)
-%             for i = 1:length(obj.mat);
-%                 if strcmpi(name, obj.mat(i).name);
-%                     M = obj.mat(i).matrix;
-%                     return;
-%                 end
-%             end
-%         end
+        function X = get(obj, name)
+            %GET Returns the value for the specified name
+            
+            [type, idx] = locate(name);
+            
+            switch type;
+                case 'mat'; X = obj.mat(idx).matrix;
+                case 'vec'; X = obj.vet(idx).vector;
+                case 'const'; X = obj.const(idx).value;
+            end
+        end
         
         function X = assemble(obj, name)
+            % Assembles matrix and vectors
+
+            % Locate the matrix or vector
+            [type,idx] = obj.locate(name);
             
-
-           [type,idx] = obj.locate(name);
-
-           
-           switch lower(type);
+            % Call the correct assembly routine
+            switch lower(type);
                case 'mat'; X = obj.assemble_matrix(idx); 
                case 'vec'; X = obj.assemble_vector(idx);
                otherwise
                    error('System:Assemble','No assembly routine for %s types', type);
-           end
+            end
         end
- 
     end
     
     methods (Access = private)
         
         function [type, idx] = locate(obj, name)
+            %LOCATE Returns the type and index for the supplied name
             
+            % Initialize variables
+            idx = [];                       % location of name
+            types = {'mat','vec','const'};  % type of entity 
             
-            idx = [];
-            types = {'mat','vec','const'};
+            % Loop throug the types
             for t = 1:length(types);
-                type = types{t};
+                type = types{t}; % the current type
                 
+                % Loop through all array values for the current type
                 for i = 1:length(obj.(type));
+                    
+                    % If name is found return the index
                     if strcmpi(obj.(type)(i).name, name);
                         idx = i;
                         return;
                     end
                 end
             end
-                 
-                 
+            
+            % Throw and error if the name was not found
+            if isempty(idx);
+                error('System:locate', 'The entity with name %s was not found.', name);
+            end   
         end
         
+        function add_const(obj, name, value)
+            %ADD_CONST Adds a single constant to the system
+            
+            % Test that the constant is not reserved
+            if any(strcmp(name,obj.reserved));
+                error('System:add_const', 'The constant %s is a reserved string, select a different name.', name);
+            end
+            
+            % Add the constant
+            idx = length(obj.const) + 1;    % location
+            obj.const(idx).name = name;     % constant name
+            obj.const(idx).value = value;   % constant value
+        end
         
         function fcn = parse_equation(obj, eqn)
+            %PARSE_EQUATION Converts given equation into a useable function
+            
+            % Get the dimensions of the FE space
+            n_dim = obj.mesh.n_dim;
 
-           n_dim = obj.mesh.n_dim;
-           
-           if n_dim == 1;
-               var = 'xi';
-           elseif n_dim == 2;
-               var = 'xi,eta'; 
-           elseif n_dim == 3;
+            % Build variable strings based on the dimensions of FE space
+            if n_dim == 1;
+                var = 'xi';
+            elseif n_dim == 2;
+                var = 'xi,eta'; 
+            elseif n_dim == 3;
                 var = 'xi,eta,zeta';
-           else
+            else
                 error('System:parse_equation', '%d-D finite element space not supported', n_dim);
-           end
-           
-           eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
-           eqn  = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
-           
-            for i = 1:length(obj.const);
-               str = obj.const(i).name;
-               val = obj.const(i).value;
-                
-                
-               x1 = regexpi(eqn, str);
-               s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
-               x2 = find(strcmp(obj.const(i).name, s));
-               
-               if ~isempty(x1) && ~isempty(x2);
-                   eqn = regexprep(eqn, str, mat2str(val));
-               end
-
-                 
             end
-           
-           fcn = ['@(elem,',var,') ', eqn]
+
+            % Insert element shape function and shape function derivatives
+            eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
+            eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
+
+            % Loop through each constant and add if present
+            for i = 1:length(obj.const);
+                
+                % Current constant name and value
+                str = obj.const(i).name;    
+                val = obj.const(i).value;  
+
+                % Look for the constant as a complete string    
+                x1 = regexpi(eqn, str);
+                
+                % Look for the constant without mathmatical symbols
+                s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
+                x2 = find(strcmp(obj.const(i).name, s),1);
+
+                % If the constant is present in both cases above, then
+                % insert it into the equation. Using the two cases
+                % elimnates problems with having constant names that are
+                % within other constant names (e.g., b and Qb)
+                if ~isempty(x1) && ~isempty(x2);
+                   eqn = regexprep(eqn, str, mat2str(val));
+                end
+            end
+
+            % Create the function string
+            fcn = ['@(elem,',var,') ', eqn];
         end
-        
-        
-        
         
         function K = assemble_matrix(obj, idx)
 
@@ -196,12 +244,7 @@ classdef System < handle
                 f = obj.vec(idx).vector;
                 
         end
-        
-        function add_const(obj, name, value)
-            idx = length(obj.const) + 1;
-            obj.const(idx).name = name;
-            obj.const(idx).value = value;
-        end
+
         
         
     end

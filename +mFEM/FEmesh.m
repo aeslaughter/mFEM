@@ -1,7 +1,6 @@
-classdef FEmesh < handle
-    % Class for managing and generating FEM spaces
+classdef FEmesh < mFEM.handle_hide
+    %Class for managing and generating FEM spaces
     
-    % Read only properties
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
         n_dim = uint32([]);         % no. of spatial dimensions
@@ -16,17 +15,13 @@ classdef FEmesh < handle
             struct('element', 'Quad4', 'space', 'scalar', 'type', 'CG');
     end
     
-    % Private properties
     properties (Access = private)
-        CG_dof_map = uint32([]); % needed to compute neighbors for both CG and DG
-        boundary_id = uint32([]); % appended each time add_boundary_id is called
+        boundary_id = uint32([]);   % appended each time add_boundary_id is called
     end
     
-    % Public methods
     methods (Access = public)
-        % Constructor
         function obj = FEmesh(varargin)
-            % Class constructor
+            % FEMESH Creates a finite element mesh object.
             % 
             % Syntax:
             %   obj = FEmesh()
@@ -68,8 +63,7 @@ classdef FEmesh < handle
             % Initialize the element property
             obj.element = feval(['mFEM.',obj.opt.element,'.empty']);
         end
-        
-        % Adds an element to the mesh
+
         function add_element(obj, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
@@ -107,7 +101,6 @@ classdef FEmesh < handle
 %             obj.map.center(end+1,:) = mean(nodes);
         end
         
-        % Initializes by computing degree-of-freedom maps
         function initialize(obj)
             % Initialization function.
             %
@@ -151,7 +144,6 @@ classdef FEmesh < handle
             obj.initialized = true;
         end
                 
-        % Adds identification to elements
         function add_boundary(obj, varargin)
             % Labels elements with numeric tabs.
             %
@@ -225,7 +217,6 @@ classdef FEmesh < handle
             obj.boundary_id(end+1) = id;
         end
 
-        % Return the global dogs for entire mesh
         function dof = get_dof(obj, varargin)
             % The global degrees of freedom, account for type of space
             %
@@ -279,7 +270,6 @@ classdef FEmesh < handle
             end
         end
                 
-        % Return the spatial position of nodes
         function out = get_nodes(obj,varargin)
             % Return the spatial position of the nodes for the mesh
             %
@@ -294,7 +284,6 @@ classdef FEmesh < handle
             end
         end
             
-        % Tool for generating a 2D mesh
         function grid(obj, varargin)  
             % Create a mesh (1D, 2D, or 3D)
             % 
@@ -330,7 +319,6 @@ classdef FEmesh < handle
             obj.initialize();
         end
        
-        % Tool for plotting the mesh with element and node labels
         function plot(obj, varargin)
             % Plots the mesh with element and node numbers (global)
             % (currently this only works with 2D and 3D (not tested in 3D)
@@ -427,24 +415,18 @@ classdef FEmesh < handle
         end 
     end
     
-    % Private methods
     methods (Access = private)
-        % Computes the dof maps
         function compute_dof_map(obj)
             % Calculates the global degree-of-freedom map
-            % (this is used by both CG and DG for finding neighbors)
             
             % Display wait message
             tic;
             disp('Computing the degree-of-freedom map...');
-            
-            % Compute the CG dof map
-            [~,~,obj.CG_dof_map] = unique(obj.map.node, 'rows','stable');
 
             % Place the correct type of map in public property
             switch obj.opt.type;
                 case 'CG'; 
-                    obj.map.dof = obj.CG_dof_map;
+                    [~,~,obj.map.dof] = unique(obj.map.node, 'rows','stable');
                 case 'DG'; 
                     obj.map.dof = (1:size(obj.map.node,1))';
             end
@@ -457,10 +439,8 @@ classdef FEmesh < handle
             
             % Complete message
             disp(['    ...Completed in ', num2str(toc),' sec.']);
-            
         end
         
-        % 1D mesh generation
         function gen1Dgrid(obj, x0, x1, xn)
             % Generate the 1D mesh (see grid)
 
@@ -478,7 +458,6 @@ classdef FEmesh < handle
             end
         end
         
-        % 2D mesh generation
         function gen2Dgrid(obj, x0, x1, y0, y1, xn, yn)
             % Generate the 2D mesh (see grid)
 
@@ -508,7 +487,6 @@ classdef FEmesh < handle
             end
         end
         
-        % Finds element neighbors   
         function find_neighbors(obj)
             % Locates elements that share a side
             %
@@ -600,7 +578,6 @@ classdef FEmesh < handle
             disp(['    ...Completed in ', num2str(toc),' sec.']);
         end 
         
-        % Match elem and neighbor side ids
         function s_n = match_side(obj, a, N)
             % Returns the side index of the neighbor that matches 
                         
@@ -630,7 +607,6 @@ classdef FEmesh < handle
             s_n = find(all(side == aa, 2));
         end
         
-        % Sub-method for parsing boundary_id input
         function [col, value, id] = parse_boundary_id_input(obj, varargin)
             
              % The location flag
@@ -688,7 +664,6 @@ classdef FEmesh < handle
             end  
         end
         
-        % Method for tagging unmarked boundaries
         function id_empty_boundary(obj, id)
             % Mark all elements sides that were not marked previously
     
@@ -730,7 +705,6 @@ classdef FEmesh < handle
             obj.boundary_id(end+1) = id;
         end 
         
-        % Function for parsing the plot input data (see plot)
         function [data, opt] = parse_plot_input(obj, varargin)
             % Function for parsing input data to plot function
             %
