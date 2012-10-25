@@ -367,7 +367,6 @@ classdef FEmesh < mFEM.handle_hide
             % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
                 elem = obj.element(e);      % current element
-                elem.on_boundary = false;   % initilize on_boundary flag
 
                 % Define vectors of nodal values
                 a = elem.nodes;
@@ -586,7 +585,7 @@ classdef FEmesh < mFEM.handle_hide
                 elem = obj.element(e);
 
                 % Test if element is on the boundary
-                if elem.on_boundary;
+                if isempty(elem.on_boundary) || elem.on_boundary 
                     
                     % Loop through the sides
                     for s = 1:elem.n_sides;

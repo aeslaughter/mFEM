@@ -74,7 +74,7 @@ function opt = parse_input(obj, varargin)
 
     % Define user properties
     opt.data = []; 
-    opt.shownodes = true;
+    opt.shownodes = false;
     opt.elementlabels = true;
     opt.nodelabels = true;
     opt.newfigure = true;

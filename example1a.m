@@ -132,7 +132,7 @@ figure('Color','w','Name','Example 1 Results');
 
 % Create Temperature plot
 h = subplot(2,1,1);
-mesh.plot(T); hold on;
+mesh.plot(T,'ShowNodes',true); hold on;
 plot(h,x0,Tex,'k-','LineWidth',1);
 legend({'Exact','FEM'},'location','best');
 xlabel('x (m)','interpreter','tex');

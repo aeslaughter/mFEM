@@ -25,7 +25,7 @@
 % Assembly time for I,J method: 22.02 s
 % Assembly time for index method: 25.61 s
 
-function example6(varargin)
+function example6a(varargin)
 
 % Determine the number of elements to divide the mesh into
 N = 32;
