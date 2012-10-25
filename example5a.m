@@ -5,7 +5,7 @@
 %
 % Description:
 %   example5 solves a simple transient heat conduction problem.
-function example5
+function example5a
    
 % Import the mFEM library
 import mFEM.*;
@@ -24,10 +24,10 @@ mesh.add_boundary(3);                % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2,'tri');
+q_elem = Gauss(3,'tri');
 [qp, W] = q_elem.rules();
 
-q_face = Gauss(2);
+q_face = Gauss(1,'line');
 [qp_side, W_side] = q_face.rules();
 
 % Problem specifics
@@ -80,15 +80,16 @@ for e = 1:mesh.n_elements;
             N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
                 d = elem.get_dof(s); % local dofs for the current side
-                Ke(d,d) = Ke(d,d) + W_side(i) * h * N(qp_side(i))'*N(qp_side(i))*side.detJ();
-                fe(d) = fe(d) + h*T_inf*W_side(i)*N(qp_side(i))'*side.detJ();              
+                side.detJ(qp_side(i))
+                Ke(d,d) = Ke(d,d) + W_side(i) * h * N(qp_side(i))'*N(qp_side(i))*side.detJ(qp_side(i));
+                fe(d) = fe(d) + h*T_inf*W_side(i)*N(qp_side(i))'*side.detJ(qp_side(i));              
             end
         end
     end      
     
     % Add local mass, stiffness, and force to global (this method is slow)
     dof = elem.get_dof();
-    M(dof,dof) =  M(dof,dof) + Me;
+    M(dof,dof) = M(dof,dof) + Me;
     K(dof,dof) = K(dof,dof) + Ke;
     f(dof) = f(dof) + fe;
 end

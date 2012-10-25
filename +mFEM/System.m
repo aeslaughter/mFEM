@@ -130,6 +130,13 @@ classdef System < mFEM.handle_hide
             % Add the constant
             idx = length(obj.const) + 1;    % location
             obj.const(idx).name = name;     % constant name
+            
+            % If is string, insert existing constants and evaluate
+            if ischar(value);
+                value = eval(obj.apply_constants(value));
+            end
+            
+            % Assign the numeric constant
             obj.const(idx).value = value;   % constant value
         end
         
@@ -160,11 +167,25 @@ classdef System < mFEM.handle_hide
             else
                 error('System:parse_equation', '%d-D finite element space not supported', n_dim);
             end
-
+            
+            % Apply constants
+            eqn = obj.apply_constants(eqn);
+            
             % Insert element shape function and shape function derivatives
             eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
             eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
 
+            % Create the function string
+            if isempty(var);
+                fcn = ['@(elem) ', eqn];     
+            else
+                fcn = ['@(elem,',var,') ', eqn];
+            end
+        end
+        
+        function eqn = apply_constants(obj, eqn)
+            %APPLY_CONSTANTS applies constants to a string equation
+                        
             % Loop through each constant and add if present
             for i = 1:length(obj.const);
                 
@@ -177,6 +198,7 @@ classdef System < mFEM.handle_hide
                 
                 % Look for the constant without mathmatical symbols
                 s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
+                s = strtrim(s); % remove leading/trailing whitespace
                 x2 = find(strcmp(obj.const(i).name, s),1);
 
                 % If the constant is present in both cases above, then
@@ -187,21 +209,92 @@ classdef System < mFEM.handle_hide
                    eqn = regexprep(eqn, str, mat2str(val));
                 end
             end
-
-            % Create the function string
-            if isempty(var);
-                fcn = ['@(elem) ', eqn];     
-            else
-                fcn = ['@(elem,',var,') ', eqn];
-            end
         end
         
         function K = assemble_matrix(obj, idx)
-            %ASSEMBLE_MATRIX Assemble a sparse matrix for the given idx
-                
-                % Clear existing matrix
-                obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+            %ASSEMBLE_VECTOR Assembles a vector for given index
+
+            % Clear existing matrix
+            obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+          
+            % Case when the vector is only applied to a side
+            if ~isempty(obj.mat(idx).boundary_id);
+               obj.assemble_matrix_side(idx);
+               
+            % Case when the vector is applied to entire element    
+            else
+                obj.assemble_matrix_elem(idx);
+            end
             
+            % Output the global vector
+            K = obj.mat(idx).matrix;
+        end   
+        
+        function assemble_matrix_side(obj, idx)
+            %LOCAL_BOUNDARY_MATRIX computes matrix equation on boundary
+            
+            % Build the function for the side
+            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, 'side'))
+            
+            % Extract the boundary ids
+            id = obj.mat(idx).boundary_id;
+            
+            % Loop through each element
+            for e = 1:obj.mesh.n_elements;
+
+                % The current element
+                elem = obj.mesh.element(e);
+
+                % Intialize the force fector
+                Ke = zeros(elem.n_dof, elem.n_dof);
+            
+                % Loop through all of the boundaries specified
+                for i = 1:length(id);
+
+                    % Loop through all sides of this element
+                    for s = 1:elem.n_sides; 
+
+                        % Test if this side is on the boundary
+                        if any(elem.side(s).boundary_id == id(i));
+
+                            % Create the side element
+                            side = elem.build_side(s);
+
+                            % If elem is 1D, then the side is a point that
+                            % does not require intergration
+                            if elem.local_n_dim == 1;
+                                dof = elem.get_dof(s);
+                                Ke(dof,dof) = Ke(dof,dof) + fcn(side);
+
+                            % Side elements that are not points    
+                            else
+                                [qp,W] = side.quad.rules('cell')
+
+                                % Local dofs for the current side
+                                dof = elem.get_dof(s);
+
+                                % Perform quadrature
+                                for j = 1:size(qp,1);
+                                    side.detJ(qp{j,:})
+                                    Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
+                                end
+                            end
+
+                            % Delete the side element
+                            delete(side);
+                            
+                            % Add the local force vector to the global vector
+                            dof = elem.get_dof();    
+                            obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
+                        end
+                    end   
+                end 
+            end
+        end
+        
+        function assemble_matrix_elem(obj, idx)
+            %ASSEMBLE_MATRIX_ELEM Assemble a matrix for entire domain
+
                 % Create function from the function string
                 fcn = str2func(obj.mat(idx).func);
             
@@ -229,9 +322,6 @@ classdef System < mFEM.handle_hide
                     % Add the contribution to the gloval matrix
                     obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
                 end
-                
-                % Return the global matrix
-                K = obj.mat(idx).matrix;
         end
         
         function f = assemble_vector(obj, idx)

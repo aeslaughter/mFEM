@@ -48,25 +48,11 @@ classdef Truss2 < mFEM.Element
 
         function B = grad_basis(obj, varargin) 
             % Gradient of shape functions
-            
-            % grad(B) is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Truss2:grad_basis', 'The shape function deriviatives are constant for the Linear2 element, thus no spatial coordinates are needed.');
-            end
-            
-            % Proper gradient
             B = inv(obj.jacobian()) * obj.local_grad_basis;
         end
              
         function J = jacobian(obj, varargin)
-            % Returns the jacobian matrix  
-            
-            % The Jacobian is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Truss2:jacobian', 'The Jacobian for the Truss2 element is constant, thus no spatial coordinates are needed.');
-            end
-
-            % Return the Jacobian matrix (1/2 the length)
+            % Returns the jacobian matrix (1/2 the length)
             J = 1/2 * obj.size();               
         end
         

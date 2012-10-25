@@ -1,0 +1,86 @@
+% Example 8.1 from Bhatti, 2005 (p. 553)
+%
+% Syntax:
+%   example5
+%
+% Description:
+%   example5 solves a simple transient heat conduction problem.
+function example5b
+   
+% Import the mFEM library
+import mFEM.*;
+
+% Create a FEmesh object, add the single element, and initialize it
+mesh = FEmesh('Tri3');
+mesh.add_element(1/100*[0,0; 2,0; 2,4]);
+mesh.add_element(1/100*[0,0; 2,4; 0,2]);
+mesh.initialize();
+
+% Label the boundaries
+mesh.add_boundary('left',1);            % insulated (q = 0)
+mesh.add_boundary('right',1);           % insulated (q = 0)
+mesh.add_boundary('bottom',2);          % convective (q = h(T - Tinf))
+mesh.add_boundary(3);                   % essential boundaries (all others)
+
+% Create system
+sys = System(mesh);
+
+% Problem specifics
+sys.add_constant('D', 3 * eye(2));      % thermal conductivity (W/(mC))
+sys.add_constant('rho', 1600);          % density (kg/m^3)
+sys.add_constant('c_p', 800);           % specific heat (J/kg)
+sys.add_constant('h', 200);             % convective heat transfer coefficient (W/m^2)
+sys.add_constant('T_s', 300);           % prescribed temperature on top (C)
+sys.add_constant('T_inf', 50);          % ambient temperature (C)
+sys.add_constant('T_0', 50);            % initial temperature (C)
+
+% Add matrices
+sys.add_matrix('M', 'rho*c_p*N''*N');
+sys.add_matrix('K', 'B''*D*B');
+sys.add_matrix('K_h', 'h*N''*N', 2);
+sys.add_vector('f','h*T_inf*N''', 2);
+
+% Assemble the matrices
+M = sys.assemble('M');
+K = sys.assemble('K') + sys.assemble('K_h');
+f = sys.assemble('f');
+
+% Print the full M,K, and f matrices (re-order to match book)
+ix = [1,4,2,3];
+% full(M(ix,ix))
+% full(K(ix,ix))
+% f(ix)
+
+% Define dof indices for the essential dofs and non-essential dofs
+non = mesh.get_dof(3,'ne'); % 1,2
+ess = mesh.get_dof(3);      % 3,4
+
+% Solve for the temperatures
+T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector
+T(ess,1) = sys.get('T_s');               % apply essential boundaries
+
+% Compute residual for non-essential boundaries, the mass matrix does not
+% contribute because the dT/dt = 0 on the essential boundaries
+R(:,1) = f(non) - K(non,ess)*T(ess,1);
+
+% Use a general time integration scheme
+dt = 30;
+theta = 0.5;
+K_hat = M(non,non) + theta*dt*K(non,non);
+f_K   = M(non,non) - (1-theta)*dt*K(non,non);
+
+% Perform 10 time-steps
+for t = 1:10;
+
+    % Compute the force componenet using previous time step T
+    f_hat = dt*R + f_K*T(non,t);
+
+    % Solve for non-essential boundaries
+    T(non, t+1) = K_hat\f_hat;
+    
+    % Set values for the essential boundary conditions the next time step 
+    T(ess, t+1) = sys.get('T_s');
+end
+
+% Display the temperatures (in same order as p.556 of Bhatti, 2005)
+T(ix,:)'

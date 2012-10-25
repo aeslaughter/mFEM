@@ -1,5 +1,5 @@
 % Example 9.2 of Fish & Belytschko (2007)
-function example4
+function example4a
 
 % Import the mFEM library
 import mFEM.*;
