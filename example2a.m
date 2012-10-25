@@ -5,7 +5,7 @@
 %
 % Description:
 %   example2 solves a simple two element heat conduction problem.
-function example2
+function example2a
    
 % Import the mFEM library
 import mFEM.*;
