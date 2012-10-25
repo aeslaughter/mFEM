@@ -138,10 +138,8 @@ classdef FEmesh < mFEM.handle_hide
             obj.n_dof = length(unique(obj.map.dof)) * obj.n_dof_node;
             
             % Locates the neighbor elements for each element
-            if strcmpi(obj.opt.type,'DG');
-                obj.find_neighbors();
-            end
- 
+            obj.find_neighbors();
+
             % Set the initilization flag to true
             obj.initialized = true;
         end
@@ -286,6 +284,73 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
         
+        function grid(obj, varargin)  
+            % Create a mesh (1D, 2D, or 3D)
+            % 
+            % Syntax:
+            %   grid(x0, x1, xn)
+            %   grid(x0, x1, y0, y1, xn, yn)
+            %   grid(x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %
+            % Input:
+            %   x0,x1 = Mesh limits in x-direction
+            %   y0,y1 = Mesh limits in y-direction
+            %   z0,z1 = Mesh limits in z-direction
+            %   xn,yn,zn = Num. of elements in x,y,z direction
+           
+            % Display wait message
+            tic;
+            disp('Generating mesh...'); 
+            
+            % Check the current element type is supported
+            switch obj.opt.element;
+                case 'Linear2';
+                    obj.gen1Dgrid(varargin{:});
+                case {'Quad4', 'Tri3', 'Tri6'};
+                    obj.gen2Dgrid(varargin{:});
+                otherwise
+                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.opt.element);
+            end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+   
+            % Initialize
+            obj.initialize();
+        end
+       
+        function plot(obj, varargin)
+            %PLOT Plots mesh and/or data (see FEplot function for details)
+            FEplot(obj,varargin{:});
+        end
+    end
+    
+    methods (Access = private)
+        function compute_dof_map(obj)
+            % Calculates the global degree-of-freedom map
+            
+            % Display wait message
+            tic;
+            disp('Computing the degree-of-freedom map...');
+
+            % Place the correct type of map in public property
+            switch obj.opt.type;
+                case 'CG'; 
+                    [~,~,obj.map.dof] = unique(obj.map.node, 'rows','stable');
+                case 'DG'; 
+                    obj.map.dof = (1:size(obj.map.node,1))';
+            end
+
+            % Update the elements with the global dof
+            for e = 1:obj.n_elements;
+                elem = obj.element(e);
+                elem.global_dof = obj.map.dof(obj.map.elem == e,:);
+            end
+            
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+        end
+        
         function find_neighbors(obj)
             % Locates elements that share a side
             %
@@ -375,73 +440,6 @@ classdef FEmesh < mFEM.handle_hide
             % Complete message
             disp(['    ...Completed in ', num2str(toc),' sec.']);
          end 
-        
-        function grid(obj, varargin)  
-            % Create a mesh (1D, 2D, or 3D)
-            % 
-            % Syntax:
-            %   grid(x0, x1, xn)
-            %   grid(x0, x1, y0, y1, xn, yn)
-            %   grid(x0, x1, y0, y1, z0, z1, xn, yn, zn)
-            %
-            % Input:
-            %   x0,x1 = Mesh limits in x-direction
-            %   y0,y1 = Mesh limits in y-direction
-            %   z0,z1 = Mesh limits in z-direction
-            %   xn,yn,zn = Num. of elements in x,y,z direction
-           
-            % Display wait message
-            tic;
-            disp('Generating mesh...'); 
-            
-            % Check the current element type is supported
-            switch obj.opt.element;
-                case 'Linear2';
-                    obj.gen1Dgrid(varargin{:});
-                case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(varargin{:});
-                otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.opt.element);
-            end
-            
-            % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
-   
-            % Initialize
-            obj.initialize();
-        end
-       
-        function plot(obj, varargin)
-            %PLOT Plots mesh and/or data (see FEplot function for details)
-            FEplot(obj,varargin{:});
-        end
-    end
-    
-    methods (Access = private)
-        function compute_dof_map(obj)
-            % Calculates the global degree-of-freedom map
-            
-            % Display wait message
-            tic;
-            disp('Computing the degree-of-freedom map...');
-
-            % Place the correct type of map in public property
-            switch obj.opt.type;
-                case 'CG'; 
-                    [~,~,obj.map.dof] = unique(obj.map.node, 'rows','stable');
-                case 'DG'; 
-                    obj.map.dof = (1:size(obj.map.node,1))';
-            end
-
-            % Update the elements with the global dof
-            for e = 1:obj.n_elements;
-                elem = obj.element(e);
-                elem.global_dof = obj.map.dof(obj.map.elem == e,:);
-            end
-            
-            % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
-        end
         
         function gen1Dgrid(obj, x0, x1, xn)
             % Generate the 1D mesh (see grid)
