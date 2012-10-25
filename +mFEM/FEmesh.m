@@ -295,6 +295,9 @@ classdef FEmesh < mFEM.handle_hide
             % Display wait message
             tic;
             disp('Locating neighbor elements...');
+            
+            % Create a dof map for searching out neighbors
+            [~, ~, CGdof] = unique(obj.map.node, 'rows','stable');
                                     
             % Loop through elements and store ids of neighboring elements
             for e = 1:obj.n_elements;
@@ -303,7 +306,7 @@ classdef FEmesh < mFEM.handle_hide
 
                 % Define vectors of nodal values
                 a = elem.nodes;
-                
+
                 % Compute distance of all nodes from center of this element
                 cntr = mean(elem.nodes);
                 d = max(obj.map.node - repmat(cntr,length(obj.map.node),1),[],2);
@@ -333,8 +336,11 @@ classdef FEmesh < mFEM.handle_hide
                 % Locate the neighbor that shares all nodes on side
                 occ = histc(all_neighbors, neighbors);
                 id = neighbors(occ > obj.n_dim - 1);
-                elem.n_neighbors = length(id);
 
+                % Build global dof for sides of the current element
+                dof_e = CGdof(obj.map.elem == e);
+                dof_e = sort(dof_e(elem.side_dof),2);
+                
                 % Loop through the neighbor elements
                 for n = 1:length(id);
                     
@@ -342,23 +348,25 @@ classdef FEmesh < mFEM.handle_hide
                     neighbor = obj.element(id(n));
 
                     % Skip if this pairing was already done
-                   if any(elem.neighbors == neighbor);
+                    if any(elem.neighbors == neighbor);
                        continue;
-                   end    
-                    
+                    end    
+
+                    % Get the neighbor element dofs
+                    dof_n = CGdof(obj.map.elem == id(n));
+                    dof_n = sort(dof_n(neighbor.side_dof),2);
+
                     % Locate where the sides are the same
-                    [~, s_e, s_n] = intersect(elem.nodes, neighbor.nodes, 'rows', 'R2012a');
-                    
+                    [~, s_e, s_n] = intersect(dof_e, dof_n, 'rows', 'R2012a');
+
                     % Store the values for the current element
-                    elem.neighbor(end+1).element = neighbor;
-                    elem.neighbor(end).element_dof = uint32(s_e);  
-                    elem.neighbor(end).neighbor_dof = uint32(s_n);  
-                    
+                    elem.side(s_e).neighbor = neighbor;
+                    elem.side(s_e).neighbor_side = uint32(s_n);  
+
                     % Store the values for the neighbor element
-                    neighbor.neighbor(end+1).element = elem;
-                    neighbor.neighbor(end).element_dof = s_n;  
-                    neighbor.neighbor(end).neighbor_dof = s_e;  
-                    
+                    neighbor.side(s_n).neighbor = elem;
+                    neighbor.side(s_n).neighbor_side = uint32(s_e);  
+
                     % Store current element in vector for comparision 
                     neighbor.neighbors(end+1) = elem;
                 end  
@@ -587,8 +595,11 @@ classdef FEmesh < mFEM.handle_hide
 
                         % If side is on the boundary and contains no
                         % boundary ids, assign the desired id
-                        if elem.side(s).on_boundary ...
-                                && elem.side(s).boundary_id == 0;
+                        if (elem.side(s).on_boundary || isempty(elem.side(s).neighbor)) ...
+                                && isempty(elem.side(s).boundary_id);
+                            
+                            % Be sure to tag side as boundary
+                            elem.side(s).on_boundary = true;
                             
                             % Apply the id to the element side data
                             elem.side(s).boundary_id = id;

@@ -40,8 +40,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        n_neighbors;                % no. of neighbors
-        neighbor;                   % structure of neighboring elements
+%         n_neighbors;                % no. of neighbors
+%         neighbor;                   % structure of neighboring elements
         side;                       % side info, see constructor         
     end
     
@@ -99,12 +99,10 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             
             % Intialize the side data structure
             obj.side = struct('on_boundary', false, ...
-                'boundary_id',cell(obj.n_sides,1));
+                'boundary_id', cell(obj.n_sides,1),...
+                'neighbor',[], 'neighbor_side', []);
             
-            % Initialize neighbor informatoin
-            obj.neighbor = struct('element', {}, 'element_dof', {}, ...
-                'neighbor_dof', {});
-            
+            % Initialize neighbor array
             obj.neighbors = feval([class(obj),'.empty']);
         end
         
