@@ -7,10 +7,10 @@ classdef Truss2 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_sides = 2;                % no. "sides" (nodes are sides in 1D)
-        lims = [-1,1];              % limits xi
-        side_dof = [1; 2];          % local dofs of the "sides"
-        side_type = '';             % 1D elements do not have side elements
+        n_sides = 2;                 % no. "sides" (nodes are sides in 1D)
+        side_dof = [1; 2];           % local dofs of the "sides"
+        side_type = 'Point';         % 1D elements do not have side elements
+        quad = mFEM.Gauss(1,'line'); % 1-point line quadrature
     end
     
     % Define the Linear2 constructor
@@ -25,11 +25,16 @@ classdef Truss2 < mFEM.Element
            
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+           
+           % Set the local dimensionality, only needed if the number of 
+           % element local coordinates (xi,eta,...) are different from the 
+           % number of spatial coordinates (x,y,...).
+           obj.local_n_dim = 1;
         end
         
         % Define the size function
         function L = size(obj)
-        	L = norm(obj.nodes);   
+        	L = norm(diff(obj.nodes,1));
         end
     end
     

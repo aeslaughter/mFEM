@@ -11,12 +11,12 @@ classdef System < mFEM.handle_hide
     properties(Access = private)
         mesh = mFEM.FEmesh.empty;
         reserved = {'N','B','x','y','z','xi','eta','zeta'};
-        mat = struct('name', char, 'equation', char, 'func',char, 'matrix',sparse([]),'boundary_id', uint32([]));
-        vec = struct('name', char, 'equation' ,char, 'func',char, 'vector',[],'boundary_id', uint32([]));
+        mat = struct('name', char, 'eqn', char, 'func', char, 'matrix',sparse([]),'boundary_id', uint32([]));
+        vec = struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));
         const = struct('name', char, 'value',[]);
     end
     
-    methods 
+    methods (Access = public)
         function obj = System(mesh)
             %SYSTEM Class constructor.
             obj.mesh = mesh;
@@ -44,7 +44,7 @@ classdef System < mFEM.handle_hide
             idx = length(obj.mat) + 1;
             
             obj.mat(idx).name = name;
-            obj.mat(idx).equation = eqn;
+            obj.mat(idx).eqn = eqn;
             obj.mat(idx).func = obj.parse_equation(eqn);
             obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
             obj.mat(idx).boundary_id = varargin{:};
@@ -55,7 +55,7 @@ classdef System < mFEM.handle_hide
             
             idx = length(obj.vec) + 1;
             obj.vec(idx).name = name;
-            obj.vec(idx).equation = eqn;
+            obj.vec(idx).eqn = eqn;
             obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
             obj.vec(idx).boundary_id = varargin{:};   
@@ -64,7 +64,7 @@ classdef System < mFEM.handle_hide
         function X = get(obj, name)
             %GET Returns the value for the specified name
             
-            [type, idx] = locate(name);
+            [type, idx] = obj.locate(name);
             
             switch type;
                 case 'mat'; X = obj.mat(idx).matrix;
@@ -74,7 +74,7 @@ classdef System < mFEM.handle_hide
         end
         
         function X = assemble(obj, name)
-            % Assembles matrix and vectors
+            %ASSEMBLE Assembles matrix or vector given by name
 
             % Locate the matrix or vector
             [type,idx] = obj.locate(name);
@@ -106,7 +106,7 @@ classdef System < mFEM.handle_hide
                 for i = 1:length(obj.(type));
                     
                     % If name is found return the index
-                    if strcmpi(obj.(type)(i).name, name);
+                    if strcmp(obj.(type)(i).name, name);
                         idx = i;
                         return;
                     end
@@ -133,14 +133,25 @@ classdef System < mFEM.handle_hide
             obj.const(idx).value = value;   % constant value
         end
         
-        function fcn = parse_equation(obj, eqn)
+        function fcn = parse_equation(obj, eqn, varargin)
             %PARSE_EQUATION Converts given equation into a useable function
+            %
+            % Syntax:
+            %   parse_equation(eqn)
+            %   parse_equation(eqn,'side');
             
             % Get the dimensions of the FE space
             n_dim = obj.mesh.n_dim;
+            
+            % Adjust for special side case
+            if nargin == 3 && strcmpi(varargin{1},'side')
+                n_dim = n_dim - 1;
+            end
 
             % Build variable strings based on the dimensions of FE space
-            if n_dim == 1;
+            if n_dim == 0; % (side of 1D elements)
+                var = '';
+            elseif n_dim == 1;
                 var = 'xi';
             elseif n_dim == 2;
                 var = 'xi,eta'; 
@@ -178,76 +189,158 @@ classdef System < mFEM.handle_hide
             end
 
             % Create the function string
-            fcn = ['@(elem,',var,') ', eqn];
+            if isempty(var);
+                fcn = ['@(elem) ', eqn];     
+            else
+                fcn = ['@(elem,',var,') ', eqn];
+            end
         end
         
         function K = assemble_matrix(obj, idx)
-
+            %ASSEMBLE_MATRIX Assemble a sparse matrix for the given idx
+                
+                % Clear existing matrix
+                obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+            
+                % Create function from the function string
                 fcn = str2func(obj.mat(idx).func);
             
+                % Loop through all of the elements
                 for e = 1:obj.mesh.n_elements;
 
+                    % Extract current element
                     elem = obj.mesh.element(e);
                     
-                    [qp, W] = elem.quad.rules();
-                    
-                    
+                    % Initialize the local stiffness matrix
                     Ke = zeros(elem.n_dof);
-                    for i = 1:length(qp);
-                        Ke = Ke + W(i)*fcn(elem,qp(i))*elem.detJ(qp(i));
+                    
+                    % Get the quadrature rules for this element
+                    [qp, W] = elem.quad.rules('cell');
+                    
+                    % Loop through all of the quadrature points and add the
+                    % result to the local matrix
+                    for i = 1:size(qp,1);
+                        Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
                     end
                     
+                    % Extract the global dof for this element
                     dof = elem.get_dof();    
+                    
+                    % Add the contribution to the gloval matrix
                     obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
                 end
                 
+                % Return the global matrix
                 K = obj.mat(idx).matrix;
-                
         end
         
         function f = assemble_vector(obj, idx)
-
-                V = obj.vec(idx);
-                fcn = str2func(V.func);
+            %ASSEMBLE_VECTOR Assembles a vector for given index
             
-                for e = 1:obj.mesh.n_elements;
+            % Clear existing vector
+            obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
+          
+            % Case when the vector is only applied to a side
+            if ~isempty(obj.vec(idx).boundary_id);
+               obj.assemble_vector_side(idx);
+               
+            % Case when the vector is applied to entire element    
+            else
+                obj.assemble_vector_elem(idx);
+            end
+            
+            % Output the global vector
+            f = obj.vec(idx).vector;
+        end  
+        
+        function assemble_vector_side(obj, idx)
+            %LOCAL_BOUNDARY_VECTOR computes vector equation on boundary
+            
+            % Build the function for the side
+            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, 'side'));
+            
+            % Extract the boundary ids
+            id = obj.vec(idx).boundary_id;
+            
+            % Loop through each element
+            for e = 1:obj.mesh.n_elements;
 
-                    elem = obj.mesh.element(e);
-                    
-                    [qp, W] = elem.quad.rules();
-                                            
-                    fe = zeros(elem.n_dof,1);
+                % The current element
+                elem = obj.mesh.element(e);
 
-                    if ~isempty(V.boundary_id);
-                        
-                        for i = 1:length(V.boundary_id);
-                            id = V.boundary_id(i);
-                        
-                            for s = 1:elem.n_sides; 
-                                if elem.side(s).boundary_id == id;
-                                    xi = elem.lims(elem.get_dof(s));    % xi value to evaluate at
-                                    fe = fe + fcn(elem,xi);              
+                % Intialize the force fector
+                fe = zeros(elem.n_dof, 1);
+            
+                % Loop through all of the boundaries specified
+                for i = 1:length(id);
+
+                    % Loop through all sides of this element
+                    for s = 1:elem.n_sides; 
+
+                        % Test if this side is on the boundary
+                        if any(elem.side(s).boundary_id == id(i));
+
+                            % Create the side element
+                            side = elem.build_side(s);
+
+                            % If elem is 1D, then the side is a point that
+                            % does not require intergration
+                            if elem.local_n_dim == 1;
+                                dof = elem.get_dof(s);
+                                fe(dof) = fe(dof) + fcn(side);
+
+                            % Side elements that are not points    
+                            else
+                                [qp,W] = side.quad.rules('cell');
+
+                                % Local dofs for the current side
+                                dof = elem.get_dof(s);
+
+                                % Perform quadrature
+                                for j = 1:size(qp,1);
+                                    fe(dof) = fe(dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                 end
-                            end   
-                        end
-                        
-                    else
-                        for i = 1:length(qp);
-                            fe = fe + W(i)*fcn(elem,qp(i))*elem.detJ(qp(i));
-                        end
-                    end
-                    
-                    dof = elem.get_dof();    
-                    obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
-                end
-                
-                f = obj.vec(idx).vector;
-                
-        end
+                            end
 
+                            % Delete the side element
+                            delete(side);
+                            
+                            % Add the local force vector to the global vector
+                            dof = elem.get_dof();    
+                            obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
+                        end
+                    end   
+                end 
+            end
+        end
         
-        
+        function assemble_vector_elem(obj, idx)
+            %ASSEMBLE_VECTOR_ELEM Assebles a vector across entire domain 
+            
+            % Create the function for element calculations
+            fcn = str2func(obj.vec(idx).func);
+
+            % Loop through each element
+            for e = 1:obj.mesh.n_elements;
+
+                % The current element
+                elem = obj.mesh.element(e);
+
+                % Intialize the force fector
+                fe = zeros(elem.n_dof,1);
+
+                % Get the quadrature points in cell form
+                [qp, W] = elem.quad.rules('cell');
+
+                % Loop through all of the quadrature points
+                for j = 1:size(qp,1);
+                    fe = fe + W(j)*fcn(elem,qp{j,:})*elem.detJ(qp{j,:});
+                end
+
+                % Add the local force vector to the global vector
+                dof = elem.get_dof();    
+                obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
+            end
+        end
     end
-    
- 
 end

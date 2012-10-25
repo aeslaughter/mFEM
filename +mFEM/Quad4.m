@@ -13,9 +13,9 @@ classdef Quad4 < mFEM.Element
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
         n_sides = 4;                        % no. of sides
-        lims = [-1, 1];                     % limits of xi and eta
         side_dof = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
         side_type = 'Truss2';               % side is 2-node truss element
+        quad = mFEM.Gauss(2, 'quad');       % quadrature rules
      end
     
     % Define the Quad4 constructor

@@ -15,9 +15,10 @@ classdef Tri3 < mFEM.Element
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
         n_sides = 3;                % no. of sides
-        lims = [0,1];               % limits of xi1 and xi2        
+        lims = [0,1; 0,1];          % limits of xi1 and xi2        
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
         side_type = 'Truss2';       % 2-node Truss element for side
+        quad = mFEM.Gauss(3,'tri'); % 3-point triangular quadrature
     end
     
     % Define the Quad4 constructor
@@ -42,10 +43,10 @@ classdef Tri3 < mFEM.Element
             % Define the Jacobain (see Fish p. 180)
             
             % The Jacobian is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Tri3:jacobian', 'The Jacobian for the Tri3 element is constant, thus no spatial coordinates are needed.');
-            end
-            
+%             if nargin > 1;
+%                 warning('Tri3:jacobian', 'The Jacobian for the Tri3 element is constant, thus no spatial coordinates are needed.');
+%             end
+           
             % Define short-hand for difference between two points
             x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
             y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);
@@ -65,9 +66,9 @@ classdef Tri3 < mFEM.Element
             % Gradient of shape functions (Fish, p. 174)
             
             % The Jacobian is constant, produce a warning for agruements
-            if nargin > 1;
-                warning('Tri3:grad_basis', 'The shape functin dervatives for the Tri3 element are constant, thus no spatial coordinates are needed.');
-            end
+%             if nargin > 1;
+%                 warning('Tri3:grad_basis', 'The shape functin dervatives for the Tri3 element are constant, thus no spatial coordinates are needed.');
+%             end
             
             % Define short-hand for difference between two points
             x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);

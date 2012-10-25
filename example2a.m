@@ -23,7 +23,7 @@ mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2,'tri');
+q_elem = Gauss(3,'tri');
 [qp, W] = q_elem.rules();
 
 q_face = Gauss(1);
@@ -68,10 +68,15 @@ for e = 1:mesh.n_elements;
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
+            % Local dofs for the current side
+            dof = elem.get_dof(s); 
+           
+            % Build the side element
             side = elem.build_side(s);
+            
+            % Perform Guass quadrature
             for i = 1:length(qp_side);
-                dof = elem.get_dof(s); % local dofs for the current side
-                fe(dof) = fe(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ();              
+                fe(dof) = fe(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ(qp_side(i));              
             end
             delete(side)
         end
@@ -84,7 +89,6 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-mesh.map.boundary_id
 non = mesh.get_dof(3,'ne'); % 4
 ess = mesh.get_dof(3);      % 1,2,3
 

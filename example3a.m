@@ -5,7 +5,7 @@
 %
 % Description:
 %   example3 solves a simple single element heat conduction problem.
-function example3
+function example3a
    
 % Import the mFEM library
 import mFEM.*;
@@ -22,10 +22,10 @@ mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2);
+q_elem = Gauss(2,'quad');
 [qp, W] = q_elem.rules();
 
-q_face = Gauss(1);
+q_face = Gauss(1,'line');
 [qp_side, W_side] = q_face.rules();
 
 % Definethe constants for the problem
@@ -59,24 +59,21 @@ for e = 1:mesh.n_elements;
             K = K + W(j)*W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
         end
     end
-    
-    % Re-define the N short-hand function handle for use on sides
-    N = @(xi) side.shape(xi);
-    
+  
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
+            dof = elem.get_dof(s); % local dofs for the current side
             side = elem.build_side(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
-                dof = elem.get_dof(s); % local dofs for the current side
-                f(dof) = f(dof) + -q_top*W_side(i)*N(qp_side(i))'*side.detJ();              
+                f(dof) = f(dof) + -q_top*W_side(i)*N(qp_side(i))'*side.detJ(qp_side(i));              
             end
-            delete(side)
+            delete(side);
         end
-    end      
+    end  
 end
 
 % Define dof indices for the essential dofs and non-essential dofs

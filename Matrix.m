@@ -1,4 +1,4 @@
-classdef Matrix < handle
+classdef Matrix < mFEM.handle_hide
 
    properties %(Access = private)
       I;
@@ -77,7 +77,6 @@ classdef Matrix < handle
 
             % Add the local mass and stiffness matrix to the sparse matrix values
             obj.Aij(idx) = reshape(B, numel(B), 1);
-
        end
        
        function A = init(obj)

@@ -12,9 +12,9 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public) 
       n_sides;      % no. of sides
-      lims;         % limits of local coordinate; assumes all vary the same
       side_dof;     % array of local node ids for each side
       side_type;    % defines the type of element that defines the sides
+      quad;         % Instance of Gauss quadrature class to use
     end
     
     % Abstract Methods (protected)
@@ -28,27 +28,26 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
-        id = uint32([]);          % element id [double]
-        n_nodes = uint32([]);     % no. of nodes [double]
-        n_dim = uint32([]);       % no. of spatial dimensions
-        n_dof = uint32([]);       % no. of global degrees of freedom
-        n_dof_node = uint32(1);   % no. of dofs per node (scalar = 1)  
-        nodes = [];               % global coordinates (no. nodes, no. dim)
+        id = uint32([]);            % element id [double]
+        n_nodes = uint32([]);       % no. of nodes [double]
+        n_dim = uint32([]);         % no. of spatial dimensions
+        n_dof = uint32([]);         % no. of global degrees of freedom
+        n_dof_node = uint32(1);     % no. of dofs per node (scalar = 1)  
+        nodes = [];                 % global coordinates (no. nodes, no. dim)
     end
     
-    % Public properties (read only; except FEmesh)
+    % Public properties (read only; except FEmesh and Element)
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-%         n_neighbors;                % no. of neighbors
-%         neighbor;                   % structure of neighboring elements
-        side;                       % side info, see constructor         
+        side;                       % side info, see constructor        
+        local_n_dim;                % local dimensions (default is n_dim; see Truss2 for exception)
     end
     
     % Protected properties
     properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
        global_dof = []; % global dof for nodes of element 
-       neighbors; % storage of nieghbor elements (see FEmesh.find_neighbors)
+       neighbors;       % storage of nieghbor elements (see FEmesh.find_neighbors)
     end    
     
     % Public Methods
@@ -86,6 +85,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             obj.id = id;
             obj.nodes = nodes;
             [obj.n_nodes, obj.n_dim] = size(nodes);
+            obj.local_n_dim = obj.n_dim;
 
             % Change dofs per node
             if nargin == 3 && strcmpi(varargin{1},'vector');
@@ -223,7 +223,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % Extract the nodes for the side
             dof = obj.side_dof(id,:);
             node = obj.nodes(dof,:);
-                       
+
             % Create the side element
             side = feval(['mFEM.',obj.side_type], NaN, node, obj.n_dof_node);
             

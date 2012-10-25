@@ -3,7 +3,7 @@ classdef FEmesh < mFEM.handle_hide
     
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
-        n_dim = uint32([]);         % no. of spatial dimensions
+        n_dim = uint32([]);         % no. of dimensions (== Element local_n_dim)
         n_dof = uint32([]);         % total no. of global dofs
         n_dof_node = uint32(1);     % no. of dofs per node      
         element;                    % empty array of elements [Element]
@@ -115,7 +115,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.n_elements = length(obj.element); 
             
             % Spatial dimension
-            obj.n_dim = obj.element(1).n_dim;
+            obj.n_dim = obj.element(1).local_n_dim;
             
             % Determine the no. of dofs per node
             if strcmpi(obj.opt.space, 'scalar');

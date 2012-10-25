@@ -6,11 +6,10 @@ classdef Linear2 < mFEM.Element
     %
 
     properties (SetAccess = protected, GetAccess = public)    
-        n_sides = 2;                % no. "sides" (nodes are sides in 1D)
-        lims = [-1,1];              % limits xi
-        side_dof = [1; 2];          % local dofs of the "sides"
-        side_type = '';             % 1D elements do not have side elements
-        quad = mFEM.Gauss(1);       % Instance of Gauss quadrature class
+        n_sides = 2;                    % no. "sides" (points in 1D)
+        side_dof = [1; 2];              % local dofs of the "sides"
+        side_type = 'Point';            % Sides are points
+        quad = mFEM.Gauss(1,'line');    % Instance of Gauss quadrature class
     end
     
     methods     
