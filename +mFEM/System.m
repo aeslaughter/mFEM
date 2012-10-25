@@ -1,4 +1,4 @@
-classdef System < handle
+classdef System < mFEM.handle_hide
     %SYSTEM A class for automatic assembly of finite element equations.
     %
     % Syntax:
@@ -9,7 +9,7 @@ classdef System < handle
     %
 
     properties(Access = private)
-        mesh = mFEM.mesh.empty;
+        mesh = mFEM.FEmesh.empty;
         reserved = {'N','B','x','y','z','xi','eta','zeta'};
         mat = struct('name', char, 'equation', char, 'func',char, 'matrix',sparse([]),'boundary_id', uint32([]));
         vec = struct('name', char, 'equation' ,char, 'func',char, 'vector',[],'boundary_id', uint32([]));

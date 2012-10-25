@@ -40,8 +40,8 @@ classdef Element < mFEM.handle_hide
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        neighbors = struct([]);      % struct of neighboring element info
-        side = struct([]);          % side info         
+        neighbors;                  % neighboring elements
+        side;                       % side info, see constructor         
     end
     
     % Protected properties
@@ -94,6 +94,11 @@ classdef Element < mFEM.handle_hide
             
             % Determine the total number of global dofs
             obj.n_dof = obj.n_nodes * obj.n_dof_node;
+            
+            % Intialize the side data structure
+            obj.side = struct('on_boundary', false, ...
+                'boundary_id',cell(obj.n_sides,1), 'neighbor', [],...
+                'neighbor_side', uint32([]));
         end
         
         function N = shape(obj, varargin)

@@ -138,7 +138,9 @@ classdef FEmesh < mFEM.handle_hide
             obj.n_dof = length(unique(obj.map.dof)) * obj.n_dof_node;
             
             % Locates the neighbor elements for each element
-            obj.find_neighbors();
+            if strcmpi(obj.opt.type,'DG');
+                obj.find_neighbors();
+            end
  
             % Set the initilization flag to true
             obj.initialized = true;
@@ -283,7 +285,79 @@ classdef FEmesh < mFEM.handle_hide
                out = out(:,varargin{1});
             end
         end
+        
+        function find_neighbors(obj)
+            % Locates elements that share a side
+            %
+            % Syntax:
+            %   find_neighbors()   
+
+            % Display wait message
+            tic;
+            disp('Locating neighbor elements...');
+                                    
+            % Loop through elements and store ids of neighboring elements
+            for e = 1:obj.n_elements;
+                elem = obj.element(e);      % current element
+                elem.on_boundary = false;   % initilize on_boundary flag
+
+                % Define vectors of nodal values
+                a = elem.nodes;
+                
+                % Compute distance of all nodes from center of this element
+                cntr = mean(elem.nodes);
+                d = max(obj.map.node - repmat(cntr,length(obj.map.node),1),[],2);
+                
+                % Create a local set of nodes to search
+                L = elem.hmax();                % max distance
+                cmap = obj.map.elem(d < L);     % elemnts closer than L
+                cidx = cmap ~= e;               % exclude current element
+                cmap = cmap(cidx);              % update cmap
+
+                % Build list of nodes to search through 
+                b = obj.map.node(d < L, :);
+                b = b(cidx,:);            
+
+                % Determine where the a and b vectors are the same
+                [m,n] = size(a);
+                index = zeros(length(b),n); 
+                for i = 1:m;
+                    aa = repmat(a(i,:), size(b,1), 1);
+                    index(:,i) = all(aa == b, 2);
+                end
+
+                % Define the neighor elements
+                all_neighbors = cmap(any(index,2));
+                neighbors = unique(all_neighbors);
+
+                % Locate the neighbor that shares all nodes on side
+                occ = histc(all_neighbors, neighbors);
+                id = neighbors(occ > obj.n_dim - 1);
+                
+                % Side global degrees of freedome for the element
+                ge = elem.get_dof();
+                ge = sort(ge(elem.side_dof),2);
+                
+                % Loop through the neighbor elements
+                for n = 1:length(id);
+                    % Build side global dofs for the neighbor element
+                    neighbor = obj.element(id(n));
+                    gn = neighbor.get_dof();
+                    gn = sort(gn(neighbor.side_dof),2);
+                    
+                    % Locate where the sides are the same
+                    [~, s_e, s_n] = intersect(ge, gn, 'rows', 'R2012a');
+                    
+                    % Store the values
+                    elem.side(s_e).neighbor = neighbor;
+                    elem.side(s_e).neighbor_side = s_n;  
+                end  
+            end
             
+            % Complete message
+            disp(['    ...Completed in ', num2str(toc),' sec.']);
+         end 
+        
         function grid(obj, varargin)  
             % Create a mesh (1D, 2D, or 3D)
             % 
@@ -396,98 +470,7 @@ classdef FEmesh < mFEM.handle_hide
                 end
             end
         end
-        
-        function find_neighbors(obj)
-            % Locates elements that share a side
-            %
-            % Syntax:
-            %   find_neighbors()   
-            %
-            % Note, this code was written with speed in mind, many of the
-            % operations can be done here with ismember, intersect, and 
-            % repmat, but they are slow. This code may be longer and more 
-            % invlove, but it is faster by about 30 than previous versions.
-            %
-            % This helped remove repmat:
-            %   http://www.psi.toronto.edu/~vincent/matlabindexrepmat.html
-            
-            % Display wait message
-            tic;
-            disp('Locating neighbor elements...');
-                                    
-            % Loop through elements and store ids of neighboring elements
-            for e = 1:obj.n_elements;
-                elem = obj.element(e);      % current element
-                elem.on_boundary = false;   % initilize on_boundary flag
 
-                % Compute distance of all nodes from center of this element
-                cntr = mean(elem.nodes);
-                d = max(obj.map.node - repmat(cntr,length(obj.map.node),1),[],2);
-                
-                % Create a local set of nodes to search
-                L = elem.hmax();              % max distance
-                cmap = obj.map.elem(d < L);     % elemnts closer than L
-                cidx = cmap ~= e;               % exclude current element
-                cmap = cmap(cidx);              % update cmap
-
-                % Build list of nodes to search through 
-                b = obj.map.node(d < L, :);
-                b = b(cidx,:);            
-
-                % Loop through the sides
-                for s = 1:elem.n_sides;
-
-                    % Define vectors of nodal values
-                    a = elem.nodes(elem.side_dof(s,:),:);
-                    
-                    % Determine where the a and b vectors are the same
-                    [m,n] = size(a);
-                    rowIdx = 1:m;
-                    repmatRowIdx = rowIdx(:, ones(length(b),1));
-                    index = zeros(length(b),n); 
-                    for i = 1:m;
-                         aa = a(i,:);
-                       % aa = repmat(a(i,:), size(b,1), 1);
-                        index(:,i) = all(aa(repmatRowIdx(:), 1:end) == b, 2);
-                    end
-                    
-                    % Define the neighor elements
-                    all_neighbors = cmap(any(index,2));
-                    neighbors = unique(all_neighbors);
-                    
-                    % Locate the neighbor that shares all nodes on side
-                    occ = histc(all_neighbors, neighbors);
-                    id = neighbors(occ > obj.n_dim - 1);
-                    
-                    % Store side information, if there is a neighbor
-                    if ~isempty(id);
-                        
-                        % Store the neighbor element handle
-                        elem.side(s).neighbor = obj.element(id);
-
-                        % Store the local dofs for the neighbor
-                        elem.side(s).neighbor_side = ...
-                            obj.match_side(a, elem.side(s).neighbor);
-                        
-                        % Set boundary flag and id
-                        elem.side(s).on_boundary = false;
-                        elem.side(s).boundary_id = [];
-                        
-                    % If no neighbor, then it is a boundary    
-                    else
-                        elem.on_boundary = true;
-                        elem.side(s).on_boundary = true;
-                        elem.side(s).boundary_id = 0;
-                        elem.side(s).neighbor = feval([class(elem),'.empty']);
-                        elem.side(s).neighbor_side = [];
-                    end
-                end
-            end
-            
-            % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
-        end 
-        
         function s_n = match_side(obj, a, N)
             % Returns the side index of the neighbor that matches 
                         
