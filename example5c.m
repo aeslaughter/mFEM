@@ -5,16 +5,17 @@
 %
 % Description:
 %   example5 solves a simple transient heat conduction problem.
-function example5b
+function example5c
    
 % Import the mFEM library
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh();
-mesh.add_element('Tri3', 1/100*[0,0; 2,0; 2,4]);
-mesh.add_element('Tri3', 1/100*[0,0; 2,4; 0,2]);
+mesh.add_element('Quad4', 1/100*[0,0; 2,0; 2,2; 0,2]);
+mesh.add_element('Tri3', 1/100*[0,2; 2,2; 2,4]);
 mesh.initialize();
+mesh.plot();
 
 % Label the boundaries
 mesh.add_boundary('left',1);            % insulated (q = 0)
@@ -45,15 +46,9 @@ M = sys.assemble('M');
 K = sys.assemble('K') + sys.assemble('K_h');
 f = sys.assemble('f');
 
-% Print the full M,K, and f matrices (re-order to match book)
-ix = [1,4,2,3];
-% full(M(ix,ix))
-% full(K(ix,ix))
-% f(ix)
-
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(3,'ne'); % 1,2
-ess = mesh.get_dof(3);      % 3,4
+non = mesh.get_dof(3,'ne'); 
+ess = mesh.get_dof(3);      
 
 % Solve for the temperatures
 T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector
@@ -83,4 +78,4 @@ for t = 1:10;
 end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
-T(ix,:)'
+T'

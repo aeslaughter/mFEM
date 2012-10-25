@@ -24,8 +24,8 @@ if nargin == 1 && isnumeric(varargin{1});
 end
     
 % Create a FEmesh object, 2 node linear mesh from 0 to 4
-mesh = FEmesh('Linear2');
-mesh.grid(0,4,nel); % the mesh is initialized automatically with grid function
+mesh = FEmesh();
+mesh.grid('Linear2',0,4,nel); % the mesh is initialized automatically with grid function
 
 % Label the boundaries
 mesh.add_boundary('left', 1); % T = 0 boundary (essential)    

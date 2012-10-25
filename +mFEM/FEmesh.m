@@ -12,7 +12,7 @@ classdef FEmesh < mFEM.handle_hide
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary_id', uint32([]));       
         opt = ...                   % struct of default user options
-            struct('element', 'Quad4', 'space', 'scalar', 'type', 'CG');
+            struct('space', 'scalar', 'type', 'CG');
     end
     
     properties (Access = private)
@@ -51,20 +51,15 @@ classdef FEmesh < mFEM.handle_hide
             %               allows user to specify the element, this is the
             %               same as using the name option, if both are set
             %               this property takes presidnece.
-                       
-            % Prepare input
-            if mod(nargin,2); % odd
-            	varargin = ['Element', varargin];
-            end
-            
+
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
                      
-            % Initialize the element property
-            obj.element = feval(['mFEM.',obj.opt.element,'.empty']);
+            % Initialize the element property (the type does not matter)
+            obj.element = mFEM.Quad4.empty;
         end
 
-        function add_element(obj, nodes)
+        function add_element(obj, type, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
             % Syntax:
@@ -75,8 +70,8 @@ classdef FEmesh < mFEM.handle_hide
             %   element that was established when the FEmesh object was
             %   created. For example:
             %
-            %   >> mesh = FEmesh('Quad4');
-            %   >> mesh.add_element(1,[0,0; 1,0; 1,1; 0,1]);
+            %   >> mesh = FEmesh();
+            %   >> mesh.add_element(1,'Quad4', [0,0; 1,0; 1,1; 0,1]);
             %
             %   Note, the optional space string for the element is not
             %   accepted here, as it is defined across the entire mesh
@@ -84,21 +79,16 @@ classdef FEmesh < mFEM.handle_hide
             
             % Indicate that the object must be reinitialized
             obj.initialized = false;
-            
-            % Add the element(s)
-            id = length(obj.element) + 1;
-
+                        
             % Create the element
-            obj.element(id) = feval(['mFEM.', obj.opt.element],...
+            id = length(obj.element) + 1;
+            obj.element(id) = feval(['mFEM.', type],...
                 id, nodes, obj.opt.space);
             
             % Append the element and node maps                    
             nn = obj.element(end).n_nodes;
             obj.map.elem(end+1:end+nn,:) = id;
             obj.map.node(end+1:end+nn,:) = obj.element(id).nodes;
-            
-            % Compute the centroid
-%             obj.map.center(end+1,:) = mean(nodes);
         end
         
         function initialize(obj)
@@ -284,15 +274,16 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
         
-        function grid(obj, varargin)  
+        function grid(obj, type, varargin)  
             % Create a mesh (1D, 2D, or 3D)
             % 
             % Syntax:
-            %   grid(x0, x1, xn)
-            %   grid(x0, x1, y0, y1, xn, yn)
-            %   grid(x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %   grid(type, x0, x1, xn)
+            %   grid(type, x0, x1, y0, y1, xn, yn)
+            %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
             %
             % Input:
+            %   type = name of element (e.g., 'Quad4')
             %   x0,x1 = Mesh limits in x-direction
             %   y0,y1 = Mesh limits in y-direction
             %   z0,z1 = Mesh limits in z-direction
@@ -303,11 +294,11 @@ classdef FEmesh < mFEM.handle_hide
             disp('Generating mesh...'); 
             
             % Check the current element type is supported
-            switch obj.opt.element;
+            switch type;
                 case 'Linear2';
-                    obj.gen1Dgrid(varargin{:});
+                    obj.gen1Dgrid(type, varargin{:});
                 case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(varargin{:});
+                    obj.gen2Dgrid(type, varargin{:});
                 otherwise
                     error('FEmesh:grid','Grid generation is not supported for the %s element', obj.opt.element);
             end
@@ -440,7 +431,7 @@ classdef FEmesh < mFEM.handle_hide
             disp(['    ...Completed in ', num2str(toc),' sec.']);
          end 
         
-        function gen1Dgrid(obj, x0, x1, xn)
+        function gen1Dgrid(obj,type, x0, x1, xn)
             % Generate the 1D mesh (see grid)
 
             % Generate the generic grid points
@@ -453,11 +444,11 @@ classdef FEmesh < mFEM.handle_hide
                 nodes(2) = x(i+1);
 
                 % Add the element(s)
-                obj.add_element(nodes');
+                obj.add_element(type, nodes');
             end
         end
         
-        function gen2Dgrid(obj, x0, x1, y0, y1, xn, yn)
+        function gen2Dgrid(obj, type, x0, x1, y0, y1, xn, yn)
             % Generate the 2D mesh (see grid)
 
             % Generate the generic grid points
@@ -474,13 +465,13 @@ classdef FEmesh < mFEM.handle_hide
                     nodes(4,:) = [x(i), y(j+1)];
                    
                     % Add the element(s)
-                    switch obj.opt.element;
+                    switch type;
                         case {'Quad4'};
-                            obj.add_element(nodes);
+                            obj.add_element(type, nodes);
                             
                         case {'Tri3', 'Tri6'};
-                            obj.add_element(nodes(1:3,:));
-                            obj.add_element(nodes([1,3,4],:));
+                            obj.add_element(type, nodes(1:3,:));
+                            obj.add_element(type, nodes([1,3,4],:));
                     end
                 end
             end
