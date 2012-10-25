@@ -333,24 +333,34 @@ classdef FEmesh < mFEM.handle_hide
                 % Locate the neighbor that shares all nodes on side
                 occ = histc(all_neighbors, neighbors);
                 id = neighbors(occ > obj.n_dim - 1);
-                
-                % Side global degrees of freedome for the element
-                ge = elem.get_dof();
-                ge = sort(ge(elem.side_dof),2);
-                
+                elem.n_neighbors = length(id);
+
                 % Loop through the neighbor elements
                 for n = 1:length(id);
-                    % Build side global dofs for the neighbor element
+                    
+                    % Get the neighbor element
                     neighbor = obj.element(id(n));
-                    gn = neighbor.get_dof();
-                    gn = sort(gn(neighbor.side_dof),2);
+
+                    % Skip if this pairing was already done
+                   if any(elem.neighbors == neighbor);
+                       continue;
+                   end    
                     
                     % Locate where the sides are the same
-                    [~, s_e, s_n] = intersect(ge, gn, 'rows', 'R2012a');
+                    [~, s_e, s_n] = intersect(elem.nodes, neighbor.nodes, 'rows', 'R2012a');
                     
-                    % Store the values
-                    elem.side(s_e).neighbor = neighbor;
-                    elem.side(s_e).neighbor_side = s_n;  
+                    % Store the values for the current element
+                    elem.neighbor(end+1).element = neighbor;
+                    elem.neighbor(end).element_dof = uint32(s_e);  
+                    elem.neighbor(end).neighbor_dof = uint32(s_n);  
+                    
+                    % Store the values for the neighbor element
+                    neighbor.neighbor(end+1).element = elem;
+                    neighbor.neighbor(end).element_dof = s_n;  
+                    neighbor.neighbor(end).neighbor_dof = s_e;  
+                    
+                    % Store current element in vector for comparision 
+                    neighbor.neighbors(end+1) = elem;
                 end  
             end
             

@@ -1,4 +1,4 @@
-classdef Element < mFEM.handle_hide
+classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -40,13 +40,15 @@ classdef Element < mFEM.handle_hide
     properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
-        neighbors;                  % neighboring elements
+        n_neighbors;                % no. of neighbors
+        neighbor;                   % structure of neighboring elements
         side;                       % side info, see constructor         
     end
     
     % Protected properties
     properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
-       global_dof = []; % global dof for nodes of element    
+       global_dof = []; % global dof for nodes of element 
+       neighbors; % storage of nieghbor elements (see FEmesh.find_neighbors)
     end    
     
     % Public Methods
@@ -97,8 +99,13 @@ classdef Element < mFEM.handle_hide
             
             % Intialize the side data structure
             obj.side = struct('on_boundary', false, ...
-                'boundary_id',cell(obj.n_sides,1), 'neighbor', [],...
-                'neighbor_side', uint32([]));
+                'boundary_id',cell(obj.n_sides,1));
+            
+            % Initialize neighbor informatoin
+            obj.neighbor = struct('element', {}, 'element_dof', {}, ...
+                'neighbor_dof', {});
+            
+            obj.neighbors = feval([class(obj),'.empty']);
         end
         
         function N = shape(obj, varargin)
