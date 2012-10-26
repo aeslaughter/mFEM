@@ -3,7 +3,6 @@
 % Syntax:
 %   example6a
 %   example6a('PropertyName', PropertyValue)
-%   example6a(..,'alt');
 %
 % Description:
 %   example6 solves a simple transient heat conduction problem, with the
