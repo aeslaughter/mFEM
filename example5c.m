@@ -4,7 +4,8 @@
 %   example5
 %
 % Description:
-%   example5 solves a simple transient heat conduction problem.
+%   example5 solves a simple transient heat conduction problem, using a
+%   mixed finite element mesh.
 function example5c
    
 % Import the mFEM library
@@ -12,10 +13,11 @@ import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh();
-mesh.add_element('Quad4', 1/100*[0,0; 2,0; 2,2; 0,2]);
-mesh.add_element('Tri3', 1/100*[0,2; 2,2; 2,4]);
-mesh.initialize();
-mesh.plot();
+mesh.grid('Quad4',0,0.02,0,0.02,2,2);
+mesh.add_element('Tri3', 1/100*[0,2; 1,2; 1,3]);
+mesh.add_element('Tri3', 1/100*[1,3; 2,3; 2,4]);
+mesh.grid('Quad4',0.01,0.02,0.02,0.03,1,1);
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('left',1);            % insulated (q = 0)
@@ -43,16 +45,24 @@ sys.add_vector('f','h*T_inf*N''', 2);
 
 % Assemble the matrices
 M = sys.assemble('M');
-K = sys.assemble('K') + sys.assemble('K_h');
+K = sys.assemble('K'); + sys.assemble('K_h');
 f = sys.assemble('f');
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(3,'ne'); 
-ess = mesh.get_dof(3);      
+non = mesh.get_dof(3,'ne');
+ess = mesh.get_dof(3);
 
 % Solve for the temperatures
 T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector
 T(ess,1) = sys.get('T_s');               % apply essential boundaries
+
+% Create the plot, at the intitial time step
+mesh.plot(T);
+title('t = 0');
+xlabel('x');
+ylabel('y');
+cbar = colorbar;
+set(get(cbar,'YLabel'),'String','Temperature');
 
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries
@@ -75,6 +85,11 @@ for t = 1:10;
     
     % Set values for the essential boundary conditions the next time step 
     T(ess, t+1) = sys.get('T_s');
+    
+    % Plot the results
+    pause(0.25);
+    mesh.plot(T(:,t+1));
+    title(['t = ', num2str(t)]);
 end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)

@@ -14,7 +14,7 @@ import mFEM.*;
 mesh = FEmesh();
 mesh.add_element('Tri3',[0,0; 2,0.5; 0,1]);
 mesh.add_element('Tri3',[2,0.5; 2,1; 0,1]);
-mesh.initialize();
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('top', 1);     % q = 20 boundary

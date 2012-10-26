@@ -14,7 +14,7 @@ import mFEM.*;
 mesh = FEmesh();
 mesh.add_element('Tri3', 1/100*[0,0; 2,0; 2,4]);
 mesh.add_element('Tri3', 1/100*[0,0; 2,4; 0,2]);
-mesh.initialize();
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('left',1);            % insulated (q = 0)

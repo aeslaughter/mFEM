@@ -6,6 +6,7 @@ import mFEM.*
 %% Create Mesh
 mesh = FEmesh();
 mesh.grid('Linear2',0,4,2);
+mesh.init();
 
 mesh.add_boundary('left', 1); % T = 0 boundary (essential)    
 mesh.add_boundary('right', 2); % q = 5 boundary  

@@ -19,10 +19,10 @@ classdef Tri6 < mFEM.Element
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
-        n_sides = 3;                % no. of sides
-        lims = [0,1];               % limits of xi1 and xi2        
-        side_dof = [1,4,2; 2,5,3; 3,6,1]; % define the side dofs 
-        side_type = 'Linear2';      % uses 2-node linear element for sides
+        n_sides = 3;                        % no. of sides
+        side_dof = [1,4,2; 2,5,3; 3,6,1];   % define the side dofs 
+        side_type = 'Linear2';              % uses 2-node linear element for sides
+        quad = mFEM.Gauss(4,'tri');         % 4 point triangular quadrature
     end
     
     % Define the Tri6 constructor
@@ -44,6 +44,10 @@ classdef Tri6 < mFEM.Element
 
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:});
+           
+           % Set the node plotting order (this is only needed because the
+           % nodes are not in order)
+           obj.node_plot_order = [1,4,2,5,3,6]; 
         end
     end
     

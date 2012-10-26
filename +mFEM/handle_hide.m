@@ -11,7 +11,12 @@
 % see also HANDLE ELEMENT FEMESH SYSTEM
 
 classdef handle_hide < handle
-   methods(Hidden)
+    methods(Sealed)  
+      function TF = eq(varargin)
+         TF = eq@handle(varargin{:});
+      end
+    end
+    methods(Hidden)
       function lh = addlistener(varargin)
          lh = addlistener@handle(varargin{:});
       end
@@ -26,9 +31,6 @@ classdef handle_hide < handle
       end
       function p = findprop(varargin)
          p = findprop@handle(varargin{:});
-      end
-      function TF = eq(varargin)
-         TF = eq@handle(varargin{:});
       end
       function TF = ne(varargin)
          TF = ne@handle(varargin{:});

@@ -10,7 +10,7 @@ classdef FEmesh < mFEM.handle_hide
         initialized = false;        % initialization state
         map = ...                   % struct  of node, elem, and dof maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
-            'boundary_id', uint32([]));       
+            'boundary', uint32([]));       
         opt = ...                   % struct of default user options
             struct('space', 'scalar', 'type', 'CG');
     end
@@ -58,7 +58,7 @@ classdef FEmesh < mFEM.handle_hide
             % Initialize the element property (the type does not matter)
             obj.element = mFEM.Quad4.empty;
         end
-
+        
         function add_element(obj, type, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
@@ -91,11 +91,11 @@ classdef FEmesh < mFEM.handle_hide
             obj.map.node(end+1:end+nn,:) = obj.element(id).nodes;
         end
         
-        function initialize(obj)
+        function init(obj)
             % Initialization function.
             %
             % Syntax:
-            %   initialize()
+            %   init()
             %
             % This function should be called before the FEmesh object is
             % used, it computes all of the necessary degree-of-freedom
@@ -142,24 +142,24 @@ classdef FEmesh < mFEM.handle_hide
             % also possible to specify multiple ids for an element.
             %
             % Syntax:
-            %   add_boundary_id(loc, id)
-            %   add_boundary_id(loc, value, id)
-            %   add_boundary_id(id)
+            %   add_boundary(loc, id)
+            %   add_boundary(loc, value, id)
+            %   add_boundary(id)
             %
             % Description:
-            %   add_boundary_id(loc,id) adds a boundary id to a side;
+            %   add_boundary(loc,id) adds a boundary id to a side;
             %   loc can be one of the following: 'left', 'right', 'top', 
             %   'bottom', 'front', or 'back'. The id is an interger that
             %   the user specifies for identifing the boundary.
             %
-            %   add_boundary_id(loc,value,id) adds a boundary id based on
+            %   add_boundary(loc,value,id) adds a boundary id based on
             %   the x,y,z location, so loc can be: 'x', 'y', or 'z'. The
             %   value is a location for the given coordinate that if an
             %   element contains will be specified with the given boundary
-            %   id. For example, add_boundary_id('x',2,1) will mark all
+            %   id. For example, add_boundary('x',2,1) will mark all
             %   elements with a node that has a value of x = 2 with id 1.
             %
-            %   add_boundary_id(id) all unidentified elements and sides
+            %   add_boundary(id) all unidentified elements and sides
             %   that are on a boundary are tagged with id
 
             % Check if system is initialized
@@ -176,9 +176,12 @@ classdef FEmesh < mFEM.handle_hide
             % Collect the input from the user
             [col, value, id] = obj.parse_boundary_id_input(varargin{:});
             
+            % Initialize the new column of the map
+            obj.map.boundary(:,end+1) = zeros(size(obj.map.elem), 'uint32');
+
             % Locate the elements
             idx = obj.map.node(:,col) == value;
-            obj.map.boundary_id(idx,end+1) = id;
+            obj.map.boundary(idx,end) = id;
             e = unique(obj.map.elem(idx),'R2012a');
             
             % Loop through each element on the boundary
@@ -237,11 +240,11 @@ classdef FEmesh < mFEM.handle_hide
                 for c = 1:length(col)
                     % Not equal
                     if strcmpi(test,'ne');
-                        idx = idx + uint32(obj.map.boundary_id(:,col(c)) ~= id); 
+                        idx = idx + uint32(obj.map.boundary(:,col(c)) ~= id); 
                     
                     % Equal
                     else
-                        idx = idx + uint32(obj.map.boundary_id(:,col(c)) == id);
+                        idx = idx + uint32(obj.map.boundary(:,col(c)) == id);
                     end
                 end
 
@@ -305,9 +308,6 @@ classdef FEmesh < mFEM.handle_hide
             
             % Complete message
             disp(['    ...Completed in ', num2str(toc),' sec.']);
-   
-            % Initialize
-            obj.initialize();
         end
        
         function plot(obj, varargin)
@@ -566,8 +566,11 @@ classdef FEmesh < mFEM.handle_hide
         function id_empty_boundary(obj, id)
             % Mark all elements sides that were not marked previously
     
-            % Location for new row of boundary_id
-            col = size(obj.map.boundary_id, 2) + 1;
+            % Location for new row of boundary
+            col = size(obj.map.boundary, 2) + 1;
+            
+            % Initialize the new row
+            obj.map.boundary(:,col) = zeros(size(obj.map.elem), 'uint32');
             
             % Loop through each element on the boundary
             for e = 1:obj.n_elements;
@@ -596,14 +599,14 @@ classdef FEmesh < mFEM.handle_hide
                             dof = elem.get_dof(s,'global');
                             for i = 1:length(dof);
                                 idx = obj.map.dof == dof(i);
-                                obj.map.boundary_id(idx, col) = id;
+                                obj.map.boundary(idx, col) = id;
                             end
                         end
                     end
                 end
             end
             
-            % Update mesh level boundary_id matrix
+            % Update mesh level boundary matrix
             obj.boundary_id(end+1) = id;
         end         
     end

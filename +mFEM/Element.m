@@ -34,6 +34,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         n_dof = uint32([]);         % no. of global degrees of freedom
         n_dof_node = uint32(1);     % no. of dofs per node (scalar = 1)  
         nodes = [];                 % global coordinates (no. nodes, no. dim)
+        node_plot_order;            % node plotting order (see Tri6; only needed if nodes are out of order)
     end
     
     % Public properties (read only; except FEmesh and Element)

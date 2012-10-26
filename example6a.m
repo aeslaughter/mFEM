@@ -1,54 +1,50 @@
 % A transient heat transfer example
 %
 % Syntax:
-%   example6
-%   example6(N)
-%   example6(..,'alt');
+%   example6a
+%   example6a('PropertyName', PropertyValue)
+%   example6a(..,'alt');
 %
 % Description:
-%   example6 solves a simple transient heat conduction problem, using the
-%   index sparse assembly method
+%   example6 solves a simple transient heat conduction problem, with the
+%   default settings.
 %
-%   example6(N) specifies the number of division in the mesh, the default
-%   is 32, which creats a 32x32 element mesh.
+%   example6a('PropertyName', PropertyValue) allows the user to customize
+%   the behavior of this example using the property pairs listed below.
 %
-%   example6(..,'alt') uses the faster, but more complicated sparse matrix
-%   creation method
+% Example6a Property Descriptions
 %
-% Sprase Matrix Creation:
-% This example imploys a more efficient method for creating sparse
-% matrices, see "doc sparse". Using the I,J method for the sparse matrix
-% improved the matrix assembly time. As shown below, the increase was small
-% for the 100 x 100 element mesh tested. Considering that the index method
-% is more intuitive the time savings may not be worth it.
+% N
+%   scalar
+% 
+%    The number of elements in the x and y directions, the default is 32.
 %
-% Assembly time for I,J method: 22.02 s
-% Assembly time for index method: 25.61 s
+% Element
+%   {'Quad4'} | 'Tri3' | 'Tri6'
+%
+%   Specifies the type of element for the mesh
+%
+% Method
+%   {'normal'} | 'alt'
+%
+%   Inidicates the type of sparse matrix assembly to utilize, the 'alt'
+%   method is the index method that is faster for large matrices.
 
 function example6a(varargin)
-
-% Determine the number of elements to divide the mesh into
-N = 32;
-if nargin >= 1 && isnumeric(varargin{1});
-    N = ceil(varargin{1});
-end
-
-% Specify the type of assembly to use
-alt = false;
-if nargin >= 1 && ischar(varargin{end}) && strcmpi(varargin{end},'alt');
-    alt = true;
-end
 
 % Import the mFEM library
 import mFEM.*;
 
-% Create a FEmesh object, add the single element, and initialize it
-tic;
-mesh = FEmesh('Quad4');
-mesh.grid(0,1,0,1,N,N);
+% Set the default options and apply the user defined options
+opt.n = 32;
+opt.element = 'Quad4';
+opt.method = 'normal';
+opt = gather_user_options(opt,varargin{:});
 
-% Display time for mesh creation
-disp(['Mesh generation time: ', num2str(toc), ' sec.']);
+% Create a FEmesh object, add the single element, and initialize it
+mesh = FEmesh();
+mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary(1); % essential boundaries (all)
@@ -64,7 +60,7 @@ theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
 
 % Initialize storage
-if alt;
+if strcmpi(opt.method,'alt');
     I = NaN(mesh.n_elements * mesh.n_dim^2,1); % (guess)
     J = I;
     Mij = I;
@@ -75,7 +71,6 @@ else
 end
 
 % Create mass and stiffness matrices by looping over elements
-tic;
 for e = 1:mesh.n_elements;
 
     % Extract the current element from the mesh object
@@ -100,7 +95,7 @@ for e = 1:mesh.n_elements;
     end
     
     % Insert current values into global matrix using one of two methods
-    if alt;
+    if strcmpi(opt.method,'alt');
         % Get the global degrees of freedom for this element
         dof = elem.get_dof();
 
@@ -126,14 +121,11 @@ end
 
 % If the alternative method of assembly is used, the sparse matrices must
 % be created using the I,J,Mij,Kij vectors
-if alt;
+if strcmpi(opt.method,'alt');
     % Assemble sparse matrices
     M = sparse(I,J,Mij);
     K = sparse(I,J,Kij);
 end
-
-% Print assembly time
-disp(['Matrix assembly time: ', num2str(toc), ' sec.']);
 
 % Define dof indices for the essential dofs and non-essential dofs
 non = mesh.get_dof(1,'ne'); 
@@ -179,7 +171,7 @@ for t = dt:dt:1;
     T(ess) = T_exact(x(ess), y(ess), t);
 
     % Plot the results
-    pause(0.5);
+    pause(0.25);
     mesh.plot(T);
     title(['t = ', num2str(t)]);
 end

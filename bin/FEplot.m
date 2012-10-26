@@ -46,14 +46,15 @@
 % FEmesh
 
 function FEplot(obj, varargin)
-    % Collect the input 
-    opt = parse_input(obj, varargin{:});
 
     % Check that mesh is initialized
     if (~obj.initialized)
         error('ERROR: FEmesh must be initialized before graphs may be plotted.');
     end
    
+    % Collect the input 
+    opt = parse_input(obj, varargin{:});
+
     % Plot the data
     build_plot(obj, opt);
     
@@ -165,6 +166,11 @@ function varargout = cell_node_data(obj, opt)
     % Get the node data (single element; Element object)    
     elseif isa(obj,'mFEM.Element');
         node = obj.nodes;
+        
+        if ~isempty(obj.node_plot_order);
+           node = node(obj.node_plot_order,:);
+        end
+        
     end
     
     % Create y-direction for 1D case

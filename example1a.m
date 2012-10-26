@@ -25,7 +25,8 @@ end
     
 % Create a FEmesh object, 2 node linear mesh from 0 to 4
 mesh = FEmesh();
-mesh.grid('Linear2',0,4,nel); % the mesh is initialized automatically with grid function
+mesh.grid('Linear2',0,4,nel); 
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('left', 1); % T = 0 boundary (essential)    

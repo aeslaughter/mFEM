@@ -1,15 +1,25 @@
 function test
 import mFEM.*
 
-mesh = FEmesh('Linear2');
-mesh.add_element([0;2]);
-mesh.initialize();
+mesh = FEmesh();
+% mesh.add_element('Tri6',[0,0; 1,0; 0,1]);
+mesh.grid('Tri3',0,1,0,1,10,10);
+mesh.init();
 
-elem = mesh.element(1);
+node = unique(mesh.map.node,'rows','R2012a');
+x = node(:,1);
+y = node(:,2);
+T = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
+mesh.plot(T(x,y,0));
 
-side = elem.build_side(1);
-side.shape()
 
+
+% mesh.plot();
+
+% elem = mesh.element(1);
+% idx = elem.node_plot_order
+% elem.nodes
+% elem.nodes(idx,:)
 
 % q = Gauss(3,'tri')
 % [qp,w] = q.rules('cell')

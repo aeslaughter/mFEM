@@ -13,7 +13,7 @@ import mFEM.*;
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh();
 mesh.add_element('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
-mesh.initialize();
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('top', 1);     % q = 20 boundary

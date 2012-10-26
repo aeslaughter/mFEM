@@ -151,7 +151,7 @@ classdef System < mFEM.handle_hide
             n_dim = obj.mesh.n_dim;
             
             % Adjust for special side case
-            if nargin == 3 && strcmpi(varargin{1},'side')
+            if nargin == 3 && strcmpi(varargin{1},'side');
                 n_dim = n_dim - 1;
             end
 
@@ -232,10 +232,10 @@ classdef System < mFEM.handle_hide
         
         function assemble_matrix_side(obj, idx)
             %LOCAL_BOUNDARY_MATRIX computes matrix equation on boundary
-            
+           
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, 'side'))
-            
+            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, 'side'));
+
             % Extract the boundary ids
             id = obj.mat(idx).boundary_id;
             
@@ -268,14 +268,13 @@ classdef System < mFEM.handle_hide
 
                             % Side elements that are not points    
                             else
-                                [qp,W] = side.quad.rules('cell')
+                                [qp,W] = side.quad.rules('cell');
 
                                 % Local dofs for the current side
                                 dof = elem.get_dof(s);
 
                                 % Perform quadrature
                                 for j = 1:size(qp,1);
-                                    side.detJ(qp{j,:})
                                     Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                 end
                             end
