@@ -107,9 +107,9 @@ function opt = parse_input(obj, varargin)
     
     % Set/Create the figure handle
     if opt.newfigure;
-        figure; hold on;   
+        figure('color','w'); hold on;   
     elseif ishandle(opt.figurehandle)
-        figure(opt.figurehandle); hold on;
+        figure(opt.figurehandle,'color','w'); hold on;
     end
     
     % Set the axes handle

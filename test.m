@@ -3,14 +3,17 @@ import mFEM.*
 
 mesh = FEmesh();
 % mesh.add_element('Tri6',[0,0; 1,0; 0,1]);
-mesh.grid('Tri3',0,1,0,1,10,10);
+mesh.grid('Tri6',0,1,0,1,10,10);
 mesh.init();
+% mesh.plot();
 
-node = unique(mesh.map.node,'rows','R2012a');
-x = node(:,1);
-y = node(:,2);
+[mesh.map.node,mesh.map.dof]
+% node = unique(mesh.map.node,'rows','R2012a');
+x = mesh.map.node(:,1);
+y = mesh.map.node(:,2);
 T = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
-mesh.plot(T(x,y,0));
+TT = T(x,y,0)
+mesh.plot(TT(mesh.get_dof()));
 
 
 

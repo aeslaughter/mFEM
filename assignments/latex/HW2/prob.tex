@@ -1,0 +1,33 @@
+% Homework #1
+\section*{Introduction}
+The first homework assignment is concerned with solving 1D boundary value problems using the finite element method. The main purpose it to introduce the ''mFEM'' library that will be used throughout this course and to which will be expaned upon for each assignment. The mFEM library is an object-oriented set of code designed for this course. If you are not familiar with object-oriented programming in general or with MATLAB refer to the folowing online documentation. 
+\begin{center}
+\href{http://www.mathworks.com/discovery/object-oriented-programming.html}{www.mathworks.com/discovery/object-oriented-programming.html}
+\end{center}
+
+\section*{Getting Started}
+Before the mFEM library is ready to use, there are a few steps that must be followed to setup MATLAB correctly.
+\begin{enumerate}
+\item Add the location of the unzipped folder to your MATLAB path (e.g., ../MATLAB/mFEM). This can be accomplished by first making your current folder in MATLAB the unzipped folder. Then enter the following on the MATLAB command line.
+\begin{lstlisting}
+savepath(cd);
+\end{lstlisting} 
+
+
+
+\item Before completing the assignment review the tutorial program, ''tutorial.html''
+
+\end{enumerate}
+
+
+\section*{Problem 1 (Hand Calculation)}
+The strong form of for the 1D heat conduction problem is given as follows, where $T$ is temperature, $k$ is thermal conductivity, $A$ is cross-sectional area, $s$ is the heat source, $q$ is heat flux. The domain is denoted as $\Omega$. The temperature is prescribed as $\bar{T}$ and the flux prescribed as $\bar{q}$ on the boundaries denoted as $\Gamma_T$ and $\Gamma_q$, respectively.
+\begin{equation}\begin{split}\label{eq:strong}
+& \df{}{x}\bigg({Ak \df{T}{x}}\bigg) + s = 0 \quad on \quad \Omega, \\
+& \vec{q}\cdot \hat{n} = \bar{q} \quad on \quad \Gamma_q, \\
+& T = \bar{T} \quad on \quad \Gamma_T.
+\end{split}\end{equation}
+
+Derive the weak form of Equation \eqref{eq:strong}, the finite element stiffness matrix, and the finite element force vector.
+
+

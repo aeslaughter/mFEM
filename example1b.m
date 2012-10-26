@@ -1,4 +1,17 @@
-function test_system
+%% Example1b
+% Reproduces Example 5.1 of Fish & Belytschko (2007) using automatic 
+% assembly of the stiffness matrix and force vector.
+% 
+% Syntax:
+%   example1b
+%   example1b(n)
+%
+% Description
+%   example1b runs example exactly as done in textbook, with two elements
+%   example1b(n) runs the example with n number of elements
+%
+% See also EXAMPLE1B
+function example1b
 
 %% Setup
 import mFEM.*

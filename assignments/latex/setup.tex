@@ -1,0 +1,148 @@
+% Setup the document and basic packages
+\documentclass[10pt,letterpaper]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{tabulary}
+\usepackage{multirow}
+\usepackage{ulem}
+\usepackage[pdftex,bookmarks=true]{hyperref}				
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+% Use the listing package for displaying code
+\usepackage{listings}
+\lstset{language=matlab,frame=top,frame=bottom,basicstyle=\ttfamily}
+
+% Change the font to a sans serif font
+\usepackage[T1]{fontenc}
+\renewcommand*\familydefault{\sfdefault} 
+
+% Setup the page appearance
+\usepackage[margin=1in, top=0.75in]{geometry}
+\pagestyle{empty}
+\setlength\parindent{0pt}
+\setlength{\parskip}{0pt}
+
+% Define a few short-hand commands
+\newcommand{\df}[2]{\ensuremath{\frac{d #1}{d #2}}}
+\newcommand{\ddf}[2]{\ensuremath{\frac{d^2 #1}{d #2^2}}}
+\newcommand{\pf}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\ppf}[2]{\ensuremath{\frac{\partial^2 #1}{\partial #2^2}}}
+\newcommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+
+% Define a command for the folder location (default is current directory)
+\providecommand{\folder}{.}
+
+% Define a counter for keeping track of the question number
+\newcounter{question}
+\setcounter{question}{0}
+
+% Define a counter for only compiling a single question
+\newcounter{qnumber}
+\setcounter{qnumber}{0}
+
+% A command for building only a single problem
+\providecommand{\buildonly}[1]{\setcounter{qnumber}{#1}}
+
+% Define a flag for showing solution and compiling a single question
+\usepackage{xifthen}
+\newboolean{solution}				% true - displays solutions
+\newboolean{hidesolution} 			% true - hides solution and warning message (see \hidesolution command below)
+\newboolean{header}					% true - displays the name and date header; false - the problem number
+
+% Define a command for hiding the solution regardless of the status of solution flag, this is usefull if the solution is is build into the question
+% as is the case with \tf command below. The command \hidesolution must be included inside every \question command that you want to hide
+\newcommand\hidesolution{\setboolean{hidesolution}{true}}
+
+% Define a command for a true/false question, includes the solution (use the \hidesolution command to supress warning message)
+\providecommand\truefalse{True~|~False} % text to be printed
+
+% \tf[solution]{This question is true...}, the solution is optional
+\newcommand{\tf}[2][-NoValue-]{
+
+	% Test if the solution flag is true
+	\ifthenelse{\boolean{solution}}{ 
+	
+		% TRUE: the solution is desired
+		\ifthenelse{\equal{#1}{-NoValue-}}{
+			% We don't know the solution
+			\renewcommand\truefalse{True~|~False}
+		 }
+		 {		
+			% We know the solution
+			\ifthenelse{\equal{#1}{T}}{ 
+				% The solution is true
+				\renewcommand\truefalse{\fbox{True}~|~\sout{False}}
+			}{
+				% The solution is false
+				\renewcommand\truefalse{\sout{True}~|~\fbox{False}}
+			}
+		}		
+	}
+	{
+		% FALSE: the solution was not wanted
+		\renewcommand\truefalse{True~|~False}
+	}
+	
+	\begin{tabulary}{\linewidth}{lL}
+		\truefalse & #2 \\
+	\end{tabulary}
+	
+}
+
+% Define the question command
+\newcommand\question[1]{
+
+	% Increment the counter
+	\addtocounter{question}{1}
+	
+	% Create a new page
+	\newpage
+	
+	% Build the question
+	\ifthenelse{\value{qnumber} = 0 \OR \value{qnumber} = \value{question}}{
+		\buildquestion{#1}
+	}{}
+	
+}
+
+% Builds the question
+\newcommand{\buildquestion}[2]{
+
+	% Reset equation numbering
+	\setcounter{equation}{0}
+
+	% Create the header, if desired
+	\ifthenelse{\boolean{header}}{
+		{\bfseries Name: \\ \\ Date:} \\ \\
+	}{
+		\begin{center} \large\bfseries Homework \arabic{question} \end{center}
+	}
+	
+	% Insert the question
+	\input{\folder /#1/prob.tex}
+	
+% 	% Insert the figure (if it exists)
+% 	\IfFileExists{\folder /#1/fig.pdf}{
+% 		\begin{center}\includegraphics{\folder /#1/fig.pdf}\end{center}
+% 	}{	
+% 		\vspace{12pt}\hrule
+% 	}
+	
+	% Insert the solution (if desired and if it exists)
+	\ifthenelse{\boolean{hidesolution}}{}{ 						% If hidesolution is true do nothing
+		\ifthenelse{\boolean{solution}}													% if false, insert the soln or a message if the soln.tex does not exist
+		{
+			\IfFileExists{\folder /#1/soln.tex}{
+				\par	\textbf{Solution:} \par
+				\input{\folder /#1/soln.tex}
+			}{	
+				\vspace{1em}\hrule
+				\begin{center}
+					\textbf{No solution exists for this question, to add solution create a file named:\\ ``\folder /\detokenize{#1}/soln.tex''}
+				\end{center}
+			}
+		}{}
+	}	
+	% After every question the solution is allowed, the \nosolution command is needed inside every question that does not need a solution
+	\setboolean{hidesolution}{false}
+}
