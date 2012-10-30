@@ -1,0 +1,51 @@
+First, multiple the governing equation by an arbitrary weight function and integrate over the domain.
+\begin{equation}\label{eq:HW2:1:weak1}
+\int_{\Omega} w \df{}{x}\bigg({Ak \df{T}{x}}\bigg) \, d\Omega + \int_{\Omega} w s \, d\Omega = 0  \quad \forall w
+\end{equation}
+Integrate the left-hand term by parts as follows.
+\begin{equation}\label{eq:HW2:1:weak2}
+\int_{\Omega} w \df{}{x}\bigg({Ak \df{T}{x}}\bigg) \, d\Omega = wAk\df{T}{x}\cdot \hat{n}\bigg|_\Gamma - \int_{\Omega} \df{w}{x} Ak \df{T}{x} \, d\Omega,
+\end{equation}
+where $\hat{n}$ is -1 on the left boundary and +1 on the right boundary.
+
+Noting that $q\cdot\hat{n} = -k\df{T}{x}\cdot\hat{n}$ and that on the essential boundaries ($T = \bar{T}$) $w$ is zero,
+Equations \eqref{eq:HW2:1:weak1} and \eqref{eq:HW2:1:weak2} may combined to form the weak form of the equation:
+\begin{equation}\label{eq:HW2:1:weak3}
+\int_{\Omega} \df{w}{x} Ak \df{T}{x} d\Omega + \int_{\Omega} w s \, d\Omega + wA\bar{q}\bigg|_{\Gamma_q} + wAhT\bigg|_{\Gamma_h} - wAhT_{\infty}\bigg|_{\Gamma_h} = 0  \, \forall w \, \text{with} \, w=0 \, \text{on} \, \Gamma_T.
+\end{equation}
+
+Equation \eqref{eq:HW2:1:weak3} may be written as a summation over the elements as:
+\begin{multline}\label{eq:HW2:1:fe1}
+\sum_e \bigg[\int_{\Omega^e} \bigg(\df{w^e}{x}\bigg)^T A^e k^e \df{T^e}{x} d\Omega 
++ \int_{\Omega^e} \big(w^e\big)^T s^e \, d\Omega 
++ \big(w^e\big)^T A^e \bar{q}^e \bigg|_{\Gamma_q} \\
++ \big(w^e\big)^T A^e h^e T^e \bigg|_{\Gamma_h} 
+- \big(w^e\big)^T A^e h^e T^e_{\infty} \bigg|_{\Gamma_h} \bigg] = 0  \, \forall w \, \text{with} \, w=0 \, \text{on} \, \Gamma_T.
+\end{multline}
+
+Note, the all terms are scalar, as such the use of the transpose is exploited so that when the vector-base approximations are introduced the vector multiplications will be stated correctly.
+
+Next, it is assumed that that $T^e$ and $w^e$ as well as their derivatives may be approximated by a set of basis functions ($N$) multiplied by the nodal values ($\{T^e\}$ and $\{w^e\}$ respectively), where $B = \df{N}{dx}$.
+
+\begin{align*}
+w^T &= \{w^e\}^T [ N^e ]^T & T^e &= [ N^e ] \{T^e\} \\
+\bigg(\df{w^e}{x}\bigg)^T &= \{w^e\}^T  [ B^e ]^T &\df{T^e}{x} &= [ B^e ] \{T^e\}
+\end{align*}
+
+It is also assumed that there exists an assembly matrix $[L^e$] such that it maps the element values to the global values, e.g., $T = [L^e]\{T^e\}$. 
+
+Given the approximations Equation \eqref{eq:HW2:1:fe1} may be written as:
+\begin{equation}
+ \{w\}^T \sum_e\bigg[ [L^e]^T [K^e] [L^e] \bigg] \{T\} -  \{w\}^T \sum_e\bigg[ [L^e]^T [f^e] \bigg] \{T\} = 0,
+\end{equation}
+where $[K^e]$ is the element stiffness matrix and $[f^e]$ is the element force vector:
+\begin{equation}
+[K^e] = \int_{\Omega_e} [B^e]^T A^e k^e [B] d\Omega + \int_{\Gamma_h} [N^e]^T h^e [N^e] d\Gamma,
+\end{equation}
+\begin{equation}
+[f^e] = \int_{\Omega_e} [N^e]^T s^e \, d\Omega + \int_{\Gamma_q} [N^e]^T \bar{q} \, d\Gamma - \int_{\Gamma_h} [N^e]^T h^e T_{\infty} \, d\Gamma.
+\end{equation}
+
+
+
+

@@ -1,25 +1,13 @@
 % Homework Assignments
-%--------------------------------------------------------------------------------------------------------------------
-% (1) Add a new question by creating a folder in the current directory:
-%		./<your_question_name_here>
-%
-% (2) Add a "prob.tex" file to your new folder, this file should contain the question
-%
-% (3) If a tex file exists with the name "soln.tex" it will automatically added if the
-%	     solutions flag is set to true.
-%
-% (4) To include the quiz, enter the following in the main part of this document.
-%			\question{<your_question_name_here>}
-%--------------------------------------------------------------------------------------------------------------------
 
 % This file contains all the necessary commands for this document
 \input{setup.tex}
 
 % If you want to print the solutions, set this value to true
-\setboolean{solution}{false}
+\setboolean{solution}{true}
 
 % Set this to the HW number you would like to build (0 builds all)
-\buildonly{0}
+\buildonly{2}
 
 % Include an input list of the questions
-\input{questions.tex}
+\input{assignments.tex}

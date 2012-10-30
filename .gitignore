@@ -1,2 +1,17 @@
+# Temporary Files
 *.asv
 *.*~
+*.aux
+*.log
+*.out
+*.synctex
+*.wsp
+
+# Homework Related Items
+assignments/*/release
+assignments/*/soln/*_soln.pdf
+assignments/*/*.zip
+
+# Documentation
+doc/html
+!doc/html/helptoc.xml

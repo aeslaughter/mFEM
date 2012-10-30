@@ -1,47 +1,59 @@
 % Setup the document and basic packages
-\documentclass[10pt,letterpaper]{article}
+\documentclass[10pt,letterpaper,oneside]{book}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{tabulary}
 \usepackage{multirow}
 \usepackage{ulem}
+\usepackage{enumerate}
+\usepackage{framed}
 \usepackage[pdftex,bookmarks=true]{hyperref}				
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
 
 % Use the listing package for displaying code
 \usepackage{listings}
-\lstset{language=matlab,frame=top,frame=bottom,basicstyle=\ttfamily}
+\lstset{language=matlab,frame=top,frame=bottom}
 
 % Change the font to a sans serif font
 \usepackage[T1]{fontenc}
-\renewcommand*\familydefault{\sfdefault} 
+\renewcommand*\familydefault{\sfdefault}
 
 % Setup the page appearance
 \usepackage[margin=1in, top=0.75in]{geometry}
-\pagestyle{empty}
 \setlength\parindent{0pt}
-\setlength{\parskip}{0pt}
+\setlength{\parskip}{10pt}
 
 % Define a few short-hand commands
 \newcommand{\df}[2]{\ensuremath{\frac{d #1}{d #2}}}
 \newcommand{\ddf}[2]{\ensuremath{\frac{d^2 #1}{d #2^2}}}
 \newcommand{\pf}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
 \newcommand{\ppf}[2]{\ensuremath{\frac{\partial^2 #1}{\partial #2^2}}}
-\newcommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+\newcommand{\e}[1]{\ensuremath{\times 10^{#1}}}	
+\newcommand{\dgr}{\ensuremath{^{\circ}}}
+\newcommand{\spr}[1]{\ensuremath{^{\textrm{#1}}}} 
+\newcommand{\sub}[1]{\ensuremath{_{\textrm{#1}}}} 
+\newcommand{\C}{\dgr C}
+\newcommand{\F}{\dgr F}
 
 % Define a command for the folder location (default is current directory)
-\providecommand{\folder}{.}
+\providecommand{\folder}{}
 
-% Define a counter for keeping track of the question number
+% Define a counter for keeping track of the assignment and question number
+\newcounter{assignment}
+\setcounter{assignment}{0}
 \newcounter{question}
 \setcounter{question}{0}
 
 % Define a counter for only compiling a single question
-\newcounter{qnumber}
-\setcounter{qnumber}{0}
+\newcounter{outputnum}
+\setcounter{outputnum}{0}
+\newcommand{\buildonly}[1]{\setcounter{outputnum}{#1}}
 
-% A command for building only a single problem
-\providecommand{\buildonly}[1]{\setcounter{qnumber}{#1}}
+% Change section apperance
+\usepackage{titlesec}
+\titleformat{\chapter}{}{}{0pt}{\Huge\textbf{Homework \arabic{assignment}}\\\huge}[\thispagestyle{empty}\normalsize]
+\titleformat{\section}[runin]{}{}{0pt}{\Large\textbf}[\thispagestyle{empty}\normalsize\vspace{1ex}\\]
+
 
 % Define a flag for showing solution and compiling a single question
 \usepackage{xifthen}
@@ -90,56 +102,60 @@
 }
 
 % Define the question command
-\newcommand\question[1]{
+\newcommand\assignment[1]{
 
-	% Increment the counter
-	\addtocounter{question}{1}
+	% Reset question and equation counters
+	\setcounter{equation}{0}
+	\setcounter{question}{0}	
 	
-	% Create a new page
-	\newpage
+	% Increment assignment counter
+	\addtocounter{assignment}{1}
 	
-	% Build the question
-	\ifthenelse{\value{qnumber} = 0 \OR \value{qnumber} = \value{question}}{
-		\buildquestion{#1}
+	% Set the folder name
+	\renewcommand{\folder}{#1}
+
+	% Build the assigment
+	\ifthenelse{\value{outputnum} = 0 \OR \value{outputnum} = \value{assignment}}{
+		\pagestyle{empty}
+		\input{#1/#1.tex}
 	}{}
 	
 }
 
 % Builds the question
-\newcommand{\buildquestion}[2]{
+\newcommand{\question}[1]{
 
-	% Reset equation numbering
-	\setcounter{equation}{0}
+	% Increment question counter
+	\addtocounter{question}{1}
 
-	% Create the header, if desired
-	\ifthenelse{\boolean{header}}{
-		{\bfseries Name: \\ \\ Date:} \\ \\
-	}{
-		\begin{center} \large\bfseries Homework \arabic{question} \end{center}
-	}
-	
 	% Insert the question
+	\section{Problem \arabic{question}}
 	\input{\folder /#1/prob.tex}
 	
-% 	% Insert the figure (if it exists)
-% 	\IfFileExists{\folder /#1/fig.pdf}{
-% 		\begin{center}\includegraphics{\folder /#1/fig.pdf}\end{center}
-% 	}{	
-% 		\vspace{12pt}\hrule
-% 	}
+	% Insert the figure (if it exists)
+	\IfFileExists{\folder /#1/fig.pdf}{
+		\begin{center}\includegraphics{\folder /#1/fig.pdf}\end{center}
+	}{	
+		\vspace{12pt}
+	}
 	
 	% Insert the solution (if desired and if it exists)
 	\ifthenelse{\boolean{hidesolution}}{}{ 						% If hidesolution is true do nothing
-		\ifthenelse{\boolean{solution}}													% if false, insert the soln or a message if the soln.tex does not exist
+		\ifthenelse{\boolean{solution}}							% if false, insert the soln or a message if the soln.tex does not exist
 		{
 			\IfFileExists{\folder /#1/soln.tex}{
-				\par	\textbf{Solution:} \par
+				\begin{oframed}
+				\section*{Solution}
 				\input{\folder /#1/soln.tex}
+				\end{oframed}
+				\par
 			}{	
-				\vspace{1em}\hrule
+				\vspace{1em}
+				\begin{oframed}
 				\begin{center}
 					\textbf{No solution exists for this question, to add solution create a file named:\\ ``\folder /\detokenize{#1}/soln.tex''}
 				\end{center}
+				\end{oframed}
 			}
 		}{}
 	}	

@@ -40,17 +40,13 @@ classdef FEmesh < mFEM.handle_hide
             %
             % Options:
             %   'Type' = 'CG' (default) or 'DG'
-            %             allows the type of element conectivity to be set
-            %             as continous (CG) or discontinous (DG)
+            %               allows the type of element conectivity to be set
+            %               as continous (CG) or discontinous (DG)
             %   'Space' = 'scalar', 'vector', <number>
             %               allows the type of FEM space to be set: scalar
             %               sets the number of dofs per node to 1, vector
             %               sets it to the no. of space dimension, and
             %               specifing a number sets it to that value.
-            %   'Element' = Any Element subclass (e.g., Quad4)
-            %               allows user to specify the element, this is the
-            %               same as using the name option, if both are set
-            %               this property takes presidnece.
 
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
@@ -135,7 +131,7 @@ classdef FEmesh < mFEM.handle_hide
         end
                 
         function add_boundary(obj, varargin)
-            % Labels elements with numeric tabs.
+            % Labels elements with numeric tags.
             %
             % This should be called after initialization, and id = 0
             % indicates is the default case (i.e., not identified). It is
@@ -298,12 +294,12 @@ classdef FEmesh < mFEM.handle_hide
             
             % Check the current element type is supported
             switch type;
-                case 'Linear2';
+                case {'Line2', 'Line3'};
                     obj.gen1Dgrid(type, varargin{:});
                 case {'Quad4', 'Tri3', 'Tri6'};
                     obj.gen2Dgrid(type, varargin{:});
                 otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s element', obj.opt.element);
+                    error('FEmesh:grid','Grid generation is not supported for the %s elem', type);
             end
             
             % Complete message

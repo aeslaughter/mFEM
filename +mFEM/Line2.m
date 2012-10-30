@@ -1,4 +1,4 @@
-classdef Linear2 < mFEM.Element
+classdef Line2 < mFEM.Element
     %LINEAR2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)
@@ -13,14 +13,12 @@ classdef Linear2 < mFEM.Element
     end
     
     methods     
-        % Define the Linear2 constructor
-
-        function obj = Linear2(id, nodes, varargin)
-           % LINEAR2 Class constructor; calls base class constructor
+        function obj = Line2(id, nodes, varargin)
+           % LINE2 Class constructor; calls base class constructor
            
            % Test that nodes is sized correctly
            if ~all(size(nodes) == [2,1]);
-                error('Linear2:Linear2','Nodes not specified correctly; expected a [2x1] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
+                error('Line2:Line2','Nodes not specified correctly; expected a [2x1] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Call the base class constructor
@@ -37,17 +35,18 @@ classdef Linear2 < mFEM.Element
             N(2) = 1/2*(1 + xi);
         end
 
-        function B = grad_basis(obj, varargin) 
+        function B = grad_basis(obj, xi) 
             % Gradient of shape functions
-            B = inv(obj.jacobian()) * obj.local_grad_basis;
+            B = inv(obj.jacobian(xi)) * obj.local_grad_basis(xi);
         end
              
-        function J = jacobian(obj, varargin)
+        function J = jacobian(obj, xi)
             % Returns the jacobian matrix  
-            J = obj.local_grad_basis*obj.nodes;                 
+            J = obj.local_grad_basis(xi)*obj.nodes;                 
         end
         
-        function GN = local_grad_basis(obj, varargin)
+        function GN = local_grad_basis(obj, xi)
+            % Returns shape function derivatives in terms of xi
             GN = [-1/2, 1/2];
         end
     end
