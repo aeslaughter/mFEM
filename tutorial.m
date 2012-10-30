@@ -41,7 +41,7 @@ import mFEM.*
 % using the |init| method. As shown, the |init| method will print
 % calculation times for creating the mesh and other required calculations.
 mesh = FEmesh();
-mesh.grid('Linear2',0,4,2);
+mesh.grid('Line2',0,4,2);
 mesh.init();
 
 %% Adding Boundary Identification

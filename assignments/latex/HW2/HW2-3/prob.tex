@@ -1,3 +1,12 @@
-Solve for the temperature gradient at the Gauss points for both the Tutorial Problem and Problem 2.
-
+Solve for the temperature gradient at the Gauss points for both the Tutorial Problem and Problem 2. This requires looping over the elements, which should be done using the FEmesh class.
+\begin{lstlisting}
+for e = 1:mesh.n_elements;
+	elem = mesh.element(e);
+end
+\end{lstlisting}
+Additionally, the \texttt{Element.get\_position()} method and the \texttt{Element.quad} property will be needed, refer to the Class level documentation for assistance.
+\begin{lstlisting}
+doc mFEM.Element;
+doc mFEM.Gauss;
+\end{lstlisting}
 

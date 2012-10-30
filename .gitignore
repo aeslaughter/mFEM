@@ -10,7 +10,7 @@
 # Homework Related Items
 assignments/*/release
 assignments/*/soln/*_soln.pdf
-assignments/*/*.zip
+assignments/*.zip
 
 # Documentation
 doc/html

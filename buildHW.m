@@ -22,8 +22,10 @@ files.to_mFEM = {};
 files.other = {};
 
 % List of build files that are always include (location should be specified
-% relative to the current directory)
-files.build = {'info.xml',['doc',filesep,'html',filesep,'helptoc.xml'],'install.m'};
+% relative to the current directory; the files will be added in a relative 
+% path)
+files.build = {'tutorial.m','install.m', 'info.xml',...
+    ['doc',filesep,'html',filesep,'helptoc.xml']};
 
 % Edit/append the lists of files to copy to the release directory, 
 switch num;
@@ -33,7 +35,6 @@ switch num;
 
     case 2;
         files.to_mFEM = {'Line3.m'};
-        files.other = [files.other, 'tutorial.m'];
 end
    
 % Copy files to release directory
@@ -41,9 +42,11 @@ copy_to_release(name, files);
 
 % Create a zip file 
 loc = ['assignments',filesep,name,filesep,'release'];
-cd(loc);
-zip(['..',filesep,name],{'*.*',['+mFEM',filesep,'*.*']});
-cd(['..',filesep,'..',filesep,'..']);
+if exist(loc,'dir');
+    cd(loc);
+    zip(['..',filesep,'..',filesep,name],{'*.*',['+mFEM',filesep,'*.*']});
+    cd(['..',filesep,'..',filesep,'..']);
+end
 
 function hw = run_latex(num)
 %LATEX
@@ -62,7 +65,6 @@ function hw = run_latex(num)
 %
 %       A string indicating to inclusion of the solution
 %
-%
 
 % Build format string
 frmt = ['!pdflatex -jobname %s "\\input{setup.tex}\\setboolean{solution}{%s}',...
@@ -77,6 +79,11 @@ loc = ['..',filesep,hw,filesep];
 soln = [hw,'_soln'];
 soln_loc = ['..',filesep,hw,filesep,'soln'];
 release = ['..',filesep,hw,filesep,'release'];
+
+% Delete release files
+if exist(release,'dir');
+    rmdir(release,'s');
+end
 
 % Create the homework assignment and solution
 for i = 1:2; % run twice to get references correct
@@ -103,37 +110,38 @@ function copy_to_release(name, files)
 %COPY_TO_RELEASE
 
 % Release directory
-assign  = ['assignments',filesep,name,filesep];
-release = [assign,'release',filesep];
+assign  = ['assignments', filesep, name, filesep];
+release = [assign, 'release', filesep];
 
 % +mFEM package
 for i = 1:length(files.mFEM);
-    in = ['+mFEM',filesep,files.mFEM{i}];
-    out = [release,'+mFEM',filesep];
+    in = ['+mFEM', filesep, files.mFEM{i}];
+    out = [release, '+mFEM', filesep];
     if ~exist(out,'dir'); mkdir(out); end
-    copyfile(in, [out, files.mFEM{i}]);
+    copyfile(in, [out, files.mFEM{i}],'f');
 end
 
 % Additions to the +mFEM package
 for i = 1:length(files.to_mFEM);
-    in = files.to_mFEM{i};
-    out = [release,'+mFEM',filesep];
+    in = [assign, files.to_mFEM{i}];
+    out = [release, '+mFEM', filesep];
     if ~exist(out,'dir'); mkdir(out); end
     [~,fname,ext] = fileparts(files.to_mFEM{i});
-    copyfile(in, [out,fname,ext]);
+    copyfile(in, [out,fname,ext],'f');
 end
 
 % Other files
 for i = 1:length(files.other);
-    in = assign;
+    in = [assign, files.other{i}];
     out = [release, files.other{i}];
-    copyfile(in, out);
+    copyfile(in, out, 'f');
 end
 
 % Build related files
 for i = 1:length(files.build);
     in = files.build{i};
-    [~,fname,ext] = fileparts(in);
-    out = [release,fname,ext];
-    copyfile(in, out);  
+    [p,f,e] = fileparts(files.build{i});
+    out = [release, p];
+    if ~exist(out,'dir'); mkdir(out); end
+    copyfile(in, [out,filesep,f,e], 'f');  
 end

@@ -7,12 +7,13 @@
 \usepackage{ulem}
 \usepackage{enumerate}
 \usepackage{framed}
+\usepackage{subfig}
 \usepackage[pdftex,bookmarks=true]{hyperref}				
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
 
 % Use the listing package for displaying code
 \usepackage{listings}
-\lstset{language=matlab,frame=top,frame=bottom}
+\lstset{language=matlab,frame=top,frame=bottom, keywordstyle=\color{black}}
 
 % Change the font to a sans serif font
 \usepackage[T1]{fontenc}
@@ -144,18 +145,16 @@
 		\ifthenelse{\boolean{solution}}							% if false, insert the soln or a message if the soln.tex does not exist
 		{
 			\IfFileExists{\folder /#1/soln.tex}{
-				\begin{oframed}
+% 				\rule{\linewidth}{2pt}\vspace*{-10pt}
 				\section*{Solution}
-				\input{\folder /#1/soln.tex}
-				\end{oframed}
-				\par
+				\input{\folder /#1/soln.tex}\par
+% 				\rule{\linewidth}{2pt}\vspace*{-10pt}
 			}{	
 				\vspace{1em}
-				\begin{oframed}
+				
 				\begin{center}
 					\textbf{No solution exists for this question, to add solution create a file named:\\ ``\folder /\detokenize{#1}/soln.tex''}
 				\end{center}
-				\end{oframed}
 			}
 		}{}
 	}	

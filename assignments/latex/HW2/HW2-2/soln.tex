@@ -1,6 +1,6 @@
 The additional constants $h$ and $T_inf$ must be added to the System class:
 \begin{lstlisting}
-sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5,'h',100,'T_inf',10); 
+sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5,'h',0.1,'T_inf',10); 
 \end{lstlisting}
 
 The convective term contributes to both the stiffness matrix and force vector, thus an additional matrix and vector must be added to the System.
@@ -20,7 +20,7 @@ Since there are no explicitly defined essential boundary conditions, only the mi
 T = K\f;
 \end{lstlisting}
 
-The resulting temperatures are -13.1961, 13.1487, and -13.0064 \C ~for the left, middle, and right of the bar.
+The resulting temperatures are -21.0, 36.9, and 42.3 \C ~for the left, middle, and right of the bar.
 \begin{center}
 \includegraphics{HW2/HW2-2/soln.pdf}
 \end{center}

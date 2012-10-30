@@ -1,0 +1,19 @@
+Computing the temperature gradient involves looping over the elements, extracting the quadrature points and local values of the temperature solution, as shown in the following code. Which is applicable to both the Tutorial Problem and Problem 2.
+\begin{lstlisting}
+for e = 1:mesh.n_elements; % loop through the elements
+    
+    % Extract the current element from the mesh object
+    elem = mesh.element(e);
+    
+    % Get the Gauss points
+    qp = elem.quad.rules();
+    
+    % Collect the local values of T
+    d(:,1) = T(elem.get_dof());
+    
+    % Compute the temperature gradient at the gauss point
+    TG(e) = elem.shape_deriv(qp(1))*d;
+    TGx(e) = elem.get_position(qp(1));   
+end    
+\end{lstlisting}
+The temperature gradients for the tutorial are 72.5 \C/m and 22.5 \C/m for elements 1 and 2, respectively. For Problem 2 the gradients are 29.0 \C/m and -2.7\C/m.
