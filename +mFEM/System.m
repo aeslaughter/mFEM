@@ -3,13 +3,27 @@ classdef System < mFEM.handle_hide
     %
     % Syntax:
     %   sys = System(mesh)
+    %   sys = System(mesh, 'PropertyName', PropertyValue)
     %
     % Description:
     %   sys = System(mesh) creates a System object based on the supplied
-    %   FEmesh object.
+    %       FEmesh object.
+    %   sys = System(mesh, 'PropertyName', PropertyValue) same as above but
+    %       allows the options to be changes
+    %
+    % System Properties
+    %   'Time'
+    %       true | {false}
+    %       A toggle for displaying the assembly time.
+    %   
     %
     % See Also FEMESH
-
+    
+    properties (SetAccess = private, GetAccess = public)
+        opt = ...                   % struct of default user options
+            struct('time', true);
+    end
+    
     properties(Access = private)
         mesh = mFEM.FEmesh.empty;
         reserved = {'N','B','x','y','z','xi','eta','zeta'};
@@ -19,8 +33,13 @@ classdef System < mFEM.handle_hide
     end
     
     methods (Access = public)
-        function obj = System(mesh)
+        function obj = System(mesh, varargin)
             %SYSTEM Class constructor.
+            
+            % Parse the user-defined options
+            obj.opt = gather_user_options(obj.opt, varargin{:});
+            
+            % Store the mesh object
             obj.mesh = mesh;
         end
         
@@ -80,9 +99,9 @@ classdef System < mFEM.handle_hide
             [type, idx] = obj.locate(name);
             
             switch type;
-                case 'mat'; X = obj.mat(idx).matrix;
-                case 'vec'; X = obj.vet(idx).vector;
-                case 'const'; X = obj.const(idx).value;
+                case 'matrix'; X = obj.mat(idx).matrix;
+                case 'vector'; X = obj.vet(idx).vector;
+                case 'constant'; X = obj.const(idx).value;
             end
         end
         
@@ -90,14 +109,24 @@ classdef System < mFEM.handle_hide
             %ASSEMBLE Assembles matrix or vector given by name
 
             % Locate the matrix or vector
-            [type,idx] = obj.locate(name);
+            [type, idx] = obj.locate(name);
+            
+            % Display a time message
+            if obj.opt.time;
+                ticID = tmessage('%s %s assembly...', name, type);
+            end
             
             % Call the correct assembly routine
             switch lower(type);
-               case 'mat'; X = obj.assemble_matrix(idx); 
-               case 'vec'; X = obj.assemble_vector(idx);
+               case 'matrix'; X = obj.assemble_matrix(idx); 
+               case 'vector'; X = obj.assemble_vector(idx);
                otherwise
                    error('System:Assemble','No assembly routine for %s types', type);
+            end
+            
+            % End message
+            if obj.opt.time;
+                tmessage(ticID);
             end
         end
     end
@@ -110,16 +139,17 @@ classdef System < mFEM.handle_hide
             % Initialize variables
             idx = [];                       % location of name
             types = {'mat','vec','const'};  % type of entity 
+            type_out = {'matrix', 'vector', 'constant'}; % output
             
             % Loop throug the types
             for t = 1:length(types);
-                type = types{t}; % the current type
+                type = type_out{t}; % the current type
                 
                 % Loop through all array values for the current type
-                for i = 1:length(obj.(type));
+                for i = 1:length(obj.(types{t}));
                     
                     % If name is found return the index
-                    if strcmp(obj.(type)(i).name, name);
+                    if strcmp(obj.(types{t})(i).name, name);
                         idx = i;
                         return;
                     end
@@ -160,8 +190,9 @@ classdef System < mFEM.handle_hide
             %   parse_equation(eqn)
             %   parse_equation(eqn,'side');
             
-            % Get the dimensions of the FE space
-            n_dim = obj.mesh.n_dim;
+            % Get the dimensions of the FE space (use the local, it is what
+            % determines the number of xi,eta,... inputs)
+            n_dim = obj.mesh.local_n_dim;
             
             % Adjust for special side case
             if nargin == 3 && strcmpi(varargin{1},'side');
@@ -252,6 +283,9 @@ classdef System < mFEM.handle_hide
             % Extract the boundary ids
             id = obj.mat(idx).boundary_id;
             
+            % Create a Matrix object
+            %matrix = mFEM.Matrix(obj.mesh);
+            
             % Loop through each element
             for e = 1:obj.mesh.n_elements;
 
@@ -294,46 +328,58 @@ classdef System < mFEM.handle_hide
 
                             % Delete the side element
                             delete(side);
-                            
-                            % Add the local force vector to the global vector
-                            dof = elem.get_dof();    
-                            obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
                         end
                     end   
                 end 
+                     
+                % Add the local force vector to the global vector
+                dof = elem.get_dof();    
+                %matrix.add_matrix(Ke, dof, dof);
+                obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
             end
+            
+            % Build the sparse matrix
+            %obj.mat(idx).matrix = matrix.init();
+            
         end
         
         function assemble_matrix_elem(obj, idx)
             %ASSEMBLE_MATRIX_ELEM Assemble a matrix for entire domain
 
-                % Create function from the function string
-                fcn = str2func(obj.mat(idx).func);
-            
-                % Loop through all of the elements
-                for e = 1:obj.mesh.n_elements;
+            % Create function from the function string
+            fcn = str2func(obj.mat(idx).func);
 
-                    % Extract current element
-                    elem = obj.mesh.element(e);
-                    
-                    % Initialize the local stiffness matrix
-                    Ke = zeros(elem.n_dof);
-                    
-                    % Get the quadrature rules for this element
-                    [qp, W] = elem.quad.rules('cell');
-                    
-                    % Loop through all of the quadrature points and add the
-                    % result to the local matrix
-                    for i = 1:size(qp,1);
-                        Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
-                    end
-                    
-                    % Extract the global dof for this element
-                    dof = elem.get_dof();    
-                    
-                    % Add the contribution to the gloval matrix
-                    obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
+            % Create a Matrix object
+            %matrix = mFEM.Matrix(obj.mesh);
+
+            % Loop through all of the elements
+            for e = 1:obj.mesh.n_elements;
+
+                % Extract current element
+                elem = obj.mesh.element(e);
+
+                % Initialize the local stiffness matrix
+                Ke = zeros(elem.n_dof);
+
+                % Get the quadrature rules for this element
+                [qp, W] = elem.quad.rules('cell');
+
+                % Loop through all of the quadrature points and add the
+                % result to the local matrix
+                for i = 1:size(qp,1);
+                    Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
                 end
+
+                % Extract the global dof for this element
+                dof = elem.get_dof();    
+
+                % Add the contribution to the global matrix
+                %matrix.add_matrix(Ke, dof, dof);
+                obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
+            end
+
+            % Build the sparse matrix
+            %obj.mat(idx).matrix = matrix.init();
         end
         
         function f = assemble_vector(obj, idx)

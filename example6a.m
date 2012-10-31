@@ -27,7 +27,9 @@
 %   {'normal'} | 'alt'
 %
 %   Inidicates the type of sparse matrix assembly to utilize, the 'alt'
-%   method is the index method that is faster for large matrices.
+%   method is the index method that is faster for large matrices. For
+%   example, for a 100 x 100 grid the normal assembly took 25.6 sec. and the
+%   alternative method 23.8 sec.
 
 function example6a(varargin)
 
@@ -59,6 +61,8 @@ theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
 
 % Initialize storage
+
+ticID = tmessage('Matrix assembly...');
 if strcmpi(opt.method,'alt');
     I = NaN(mesh.n_elements * mesh.n_dim^2,1); % (guess)
     J = I;
@@ -125,7 +129,8 @@ if strcmpi(opt.method,'alt');
     M = sparse(I,J,Mij);
     K = sparse(I,J,Kij);
 end
-
+tmessage(ticID);
+return;
 % Define dof indices for the essential dofs and non-essential dofs
 non = mesh.get_dof(1,'ne'); 
 ess = mesh.get_dof(1);      

@@ -1,59 +1,69 @@
 classdef Matrix < mFEM.handle_hide
 
-   properties %(Access = private)
+   properties (Access = private)
       I;
       J;
       Aij;
       m
       n
-      initialized = false;
    end
    
    methods
        function obj = Matrix(varargin)
-           if nargin == 1;
+           %MATRIX Class constructor
+           %
+           % Syntax:
+           %    Matrix(mesh)
+           %    Matrix(m,n)
+           %    Matrix(m)
+           
+           if nargin == 1 && isa(varargin{1},'mFEM.FEmesh');
+               obj.m = varargin{1}.n_dof;
+               obj.n = obj.m;
+           elseif nargin == 1;
                obj.m = varargin{1};
                obj.n = obj.m;
            elseif nargin == 2;
                obj.m = varargin{1};
                obj.n = varargin{2};
            else
-               disp('error');
+               error('Matrix:Matrix', 'Input Error');
            end
-           
-         %  obj.A = sparse(obj.m, obj.n, 
-           
-           
-         
        end
        
-       function varargout = size(obj, dim)
+       function varargout = size(obj, varargin)
+           %SIZE
+           %
+           % Syntax:
+           %    [m,n] = size()
+           %    m = size()
+           %    m = size(dim)
 
+           out = [obj.m, obj.n];
+           
            if nargin == 1 && nargout <= 1;
-               if nargout == 0;
-                   [obj.m, obj.n]
-               else
-                    varargout{1} = [obj.m, obj.n];
-               end
-               
+               varargout{1} = out;
+
            elseif nargin == 1 && nargout == 2;
-               varargout{1} = obj.m;
-               varargout{2} = obj.n;
+               varargout{1} = out(1);
+               varargout{2} = out(2);
                
            elseif nargin == 2 && nargout <= 1;
-                out = [obj.m, obj.n];
-                
-                if nargout == 0;
-                    out(dim)
-                else
-                    varargout{1} = out(dim);
-                end
+               varargout{1} = out(varargin{1});
+   
            else
-               disp('error...');
+               error('Matrix:size','Input error');
            end
        end
        
        function add_matrix(obj, B, varargin)
+           %ADD_MATRIX Adds a sub-matrix to the global matrix
+           %
+           % Syntax
+           %    add_matrix(M,dof)
+           %    add_matrix(M,dof1,dof2)
+           
+           % Parse the input
            
             if nargin == 3;
                 dof1 = varargin{1};
@@ -72,7 +82,7 @@ classdef Matrix < mFEM.handle_hide
             idx = l+1 : l+b;
 
             % Build the i,j components for the sparse matrix creation
-            obj.I(idx) = repmat(dof1, length(dof1),1);
+            obj.I(idx) = repmat(dof1, length(dof1), 1);
             obj.J(idx) = sort(repmat(dof2, length(dof2), 1));
 
             % Add the local mass and stiffness matrix to the sparse matrix values
@@ -80,17 +90,9 @@ classdef Matrix < mFEM.handle_hide
        end
        
        function A = init(obj)
+           %INIT Create and return the sparse matrix
            A = sparse(obj.I, obj.J, obj.Aij);
-           obj.initialized = true;
        end
-       
 
-       
    end
-    
-    
-    
-    
-    
-    
 end

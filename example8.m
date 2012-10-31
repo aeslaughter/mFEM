@@ -7,8 +7,9 @@ function example8
 %     if exist('example8.mat','file');
 %         load('example8.mat');
 %     else
-        mesh = FEmesh('Quad4','Type','DG');
-        mesh.grid(0,1,0,1,1,1);
+        mesh = FEmesh('Type','DG');
+        mesh.grid('Quad4',0,1,0,1,1,1);
+        mesh.init();
         save('example8.mat','mesh');
 %    end
 

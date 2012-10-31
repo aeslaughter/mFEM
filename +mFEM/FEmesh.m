@@ -3,7 +3,7 @@ classdef FEmesh < mFEM.handle_hide
     
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
-        n_dim = uint32([]);         % no. of dimensions (== Element local_n_dim)
+        n_dim = uint32([]);         % no. of space dimensions
         n_dof = uint32([]);         % total no. of global dofs
         n_dof_node = uint32(1);     % no. of dofs per node      
         element;                    % empty array of elements [Element]
@@ -12,11 +12,12 @@ classdef FEmesh < mFEM.handle_hide
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary', uint32([]));       
         opt = ...                   % struct of default user options
-            struct('space', 'scalar', 'type', 'CG');
+            struct('space', 'scalar', 'type', 'CG', 'time', true);
     end
     
-    properties (Access = private)
+    properties (GetAccess = {?mFEM.System}, SetAccess = private)
         boundary_id = uint32([]);   % appended when add_boundary is called
+        local_n_dim = uint32([]);   % local dimensions of elements
     end
     
     methods (Access = public)
@@ -100,9 +101,10 @@ classdef FEmesh < mFEM.handle_hide
             % The no. of elements
             obj.n_elements = length(obj.element); 
             
-            % Spatial dimension
-            obj.n_dim = obj.element(1).local_n_dim;
-            
+            % Spatial dimension and local dimensions
+            obj.n_dim = obj.element(1).n_dim;
+            obj.local_n_dim = obj.element(1).local_n_dim;
+
             % Determine the no. of dofs per node
             if strcmpi(obj.opt.space, 'scalar');
                 obj.n_dof_node = 1;
@@ -289,8 +291,9 @@ classdef FEmesh < mFEM.handle_hide
             %   xn,yn,zn = Num. of elements in x,y,z direction
            
             % Display wait message
-            tic;
-            disp('Generating mesh...'); 
+            if obj.opt.time;
+                ticID = tmessage('Generating mesh...');
+            end
             
             % Check the current element type is supported
             switch type;
@@ -303,7 +306,9 @@ classdef FEmesh < mFEM.handle_hide
             end
             
             % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
+            if obj.opt.time;
+                tmessage(ticID);
+            end;
         end
        
         function plot(obj, varargin)
@@ -317,8 +322,9 @@ classdef FEmesh < mFEM.handle_hide
             % Calculates the global degree-of-freedom map
             
             % Display wait message
-            tic;
-            disp('Computing the degree-of-freedom map...');
+            if obj.opt.time;
+                ticID = tmessage('Computing the degree-of-freedom map...');
+            end
 
             % Place the correct type of map in public property
             switch obj.opt.type;
@@ -335,7 +341,9 @@ classdef FEmesh < mFEM.handle_hide
             end
             
             % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
+            if obj.opt.time;
+                tmessage(ticID);
+            end;
         end
         
         function find_neighbors(obj)
@@ -345,9 +353,10 @@ classdef FEmesh < mFEM.handle_hide
             %   find_neighbors()   
 
             % Display wait message
-            tic;
-            disp('Locating neighbor elements...');
-            
+            if obj.opt.time;
+                ticID = tmessage('Locating neighbor elements...');
+            end
+
             % Create a dof map for searching out neighbors
             [~, ~, CGdof] = unique(obj.map.node, 'rows','stable');
                                     
@@ -424,7 +433,9 @@ classdef FEmesh < mFEM.handle_hide
             end
             
             % Complete message
-            disp(['    ...Completed in ', num2str(toc),' sec.']);
+            if obj.opt.time;
+                tmessage(ticID);
+            end;
          end 
         
         function gen1Dgrid(obj,type, x0, x1, xn)

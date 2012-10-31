@@ -218,7 +218,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % Build an element for the side
             
             if obj.n_dim == 3;
-                error('Element:build_side','Feature not yet supported in 3D');
+                warning('Element:build_side','Feature not tested in 3D');
             end
             
             % Extract the nodes for the side

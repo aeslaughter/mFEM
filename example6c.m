@@ -1,4 +1,4 @@
-% A transient heat transfer example, using Matrix class
+% A transient heat transfer example, using System class
 %
 % Syntax:
 %   example6b
@@ -15,87 +15,40 @@
 %
 % N
 %   scalar
-%   The number of elements in the x and y directions, the default is 32.
+%    The number of elements in the x and y directions, the default is 32.
 %
 % Element
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
-%
 
-function example6b(varargin)
 
-% Determine the number of elements to divide the mesh into
-N = 32;
-if nargin >= 1 && isnumeric(varargin{1});
-    N = ceil(varargin{1});
-end
+function example6c(varargin)
 
 % Import the mFEM library
 import mFEM.*;
 
-% Create a FEmesh object, add the single element, and initialize it
-tic;
-mesh = FEmesh();
-mesh.grid('Quad4',0,1,0,1,N,N);
-mesh.init();
+% Set the default options and apply the user defined options
+opt.n = 32;
+opt.element = 'Quad4';
+opt = gather_user_options(opt,varargin{:});
 
-% Display time for mesh creation
-disp(['Mesh generation time: ', num2str(toc), ' sec.']);
+% Create a FEmesh object, add the single element, and initialize it
+mesh = FEmesh();
+mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
+mesh.init();
 
 % Label the boundaries
 mesh.add_boundary(1); % essential boundaries (all)
 
-% Create Gauss objects for performing integration on the element and
-% elements sides.
-q_elem = Gauss(2,'quad');
-[qp, W] = q_elem.rules();
+% Build the system
+sys = System(mesh);
+sys.add_constant('D', 1 / (2*pi^2));   % thermal conductivity
+sys.add_matrix('M', 'N''*N');
+sys.add_matrix('K', 'B''*D*B');
 
-% Problem specifics
-D = 1 / (2*pi^2);           % thermal conductivity
-theta = 0.5;                % numerical intergration parameter
-dt = 0.1;                   % time-step
-
-% Initialize storage
-M = Matrix(mesh);
-K = Matrix(mesh.n_dof);
-
-% Create mass and stiffness matrices by looping over elements
-tic;
-for e = 1:mesh.n_elements;
-
-    % Extract the current element from the mesh object
-    elem = mesh.element(e);
-    
-    % Define short-hand function handles for the element shape functions
-    % and shape function derivatives
-    B = @(xi,eta) elem.shape_deriv(xi, eta);
-    N = @(xi,eta) elem.shape(xi,eta);
-
-    % Initialize the local matrices and vector
-    Me = zeros(elem.n_dof);     % mass matrix
-    Ke = zeros(elem.n_dof);     % stiffness matrix
-    
-    % Loop over the quadrature points in the two dimensions to perform the
-    % numeric integration
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            Me = Me + W(i)*N(qp(i),qp(j))'*N(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
-            Ke = Ke + W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
-        end
-    end
-    
-    % Add the local to global
-    dof = elem.get_dof();
-    M.add_matrix(Me, dof);
-    K.add_matrix(Me, dof);
-end
-
-% Initialize the sparse matrices (these method deletes the Matrix objects)
-K = K.init();
-M = M.init();
-
-% Print assembly time
-disp(['Matrix assembly time: ', num2str(toc), ' sec.']);
+% Build the matrices (display the build times for comparision)
+M = sys.assemble('M');
+K = sys.assemble('K');
 
 % Define dof indices for the essential dofs and non-essential dofs
 non = mesh.get_dof(1,'ne'); 
@@ -119,6 +72,10 @@ ylabel('y');
 cbar = colorbar;
 set(get(cbar,'YLabel'),'String','Temperature');
 
+% Numerical constants
+theta = 0.5;                % numerical intergration parameter
+dt = 0.1;                   % time-step
+
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries. This
 % problem also does not have a force term.
@@ -141,7 +98,10 @@ for t = dt:dt:1;
     T(ess) = T_exact(x(ess), y(ess), t);
 
     % Plot the results
-    pause(0.5);
+    pause(0.25);
     mesh.plot(T);
     title(['t = ', num2str(t)]);
 end
+
+% Clean up
+delete(mesh);

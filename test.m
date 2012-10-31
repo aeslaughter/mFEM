@@ -2,11 +2,8 @@ function test
 import mFEM.*
 
 mesh = FEmesh();
-mesh.grid('Tri6',0,1,0,1,1,1);
-mesh.init();
+mesh.add_element('Truss2',[-1,1; 0,0]);
 
+N = mesh.element(1).shape(0);
 
-% 
-%  mesh.element(1).quad.rules()
-T = 1:mesh.n_dof;
-mesh.plot(T,'ShowNodes',true);
+N'*N
