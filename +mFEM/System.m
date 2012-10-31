@@ -5,8 +5,10 @@ classdef System < mFEM.handle_hide
     %   sys = System(mesh)
     %
     % Description:
+    %   sys = System(mesh) creates a System object based on the supplied
+    %   FEmesh object.
     %
-    %
+    % See Also FEMESH
 
     properties(Access = private)
         mesh = mFEM.FEmesh.empty;
@@ -25,8 +27,19 @@ classdef System < mFEM.handle_hide
         function add_constant(obj, varargin)
             %ADD_CONSTANT Adds constant(s) variables to the system.
             %
-            % Syntax:
+            % Syntax
             %   add_constant('ConstantName', ConstantValue, ...)
+            %
+            % Description
+            %   add_constant('ConstantName', ConstantValue, ...) adds
+            %   a single or multiple constants to the System, the
+            %   'ConstantName' may be any string identifier and the value
+            %   may be a numeric (scalar or matrix) or a string that may be
+            %   evaluated using MATLAB's eval function.
+            %
+            % Examples
+            %   sys.add_constant('k',10);
+            %   sys.add_cosntant('D','k^2');
             
             % Location of last ConstantName
             n = nargin - 2;

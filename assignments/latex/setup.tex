@@ -20,7 +20,7 @@
 \renewcommand*\familydefault{\sfdefault}
 
 % Setup the page appearance
-\usepackage[margin=1in, top=0.75in]{geometry}
+\usepackage[margin=1in, top=1in]{geometry}
 \setlength\parindent{0pt}
 \setlength{\parskip}{10pt}
 
@@ -53,8 +53,8 @@
 % Change section apperance
 \usepackage{titlesec}
 \titleformat{\chapter}{}{}{0pt}{\Huge\textbf{Homework \arabic{assignment}}\\\huge}[\thispagestyle{empty}\normalsize]
-\titleformat{\section}[runin]{}{}{0pt}{\Large\textbf}[\thispagestyle{empty}\normalsize\vspace{1ex}\\]
-
+\titleformat{\section}[hang]{}{}{0pt}{\Large\textbf}[\thispagestyle{empty}\normalsize]
+\titleformat{\subsection}[hang]{}{}{0pt}{\large\textbf}[\thispagestyle{empty}\normalsize]
 
 % Define a flag for showing solution and compiling a single question
 \usepackage{xifthen}
@@ -130,6 +130,9 @@
 	\addtocounter{question}{1}
 
 	% Insert the question
+	\ifthenelse{\boolean{hidesolution}}{}{ 						% If hidesolution is true do nothing
+		\ifthenelse{\boolean{solution}}{\newpage}{} 			% if false, insert a newpage
+	} 					  
 	\section{Problem \arabic{question}}
 	\input{\folder /#1/prob.tex}
 	

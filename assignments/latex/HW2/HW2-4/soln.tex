@@ -1,6 +1,6 @@
 The \texttt{Line3} class was completed by adding the following code.
 
-\textbf{Element Basis Functions:}
+\subsection{Element Basis Functions}
 \begin{lstlisting}
 function N = basis(~, xi)
 	% Returns a row vector of local shape functions
@@ -10,7 +10,7 @@ function N = basis(~, xi)
 end
 \end{lstlisting}
 
-\textbf{Element Basis Function Derivatives ($\df{N}{\xi}$):}
+\subsection{Element Basis Function Derivatives ($\df{N}{\xi}$)}
 \begin{lstlisting}
 function GN = local_grad_basis(~, xi)
 	% Return the derivatives in terms of xi
@@ -18,7 +18,7 @@ function GN = local_grad_basis(~, xi)
 end
 \end{lstlisting}
 
-\textbf{Gradient of Element Basis Functions ($\df{N}{x}$):}
+\subsection{Gradient of Element Basis Functions ($\df{N}{x}$)}
 \begin{lstlisting}
 function B = grad_basis(obj, xi) 
 	% Gradient of shape functions
@@ -26,7 +26,7 @@ function B = grad_basis(obj, xi)
 end
 \end{lstlisting}
 
-\textbf{The Jacobian:}
+\subsection{The Jacobian}
 \begin{lstlisting}
 function J = jacobian(obj, xi)
 	% Returns the jacobian matrix
@@ -34,7 +34,7 @@ function J = jacobian(obj, xi)
 end
 \end{lstlisting}
 
-\textbf{Comparison Between Line2 and Line3 Elements:}\\
+\subsection{Comparison Between Line2 and Line3 Elements}
 The figure below includes the results for both element types with 2 and 10 elements across the length of the bar. The main advantage of the Line3 element is that the gradient is a linear function, while for Line2 the gradient is constant.
 \begin{figure}[ht!]
 \subfloat[Line2, 2 elements]{\includegraphics[width=0.49\linewidth]{HW2/HW2-4/soln_line2_2.pdf}}

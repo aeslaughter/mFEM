@@ -2,12 +2,12 @@ classdef Line3 < mFEM.Element
     %LINE3 A 3-node, 1D quadradtic element.
     %
     %      (-1)   (0)   (1)
-    %         1----2----3
+    %         1----3----2
     %
 
     properties (SetAccess = protected, GetAccess = public)    
         n_sides = 2;                    % no. "sides" (points in 1D)
-        side_dof = [1; 3];              % local dofs of the "sides"
+        side_dof = [1; 2];              % local dofs of the "sides"
         side_type = 'Point';            % Sides are points
         quad = mFEM.Gauss(2,'line');    % Instance of Gauss quadrature class
     end
@@ -23,13 +23,14 @@ classdef Line3 < mFEM.Element
            
            % Test that nodes is sized correctly
            if all(size(nodes) == [2,1]);
-               mid = mean(nodes,1);
-               nodes(3,:) = nodes(2,:);
-               nodes(2,:) = mid;
+               nodes(3,:)= mean(nodes,1);
            end
            
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+           
+           % Set the node plot order
+           obj.node_plot_order = [1,3,2];
         end
     end
     
@@ -39,8 +40,8 @@ classdef Line3 < mFEM.Element
         function N = basis(~, xi)
             % Returns a row vector of local shape functions
             N(1) = 1/2*xi*(xi-1);
-            N(2) = 1-xi^2;
-            N(3) = 1/2*xi*(1 + xi);
+            N(3) = 1-xi^2;
+            N(2) = 1/2*xi*(1 + xi);
         end
 
         function B = grad_basis(obj, xi) 
@@ -54,7 +55,7 @@ classdef Line3 < mFEM.Element
         end
         
         function GN = local_grad_basis(~, xi)
-            GN = [xi-1/2, -2*xi, xi+1/2];
+            GN = [xi-1/2, xi+1/2, -2*xi];
         end
     end
 end

@@ -1,14 +1,14 @@
 %% FEplot
 % Creates graphs for finite element data derived from FEMESH.
 %
-%% Syntax
+% Syntax
 %  FEplot(obj)
 %  FEplot(obj, data)
 %  FEplot(...,'PropertyName',<PropertyValue>)
 %
-%% Descrtiption
+% Descrtiption
 %
-%% FEplot Property Descriptions
+% FEplot Property Descriptions
 %
 %  ShowNodes
 %       {true} | false
@@ -42,6 +42,17 @@
 %       Add the plot to the user specified figure handle. Note, NewFigure
 %       takes presidence over FigureHandle.
 %
+%   Plot
+%       cell array
+%
+%       Use this to pass commands directly to the plot (1D) and patch
+%       commands. For example:
+%           FEplot(...,'Plot',{'Xlim',[0,1]});
+%       executes the following:
+%           plot(...,'Xlim',[0,1]);
+%       This is the last command to be applied to the plot, thus it will
+%       override other plot related settings.
+%
 %% See also
 % FEmesh
 
@@ -55,8 +66,15 @@ function FEplot(obj, varargin)
     % Collect the input 
     opt = parse_input(obj, varargin{:});
 
-    % Plot the data
-    build_plot(obj, opt);
+    % Plot the data according the spacial dimensions
+    if obj.n_dim == 1;
+        h = plot1D(obj, opt);
+    else
+        h = plot2D(obj, opt);
+    end
+    
+    apply_plot_options(h, opt);
+    %build_plot(obj, opt);
     
     % Add the element labels
     add_element_labels(obj, opt);
@@ -81,6 +99,8 @@ function opt = parse_input(obj, varargin)
     opt.newfigure = true;
     opt.figurehandle = handle.empty;
     opt.axeshandle = handle.empty; 
+    opt.plot = {};
+    opt.hold = true;
     
     % The first input is always the data
     if nargin > 1 && isnumeric(varargin{1});
@@ -118,79 +138,185 @@ function opt = parse_input(obj, varargin)
     end
 end
 
-function build_plot(obj,opt)
-    %BUILD_PLOT
+function h = plot1D(obj, opt)
+    %PLOT1D create a 1D plot
 
-    % 1D case (data is added via cell_node_data)
-    if obj.n_dim == 1;
-        cnode = cell_node_data(obj, opt);
-        h = plot(cnode{:}); 
+    % Initialize the handle output
+    X = [];
+    Y = [];
     
-    % 2D case    
-    else
-        h = zeros(obj.n_elements,1);
-        for e = 1:obj.n_elements;
-            % Current element
-            elem = obj.element(e);
-            
-            % Get the nodal data
-            cnode = cell_node_data(elem, opt);
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
         
-            if ~isempty(opt.data); % with data
-                h(e) = patch(cnode{:}, opt.data(elem.get_dof));
-            else % mesh only
-                h(e) = patch(cnode{:}, 'k', 'FaceColor','none');
-            end
+        % The node positions
+        x = elem.nodes;
+   
+        % Gather y-axis data
+        if ~isempty(opt.data);        
+            dof = elem.get_dof();
+            y = opt.data(dof);
+        else
+            y = zeros(size(x));
         end
+        
+        % Get the plotting order
+        order = elem.node_plot_order;
+        if ~isempty(order);
+            order = elem.node_plot_order;
+            x = x(order);
+            y = y(order);
+        end
+
+        % Append the output
+        X = [X;x];
+        Y = [Y;y];
     end
 
-    % Show the actual nodes
+    % Create the graph
+    h = plot(X,Y); hold on;
+end
+
+function h = plot2D(obj, opt)
+    %PLOT1D create a 2D plot
+
+    % Initialize the x and y values
+    h = zeros(obj.n_elements,1);
+    
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
+        
+        % The node positions
+        x = elem.nodes(:,1);
+        y = elem.nodes(:,2);
+        
+        % Gather y-axis data
+        z = [];
+        if ~isempty(opt.data);
+            dof = elem.get_dof();
+            z(:,1) = opt.data(dof);
+        end
+        
+        % Apply the plotting order
+        order = elem.node_plot_order;
+        if ~isempty(order);
+            x = x(order);
+            y = y(order);
+            if ~isempty(z);
+                z = z(order);
+            end
+        end
+
+        % Create the graph
+        if isempty(z);
+            h = patch(x, y, 'w');
+        else
+            h = patch(x, y, z);
+        end
+    end
+end
+
+function apply_plot_options(h, opt)
+    % APPLY_PLOT_OPTIONS
+    
+    % Show the nodes as empty circles
     if opt.shownodes
         set(h, 'Marker','o', 'MarkerSize', 8, 'MarkerEdgeColor', 'auto',...
             'MarkerFaceColor', 'auto');
     end
-end
     
-function varargout = cell_node_data(obj, opt)
-    %GET_NODE_DATA Creates column cell arrays of nodal data
-
-    % Get the node data (all elements; FEmesh object)
-    if isa(obj,'mFEM.FEmesh');
-        node = obj.map.node;
-        
-        % Adjust node data for CG or DG elements
-        if strcmpi(obj.opt.type,'CG');
-            node = unique(node,'rows','R2012a');
-        end
-        
-    % Get the node data (single element; Element object)    
-    elseif isa(obj,'mFEM.Element');
-        node = obj.nodes;
-        
-        if ~isempty(obj.node_plot_order);
-           node = node(obj.node_plot_order,:);
-        end
-        
+    % Hold the plot
+    if opt.hold;
+        hold on; 
+    else
+        hold off; 
     end
-    
-    % Create y-direction for 1D case
-    if obj.n_dim == 1;  
-        % If data is given, use this for the y position
-        if isempty(opt.data); 
-            node(:,2) = zeros(size(node(:,1)));
-        else
-            node(:,2) = opt.data(obj.get_dof);
-        end
-    end
-
-    % Create cell structure of nodes
-    varargout{1} = num2cell(node,1); % col. cell of nodes
-    
-    % Compute  mean locations of the nodes (only for element case)
-    if isa(obj,'mFEM.Element') && nargout == 2;
-    	varargout{2} = num2cell(mean(node,1)); % location of nodes
+   
+    % Add the custom plot options
+    if ~isempty(opt.plot);
+        set(h, opt.plot{:}); 
     end
 end
+
+
+% function build_plot(obj,opt)
+%     %BUILD_PLOT
+% 
+%     % 1D case (data is added via cell_node_data)
+%     if obj.n_dim == 1;
+%         cnode = cell_node_data(obj, opt);
+%         h = plot(cnode{:}); 
+%     
+%     % 2D case    
+%     else
+%         h = zeros(obj.n_elements,1);
+%         for e = 1:obj.n_elements;
+%             % Current element
+%             elem = obj.element(e);
+%             
+%             % Get the nodal data
+%             cnode = cell_node_data(elem, opt);
+%         
+%             if ~isempty(opt.data); % with data
+%                 h(e) = patch(cnode{:}, opt.data(elem.get_dof));
+%             else % mesh only
+%                 h(e) = patch(cnode{:}, 'k', 'FaceColor','none');
+%             end
+%         end
+%     end
+% 
+%     % Show the actual nodes
+%     if opt.shownodes
+%         set(h, 'Marker','o', 'MarkerSize', 8, 'MarkerEdgeColor', 'auto',...
+%             'MarkerFaceColor', 'auto');
+%     end
+% end
+    
+% function varargout = cell_node_data(obj, opt)
+%     %GET_NODE_DATA Creates column cell arrays of nodal data
+% 
+%     % Get the node data (all elements; FEmesh object)
+%     if isa(obj,'mFEM.FEmesh');
+%         node = obj.map.node;
+%         
+%         % Adjust node data for CG or DG elements
+%         if strcmpi(obj.opt.type,'CG');
+%             node = unique(node,'rows','R2012a');
+%         end
+%         
+%     % Get the node data (single element; Element object)    
+%     elseif isa(obj,'mFEM.Element');
+%         node = obj.nodes;
+%         
+%         if ~isempty(obj.node_plot_order);
+%            node = node(obj.node_plot_order,:);
+%         end
+%         
+%     end
+%     
+%     % Create y-direction for 1D case
+%     if obj.n_dim == 1;  
+%         % If data is given, use this for the y position
+%         if isempty(opt.data); 
+%             node(:,2) = zeros(size(node(:,1)));
+%         else
+%             node(:,2) = opt.data(obj.get_dof);
+%         end
+%     end
+% 
+%     % Create cell structure of nodes
+%     varargout{1} = num2cell(node,1); % col. cell of nodes
+%     
+%     % Compute  mean locations of the nodes (only for element case)
+%     if isa(obj,'mFEM.Element') && nargout == 2;
+%     	varargout{2} = num2cell(mean(node,1)); % location of nodes
+%     end
+% end
 
 function add_element_labels(obj, opt)
     %ADD_ELEMENT_LABEL

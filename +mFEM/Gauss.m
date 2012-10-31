@@ -1,7 +1,7 @@
 classdef Gauss
     properties (SetAccess = private, GetAccess = public)
         order = [];
-        type = 'quad';
+        type = 'line';
     end
     
     methods (Access = public)
@@ -23,10 +23,10 @@ classdef Gauss
 
             switch lower(obj.type)
                 case {'line','quad','hex'};
-                     [qp, w] = obj.rect_rules();
+                     [qp, w] = obj.rect_rules(obj.order);
                     
                 case 'tri';
-                     [qp, w] = obj.tri_rules();
+                     [qp, w] = obj.tri_rules(obj.order);
                      
                 case 'tet';
                     error('Not yet supported');
@@ -47,10 +47,10 @@ classdef Gauss
         end
     end
     
-    methods (Access = private)
-        function [qp, w] = rect_rules(obj)
+    methods (Static, Access = private)
+        function [qp, w] = rect_rules(order)
             
-            switch obj.order
+            switch order
                 case 1;
                     qp = 0;
                     w = 2;
@@ -82,30 +82,36 @@ classdef Gauss
                     w = [128/225, a, a, b, b]';
                     
                 otherwise
+
                     error('Gauss:rect_rules', 'The specified order of %d is not supported.', obj.order);
             end
         end   
         
-        function [qp, w] = tri_rules(obj)
+        function [qp, w] = tri_rules(order)
             % Gauss quadrature rules for triangle domains 
-            % (see Fish, p. 181, Table 7.7) 
-            switch obj.order         
-                case 1;
+
+            switch order         
+                case 1; 
                     a  = 1/3;
                     qp = [a,a];
                     w  = [1,1];
                 
                 case 3;
-                    a = 0.166666666;
-                    b = 0.666666666;
+                    a = 1/6;
+                    b = 2/3;
                     qp = [a,a; b,a; a,b];
                     w = [a, a, a];
                     
                 case 4;
                     a = 1/3;
-                    b = 0.6;
-                    c = 0.2;
+                    b = 3/5;
+                    c = 1/5;
                     qp = [a,a; b,c; c,b; c,c];
+                    
+                    a = -27/48;
+                    b = 25/48;
+                    w = [a,b,b,b];
+                    
                     
                 case 7;
                     a = 0.1012865073;
@@ -124,8 +130,10 @@ classdef Gauss
                     error('Gauss:rect_rules', 'The specified order of %d is not supported.', obj.order);
             end
         end
+    end
         
-        function [qp, w] = cell_rules(obj,qp,w)
+    methods (Access = private)
+        function [qp, w] = cell_rules(obj, qp, w)
             
             if any(strcmpi(obj.type,{'line','tet','tri'}));
             	qp = num2cell(qp);

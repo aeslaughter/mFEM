@@ -267,7 +267,7 @@ classdef FEmesh < mFEM.handle_hide
             %   get_nodes(dim)
             %
             
-            out = unique(obj.map.node, 'rows'); 
+            out = unique(obj.map.node, 'rows', 'stable'); 
             if nargin == 2 && isnumeric(varargin{1}) && varargin{1} <= obj.n_dim;
                out = out(:,varargin{1});
             end
