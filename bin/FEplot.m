@@ -9,42 +9,55 @@
 % Descrtiption
 %
 % FEplot Property Descriptions
+% 
+% The following is a list of all the available options, note that all
+% true/false may be input using a flag instead of the pairing. For example
+% the following two calls to FEplot are the same:
+%   FEplot(obj,data,'-Deformation');
+%   FEplot(obj,data,'Deformation',true);
+% The flag style input simply reversed the state from the default.
+%
+%
+%  Deformation
+%       true | {false}
+%       Toggles the use to treat the input data as deformation
+%
+%  Component
+%       interger
+%       Gives the vector component to plot as the countour variable, for
+%       example 1 would used the x-component of a vector valued supplied
+%       data. If the value is empty (the default) the magnitude is shown,
+%       if it is set to NaN zeros are used. The deformation property shows 
+%       the deformed structure visually.
 %
 %  ShowNodes
 %       {true} | false
-%
 %       Toggles the display of plotted dots at the nodes
 %
 %  ElementLabels
 %       true (default w/o data) | false (default w/ data)
-%
 %       Toggles the appearence of element number labels.
 %       
 %   NodeLabels
 %       true (default w/o data) | false (default w/ data)
-%
 %       Toggles the appearence of node number labels.
 %
 %   NewFigure
 %       true (default w/o data) | false (default w/ data)
-%
 %       Toggles the creation of a new figure, if it is set to false then
 %       gcf is used, unless the handle is specified via FigureHandle
 %
 %   AxesHandle
 %       axes handle
-%
 %       Add the plot to the user specified axes handle. 
 %
 %   FigureHandle
 %       figure handle
-%
 %       Add the plot to the user specified figure handle. Note, NewFigure
 %       takes presidence over FigureHandle.
 %
 %   Plot
 %       cell array
-%
 %       Use this to pass commands directly to the plot (1D) and patch
 %       commands. For example:
 %           FEplot(...,'Plot',{'Xlim',[0,1]});
@@ -67,10 +80,14 @@ function FEplot(obj, varargin)
     opt = parse_input(obj, varargin{:});
 
     % Plot the data according the spacial dimensions
-    if obj.n_dim == 1;
-        h = plot1D(obj, opt);
-    else
-        h = plot2D(obj, opt);
+    if obj.n_dim == 1 && obj.n_dof_node == 1;
+        h = plot1D_scalar(obj, opt);
+        
+    elseif obj.n_dim == 2 && obj.n_dof_node == 1;
+        h = plot2D_scalar(obj, opt);
+        
+    elseif obj.n_dim == 2 && obj.n_dof_node == 2;
+        h = plot2D_vector(obj, opt);
     end
     
     apply_plot_options(h, opt);
@@ -93,6 +110,9 @@ function opt = parse_input(obj, varargin)
 
     % Define user properties
     opt.data = []; 
+    opt.deformation = false;
+    opt.component = [];
+    opt.colorbar = '';
     opt.shownodes = false;
     opt.elementlabels = true;
     opt.nodelabels = true;
@@ -138,7 +158,7 @@ function opt = parse_input(obj, varargin)
     end
 end
 
-function h = plot1D(obj, opt)
+function h = plot1D_scalar(obj, opt)
     %PLOT1D create a 1D plot
 
     % Initialize the handle output
@@ -179,7 +199,7 @@ function h = plot1D(obj, opt)
     h = plot(X,Y); hold on;
 end
 
-function h = plot2D(obj, opt)
+function h = plot2D_scalar(obj, opt)
     %PLOT1D create a 2D plot
 
     % Initialize the x and y values
@@ -197,7 +217,7 @@ function h = plot2D(obj, opt)
         
         % Gather y-axis data
         z = [];
-        if ~isempty(opt.data);
+        if ~isempty(opt.data)
             dof = elem.get_dof();
             z(:,1) = opt.data(dof);
         end
@@ -220,6 +240,78 @@ function h = plot2D(obj, opt)
         end
     end
 end
+
+function h = plot2D_vector(obj, opt)
+    %PLOT1D create a 2D plot for vector spaces
+
+    % Initialize the x and y values
+    h = zeros(obj.n_elements,1);
+    
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
+        
+        % The node positions
+        x = elem.nodes(:,1);
+        y = elem.nodes(:,2);
+        
+        % Gather y-axis data
+        z = [];
+        if ~isempty(opt.data)
+            dof = elem.get_dof();
+            z = opt.data(dof);
+            zz(:,1) = z(1:2:end);
+            zz(:,2) = z(2:2:end);
+            
+            if isnan(opt.component);
+                z = nan(size(x));
+            elseif isempty(opt.component);
+                z = sqrt(zz(:,1).^2 + zz(:,2).^2);
+            elseif isnumeric(opt.component) && isscalar(opt.component);
+                z = zz(:,opt.component);
+            else
+                error('FEplot:plot2D_vector','Error with Component property value');
+            end
+            
+        end
+        
+        % Adjust nodal position if deformed shape is desired
+        if opt.deformation
+            % Determine the scaling
+            n = max(max(floor(log10(abs(zz)))));
+            scale = 10^(-sign(n)*(abs(n)-1));
+            
+            % Adjust the nodal values
+            x = x + scale*zz(:,1);
+            y = y + scale*zz(:,2);
+        end     
+        
+        % Apply the plotting order
+        order = elem.node_plot_order;
+        if ~isempty(order);
+            x = x(order);
+            y = y(order);
+            if ~isempty(z);
+                z = z(order);
+            end
+        end
+
+        % Create the graph
+        if isempty(z);
+            h = patch(x, y, 'w');
+        else
+            h = patch(x, y, z);
+        end
+        
+        if ~isempty(opt.colorbar) && ischar(opt.colorbar);
+            cbar = colorbar;
+            set(get(cbar,'YLabel'),'String',opt.colorbar);
+        end
+    end
+end
+
 
 function apply_plot_options(h, opt)
     % APPLY_PLOT_OPTIONS

@@ -11,9 +11,9 @@ mesh.init();
 
 % Label the boundaries
 mesh.add_boundary('bottom', 1);
+mesh.add_boundary('left', 1);
 mesh.add_boundary('right', 2);
-mesh.add_boundary('top', 3);
-mesh.add_boundary('left', 4);
+mesh.add_boundary('top', 2);
 
 % Create system and add matrix components
 sys = System(mesh);
@@ -24,12 +24,10 @@ sys.add_matrix('K', 'B''*D*B');
 % Add force components
 sys.add_vector('f_1', 'N''*t', 1);
 sys.add_vector('f_2', 'N''*-t', 2);
-sys.add_vector('f_3', 'N''*-t', 3);
-sys.add_vector('f_4', 'N''*t', 4);
 
 % Assemble the matrix and vector
 K = sys.assemble('K'); 
-f = sys.assemble('f_1') + sys.assemble('f_2') + sys.assemble('f_3') + sys.assemble('f_4');
+f = sys.assemble('f_1') + sys.assemble('f_2');
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = [1,2,4];
@@ -45,6 +43,10 @@ r = K*u - f;
 
 % Display the displacement results
 u
+mesh.plot(u,'-Deformation','-ShowNodes',...
+    'Colorbar','Magnitude of Disp. (m)');
+xlabel('x'); ylabel('y');
+
 
 % Compute the stress and strain at the Gauss points
 % Loop through the elements

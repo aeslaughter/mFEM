@@ -40,7 +40,7 @@ for e = 1:mesh.n_elements;
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
     K = zeros(elem.n_dof);
-    f = zeros(elem.n_dof,1);f
+    f = zeros(elem.n_dof,1);
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
@@ -89,7 +89,7 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = u(elem.get_dof())
+    d(:,1) = u(elem.get_dof());
     
     % Compute the stress and strain at the Gauss points
     k = 1;

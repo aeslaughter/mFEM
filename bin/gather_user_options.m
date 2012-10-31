@@ -1,8 +1,9 @@
-function opt =  gatheruseroptions(opt,varargin)
-% GATHERUSEROPTIONS collects property parings input into a function
+function opt =  gather_user_options(opt,varargin)
+% GATHER_USER_OPTIONS collects property parings input into a function
 %__________________________________________________________________________
 % SYNTAX:
 %   opt = gatheruseroptions(opt,'PropertyName',<PropertyValue>,...);
+%   opt = gatheruseroptions(...,-PropertyName);
 %   opt = gatheruseroptions(opt,optUser);
 %
 % DESCRIPTION:
@@ -10,6 +11,15 @@ function opt =  gatheruseroptions(opt,varargin)
 %       compares the property names with the default values stored in the
 %       data structure and applies the property value if the field matches
 %       the property name.
+%
+%   opt = gatheruseroptions(...,-PropertyName)
+%       adds an alternative method for flipping boolean values without
+%       specifing the value. For example if the options structure is:
+%           opt.flag = true;
+%       The the following two commands are equivalent
+%           opt = gather_user_options(opt,'-flag');
+%           opt = gather_user_options(opt,'flag',false);
+%
 %   opt = gatheruseroptions(opt,optUser) in this case the user suplies a
 %       data structure similar to that of opt, which is compared according
 %       to the fieldnames
@@ -21,9 +31,8 @@ function opt =  gatheruseroptions(opt,varargin)
 
 % INTILIZE THE DATA
     q = varargin;           % User supplied input
-    list = fieldnames(opt); % Fieldnames of default values
     k = 1;                  % Intilize the counter
-    N = nargin - 1;         % Number of inputs
+    N = nargin - 1;         % Number of property inputs
 
 % CONVERT DATA INPUT AS A STRUCTURE TO A CELL ARRAY
 if length(q) == 1 && isstruct(q{1});
@@ -38,16 +47,42 @@ end
 
 % COMPARE INPUT WITH THE DEFAULTS
 while k < N
-    % Seperate the name from the value; increment counter
-    itm = q{k}; value = q{k+1}; k = k + 2;
+    % Seperate the name
+    itm = q{k}; 
+    
+    % Search for flag style input
+    idx = strfind(itm,'-');
+    
+    % Case when a precedding '-' is detected
+    if numel(idx) > 0 && idx(1) == 1;
+       itm = lower(itm(2:end)); % remove the leading '-'
+       k = k + 1;        % increment the counter
+       
+       % Change the value, if it existing in the options structure
+       if isfield(opt, itm) 
+            value = ~opt.(itm); 
+            
+       % Produce a warning and move on, if the item is not recognized
+       else
+            mes = ['The option, ',itm,', was not recoignized.'];
+            warning(mes);
+            continue;
+       end
+       
+    % Standard case, the next item is the value
+    else
+       value = q{k+1}; k = k + 2;
+    end
     
     % When the property matches, update the structure
-    if strmatch(lower(itm),list,'exact');   
+    if isfield(opt, lower(itm));   
         opt.(lower(itm)) = value;
         
     % Produce a warning if the property is not recongnized    
     else 
         mes = ['The option, ',itm,', was not recoignized.'];
-        disp(mes);
+        warning(mes);
     end
 end
+
+

@@ -1,22 +1,21 @@
 classdef System < mFEM.handle_hide
     %SYSTEM A class for automatic assembly of finite element equations.
     %
-    % Syntax:
+    % Syntax
     %   sys = System(mesh)
     %   sys = System(mesh, 'PropertyName', PropertyValue)
     %
-    % Description:
+    % Description
     %   sys = System(mesh) creates a System object based on the supplied
     %       FEmesh object.
     %   sys = System(mesh, 'PropertyName', PropertyValue) same as above but
     %       allows the options to be changes
     %
-    % System Properties
-    %   'Time'
+    % System Properties Descriptions
+    %   Time
     %       true | {false}
-    %       A toggle for displaying the assembly time.
+    %       A toggle for displaying the matrix and vector assembly time.
     %   
-    %
     % See Also FEMESH
     
     properties (SetAccess = private, GetAccess = public)
@@ -276,7 +275,7 @@ classdef System < mFEM.handle_hide
         end   
         
         function assemble_matrix_side(obj, idx)
-            %LOCAL_BOUNDARY_MATRIX computes matrix equation on boundary
+            %ASSEMBLE_MATRIX_SIDE computes matrix equation on boundary
            
             % Build the function for the side
             fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, 'side'));
@@ -403,7 +402,7 @@ classdef System < mFEM.handle_hide
         end  
         
         function assemble_vector_side(obj, idx)
-            %LOCAL_BOUNDARY_VECTOR computes vector equation on boundary
+            %ASSEMBLE_VECTOR_SIDE computes vector equation on boundary
             
             % Build the function for the side
             fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, 'side'));
@@ -417,15 +416,15 @@ classdef System < mFEM.handle_hide
                 % The current element
                 elem = obj.mesh.element(e);
 
-                % Intialize the force fector
-                fe = zeros(elem.n_dof, 1);
-            
                 % Loop through all of the boundaries specified
                 for i = 1:length(id);
 
                     % Loop through all sides of this element
                     for s = 1:elem.n_sides; 
-
+                        
+                        % Intialize the force fector
+                        fe = zeros(elem.n_dof, 1);
+                        
                         % Test if this side is on the boundary
                         if any(elem.side(s).boundary_id == id(i));
 
