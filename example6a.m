@@ -96,28 +96,32 @@ for e = 1:mesh.n_elements;
             Ke = Ke + W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
         end
     end
-    
+
     % Insert current values into global matrix using one of two methods
     if strcmpi(opt.method,'alt');
-        % Get the global degrees of freedom for this element
-        dof = elem.get_dof();
+        % Get the local degrees of freedom for this element
+        dof = (1:elem.n_dof)';
 
         % Compute indices for inserting into sparse matrix i,j,s vectors
         m = numel(Me);
         idx = m*(e-1)+1 : m*(e);
 
         % Build the i,j components for the sparse matrix creation
-        I(idx) = repmat(dof, length(dof), 1);
-        J(idx) = sort(repmat(dof, length(dof), 1));
+        i = repmat(dof, length(dof),1);
+        j = sort(i);
+        
+        % Get the global degrees of freedom for this element
+        dof = elem.get_dof();
+        I(idx) = dof(i);
+        J(idx) = dof(j);
 
         % Add the local mass and stiffness matrix to the sparse matrix values
-        Mij(idx) = reshape(Me, numel(Me), 1);
-        Kij(idx) = reshape(Ke, numel(Ke), 1);
-
+         Mij(idx) = reshape(Me, numel(Me), 1);
+         Kij(idx) = reshape(Ke, numel(Ke), 1);
     else
         % Add local mass, stiffness, and force to global (this method is slow)
         dof = elem.get_dof();
-        M(dof,dof) =  M(dof,dof) + Me;
+        M(dof,dof) = M(dof,dof) + Me;
         K(dof,dof) = K(dof,dof) + Ke;
     end
 end
@@ -130,7 +134,7 @@ if strcmpi(opt.method,'alt');
     K = sparse(I,J,Kij);
 end
 tmessage(ticID);
-return;
+
 % Define dof indices for the essential dofs and non-essential dofs
 non = mesh.get_dof(1,'ne'); 
 ess = mesh.get_dof(1);      

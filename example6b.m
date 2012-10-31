@@ -24,11 +24,10 @@
 
 function example6b(varargin)
 
-% Determine the number of elements to divide the mesh into
-N = 32;
-if nargin >= 1 && isnumeric(varargin{1});
-    N = ceil(varargin{1});
-end
+% Set the default options and apply the user defined options
+opt.n = 32;
+opt.element = 'Quad4';
+opt = gather_user_options(opt,varargin{:});
 
 % Import the mFEM library
 import mFEM.*;
@@ -36,7 +35,7 @@ import mFEM.*;
 % Create a FEmesh object, add the single element, and initialize it
 tic;
 mesh = FEmesh();
-mesh.grid('Quad4',0,1,0,1,N,N);
+mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
 mesh.init();
 
 % Display time for mesh creation
@@ -56,7 +55,7 @@ theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
 
 % Initialize storage
-M = Matrix(mesh);
+M = Matrix(mesh.n_dof);
 K = Matrix(mesh.n_dof);
 
 % Create mass and stiffness matrices by looping over elements
@@ -87,7 +86,7 @@ for e = 1:mesh.n_elements;
     % Add the local to global
     dof = elem.get_dof();
     M.add_matrix(Me, dof);
-    K.add_matrix(Me, dof);
+    K.add_matrix(Ke, dof);
 end
 
 % Initialize the sparse matrices (these method deletes the Matrix objects)

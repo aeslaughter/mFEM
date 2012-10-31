@@ -60,8 +60,8 @@ classdef Matrix < mFEM.handle_hide
            %ADD_MATRIX Adds a sub-matrix to the global matrix
            %
            % Syntax
-           %    add_matrix(M,dof)
-           %    add_matrix(M,dof1,dof2)
+           %    add_matrix(B,dof)
+           %    add_matrix(B,dof1,dof2)
            
            % Parse the input
            
@@ -75,15 +75,17 @@ classdef Matrix < mFEM.handle_hide
 
             if ~iscolumn(dof1); dof1 = dof1'; end
             if ~iscolumn(dof2); dof2 = dof2'; end
- 
+
             % Compute indices for inserting into sparse matrix i,j,s vectors
             l = length(obj.I);
             b = numel(B);
             idx = l+1 : l+b;
-
+            
             % Build the i,j components for the sparse matrix creation
-            obj.I(idx) = repmat(dof1, length(dof1), 1);
-            obj.J(idx) = sort(repmat(dof2, length(dof2), 1));
+            i = repmat((1:length(dof1))', length(dof1), 1);
+            j = sort(i);
+            obj.I(idx) = dof1(i);
+            obj.J(idx) = dof2(j);
 
             % Add the local mass and stiffness matrix to the sparse matrix values
             obj.Aij(idx) = reshape(B, numel(B), 1);

@@ -78,7 +78,8 @@ classdef System < mFEM.handle_hide
             obj.mat(idx).name = name;
             obj.mat(idx).eqn = eqn;
             obj.mat(idx).func = obj.parse_equation(eqn);
-            obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+%             obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+            obj.mat(idx).matrix = sparse([]);
             obj.mat(idx).boundary_id = varargin{:};
         end
 
@@ -284,7 +285,7 @@ classdef System < mFEM.handle_hide
             id = obj.mat(idx).boundary_id;
             
             % Create a Matrix object
-            %matrix = mFEM.Matrix(obj.mesh);
+            matrix = mFEM.Matrix(obj.mesh);
             
             % Loop through each element
             for e = 1:obj.mesh.n_elements;
@@ -334,8 +335,8 @@ classdef System < mFEM.handle_hide
                      
                 % Add the local force vector to the global vector
                 dof = elem.get_dof();    
-                %matrix.add_matrix(Ke, dof, dof);
-                obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
+                matrix.add_matrix(Ke, dof, dof);
+                %obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
             end
             
             % Build the sparse matrix
@@ -350,7 +351,7 @@ classdef System < mFEM.handle_hide
             fcn = str2func(obj.mat(idx).func);
 
             % Create a Matrix object
-            %matrix = mFEM.Matrix(obj.mesh);
+            matrix = mFEM.Matrix(obj.mesh.n_dof, obj.mesh.n_dof);
 
             % Loop through all of the elements
             for e = 1:obj.mesh.n_elements;
@@ -371,15 +372,15 @@ classdef System < mFEM.handle_hide
                 end
 
                 % Extract the global dof for this element
-                dof = elem.get_dof();    
+                dof = elem.get_dof();   
 
                 % Add the contribution to the global matrix
-                %matrix.add_matrix(Ke, dof, dof);
-                obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
+                matrix.add_matrix(Ke, dof);
+                %obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
             end
 
             % Build the sparse matrix
-            %obj.mat(idx).matrix = matrix.init();
+            obj.mat(idx).matrix = matrix.init();
         end
         
         function f = assemble_vector(obj, idx)
