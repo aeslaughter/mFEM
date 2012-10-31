@@ -11,6 +11,7 @@
 assignments/*/release
 assignments/*/soln/*_soln.pdf
 assignments/*.zip
+assignments/latex/*.pdf
 
 # Documentation
 doc/html
