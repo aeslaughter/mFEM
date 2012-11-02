@@ -3,26 +3,26 @@ function opt =  gather_user_options(opt,varargin)
 %
 % Syntax
 %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
-%   opt = gather_user_options(...,-PropertyName);
+%   opt = gather_user_options(...,-PropertyName,...);
 %   opt = gather_user_options(opt,optUser);
 %
 % Description
-%   opt = gatheruseroptions(opt,'PropertyName',<PropertyValue>,...)
-%       compares the property names with the default values stored in the
-%       data structure and applies the property value if the field matches
-%       the property name.
+%   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...)
+%   compares the property names with the default values stored in the
+%   data structure and applies the property value if the field matches
+%   the property name. The opt input variable is described below.
 %
-%   opt = gatheruseroptions(...,-PropertyName)
-%       adds an alternative method for flipping boolean values without
-%       specifing the value. For example if the options structure is:
-%           opt.flag = true;
-%       The the following two commands are equivalent
-%           opt = gather_user_options(opt,'-flag');
-%           opt = gather_user_options(opt,'flag',false);
+%   opt = gather_user_options(...,-PropertyName)
+%   adds an alternative method for flipping boolean values without
+%   specifing the value. For example if the options structure is:
+%       opt.flag = true;
+%   The the following two commands are equivalent.
+%       opt = gather_user_options(opt,'-flag');
+%       opt = gather_user_options(opt,'flag',false);
 %
-%   opt = gatheruseroptions(opt,optUser) in this case the user suplies a
-%       data structure similar to that of opt, which is compared according
-%       to the fieldnames
+%   opt = gather_user_options(opt,optUser) in this case the user suplies a
+%   data structure similar to that of opt, which is compared according
+%   to the fieldnames.
 %
 % Input
 %   opt = a data structure containing the default values, e.g. opt =

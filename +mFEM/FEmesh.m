@@ -2,6 +2,12 @@ classdef FEmesh < mFEM.handle_hide
     %FEMESH Class for managing and generating FEM spaces.
     % This class handles all mesh and degree-of-freedom operations for
     % implementing the finite element method.
+    %
+    %----------------------------------------------------------------------
+    % Copyright 2012 Andrew E. Slaughter
+    % This software is for educational purposes only and may not be used
+    % without written permession.
+    %----------------------------------------------------------------------
 
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
