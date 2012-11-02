@@ -226,7 +226,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             node = obj.nodes(dof,:);
 
             % Create the side element
-            side = feval(['mFEM.',obj.side_type], NaN, node, obj.n_dof_node);
+            side = feval(['mFEM.elements.',obj.side_type], NaN, node, obj.n_dof_node);
             
             % Set the global dofs
             side.global_dof = obj.global_dof(dof);

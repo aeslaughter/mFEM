@@ -8,6 +8,7 @@ classdef FEmesh < mFEM.handle_hide
         n_dof_node = uint32(1);     % no. of dofs per node      
         element;                    % empty array of elements
         initialized = false;        % initialization state
+        boundary_id = uint32([]);   % list of boundary ids
         map = ...                   % struct  of node, elem, and dof maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary', uint32([]));       
@@ -16,7 +17,6 @@ classdef FEmesh < mFEM.handle_hide
     end
     
     properties (GetAccess = {?mFEM.System}, SetAccess = private)
-        boundary_id = uint32([]);   % appended when add_boundary is called
         local_n_dim = uint32([]);   % local dimensions of elements
     end
     
@@ -53,7 +53,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.opt = gather_user_options(obj.opt, varargin{:});
                      
             % Initialize the element property (the type does not matter)
-            obj.element = mFEM.Quad4.empty;
+            obj.element = mFEM.elements.Quad4.empty;
         end
         
         function grid(obj, type, varargin)
@@ -115,7 +115,7 @@ classdef FEmesh < mFEM.handle_hide
                         
             % Create the element
             id = length(obj.element) + 1;
-            obj.element(id) = feval(['mFEM.', type],...
+            obj.element(id) = feval(['mFEM.elements.', type],...
                 id, nodes, obj.opt.space);
         end
 
@@ -171,80 +171,82 @@ classdef FEmesh < mFEM.handle_hide
             obj.initialized = true;
         end
                 
-        function add_boundary(obj, varargin)
-            % Labels elements with numeric tags.
+        function add_boundary(obj, id, varargin)
+            %ADD_BOUNDARY Labels elements with numeric tags.
             %
-            % This should be called after initialization, and id = 0
-            % indicates is the default case (i.e., not identified). It is
-            % also possible to specify multiple ids for an element.
-            %
-            % Syntax:
-            %   add_boundary(loc, id)
-            %   add_boundary(loc, value, id)
+            % Syntax
             %   add_boundary(id)
+            %   add_boundary(id, 'PropertyName', PropertyValue,...)
             %
-            % Description:
-            %   add_boundary(loc,id) adds a boundary id to a side;
-            %   loc can be one of the following: 'left', 'right', 'top', 
-            %   'bottom', 'front', or 'back'. The id is an interger that
-            %   the user specifies for identifing the boundary.
+            % Description
+            %   add_boundary(id) labels all unidentified elements and sides
+            %       with the specified id, which must be an interger
+            %       value.
             %
-            %   add_boundary(loc,value,id) adds a boundary id based on
-            %   the x,y,z location, so loc can be: 'x', 'y', or 'z'. The
-            %   value is a location for the given coordinate that if an
-            %   element contains will be specified with the given boundary
-            %   id. For example, add_boundary('x',2,1) will mark all
-            %   elements with a node that has a value of x = 2 with id 1.
+            %   add_boundary(id, 'PropertyName', PropertyValue,...) allows 
+            %       for customization to what boundaries are tagged, see 
+            %       the property descriptions below. It is possible to
+            %       supply multiple property pairings and mutliple
+            %       instances of each property. For example,
+            %           add_boundary(1,'Location','left',...
+            %               'Location','right','Function','x==1')
+            %       will loop through each pairing and apply the boundary
+            %       id to each pairing.
             %
-            %   add_boundary(id) all unidentified elements and sides
-            %   that are on a boundary are tagged with id
+            % ADD_BOUNDARY Property Descriptions
+            %   Location
+            %       'left' | 'right' | 'top' | 'bottom' | 'front' | 'back'
+            %       Adds a boundary id to a side identified by a string
+            %       that describes its location. Note, in 1D use 'left' or
+            %       'right', in 2D 'top' and 'bottom' are added, and in 3D
+            %       all options are available. It is also possible to
+            %       include multiple sides in a cell array (e.g., {'left',
+            %       'right'}).
+            %
+            %   Function
+            %       string | cell array of strings
+            %       It is possible to tag boundaries using test functions.
+            %       For example, 'x==1' will tag boundaries that have a
+            %       node location at 1. Mutliple conditions should be
+            %       expressed in a cell array (e.g., {'x==1','y<2'}).
+            %       When multiple expressions are given all the cririea
+            %       must be met.
 
+            % Check that the id is a numeric value
+            if ~isnumeric(id);
+                error('FEmesh:add_boundary',...
+                    'The boundary id must be a number');
+            end
+            
             % Check if system is initialized
             if ~obj.initialized;
-                error('ERROR: The mesh must be initialized');
+                error('FEmesh:add_boundary',...
+                    'The FEmesh object must be initialized');
             end
                         
             % Special case, tag all untagged
-            if nargin == 2 && isnumeric(varargin{1});
-                obj.id_empty_boundary(varargin{1});
+            if nargin == 2;
+                obj.id_empty_boundary(id);
                 return;
             end
-
-            % Collect the input from the user
-            [col, value, id] = obj.parse_boundary_id_input(varargin{:});
             
-            % Initialize the new column of the map
-            obj.map.boundary(:,end+1) = zeros(size(obj.map.elem), 'uint32');
-
-            % Locate the elements
-            idx = obj.map.node(:,col) == value;
-            obj.map.boundary(idx,end) = id;
-            e = unique(obj.map.elem(idx),'R2012a');
+            % Collect the input into a structure (use the special
+            % multidemension case in gather_user_options;
+            options = struct('location', {'',''}, 'function', {'',''});
+            options = gather_user_options(options, varargin{:});
             
-            % Loop through each element on the boundary
-            for i = 1:length(e);
-
-               % Add id to the element
-               elem = obj.element(e(i));
-               elem.on_boundary = true;
-               elem.boundary_id(end+1) = id;
-   
-               % Locate dofs that meet critiera
-               idx = elem.nodes(:,col) == value;
-               dof = sort(elem.global_dof(idx));
-
-               % Loop through sides, mark side if dofs match
-               for s = 1:elem.n_sides;
-                   dof_s = sort(elem.global_dof(elem.side_dof(s,:)));
-                   if all(dof_s == dof)
-                       elem.side(s).on_boundary = true;                       
-                       elem.side(s).boundary_id = id;
-                   end
-               end
+            % Loop through the supplied options
+            for i = 1:length(options);
+                
+                % Apply id base on location flag
+                if ~isempty(options(i).location)
+                    obj.add_boundary_location(id, options(i).location);
+                
+                % Apply id based on function flag
+                elseif ~isempty(options(i).function)
+                    obj.add_boundary_function(id, options(i).function);
+                end
             end
-            
-            % Update mesh level boundary id storage (see get_dof for use)
-            obj.boundary_id(end+1) = id;
         end
 
         function dof = get_dof(obj, varargin)
@@ -557,21 +559,140 @@ classdef FEmesh < mFEM.handle_hide
             s_n = find(all(side == aa, 2));
         end
         
-        function [col, value, id] = parse_boundary_id_input(obj, varargin)
+        function add_boundary_location(obj, id, loc)
+           %ADD_BOUNDARY_LOCATION Adds boundary id based on location flag
+           %
+           % Syntax
+           %    add_boundary_location(id, SideString)
+           %    add_boundary_location(id, SideCell)
+           %
+           % Description
+           %
+           % See Also ADD_BOUNDARY
+           
+           % Convert character input into a cell
+           if ischar(loc)
+               loc = {loc};
+           end
+           
+           % Loop throug each location specified and apply the id
+           for i = 1:length(loc);
+               
+               % Locate the column in the node positions and the value to
+               % search for when applying the id
+               [col, value] = obj.parse_boundary_location_input(loc{i});
+               
+               % Build a string of the condition
+               func = [col,'==',num2str(value)];
+               
+               % Call the function based boundary function
+               obj.add_boundary_function(id, func);
+           end
+
+        end
+        
+        function add_boundary_function(obj, id, func)
+           %ADD_BOUNDARY_FUNCTION Adds boundary id based on function
+           %
+           % Syntax
+           %    add_boundary_function(id, FuncString)
+           %    add_boundary_function(id, FuncCell)
+           %
+           % Description
+           %
+           % See Also ADD_BOUNDARY
+           
+           % Convert character input into a cell
+           if ischar(func)
+               func = {func};
+           end
+           
+           % Loop throug each function specified and apply the id
+           for i = 1:length(func);
+               
+                % Extract the current function
+                f = strtrim(func{i});
+
+                % Determine the column to operate on, also test that the
+                % mesh is the proper dimension for the desired test
+                if strcmpi(f(1),'x'); 
+                   col = 1;
+                elseif strcmpi(f(1),'y') && obj.n_dim > 1;
+                   col = 2;
+                elseif strcmpi(f(1),'z') && obj.n_dim == 3;
+                   col = 3;
+                else
+                    error('FEmesh:add_boundary_function',...
+                        'The input boundary function %s is invalid.', func{i});
+                end
+
+                % Build the strings to evaluate
+                str = ['obj.map.node(:,', num2str(col), ')', f(2:end)];
+                str_elem = ['elem.nodes(:,', num2str(col), ')', f(2:end)];
+                
+                % Locate the nodes on the boundary
+                idx = eval(str);
+
+                % Meld boundary map columns together if id already exists
+                c = find(obj.boundary_id == id);
+                if ~isempty(c);
+                    idx_old = obj.map.boundary(:,c);
+                    obj.map.boundary(:,c) = any([idx_old,idx],2);
+                    
+                % Create a new column in the boundary map if id is new    
+                else
+                    obj.map.boundary(:, end+1) = idx;
+                end
+
+                % Update the boundary id labels
+                obj.boundary_id(end+1) = id;
+
+                % Locate the elements on the boundary
+                E = unique(obj.map.elem(idx),'R2012a');
             
-             % The location flag
-             loc = varargin{1};
-             switch loc;
-                 
+                % Loop through each element on the boundary
+                for e = 1:length(E);
+
+                   % Add id to the element
+                   elem = obj.element(E(i));
+                   elem.on_boundary = true;
+                   elem.boundary_id(end+1) = id;
+
+                   % Locate dofs that meet critiera
+                   idx = eval(str_elem);
+                   dof = sort(elem.global_dof(idx));
+
+                   % Loop through sides, mark side if dofs match
+                   for s = 1:elem.n_sides;
+                       dof_s = sort(elem.global_dof(elem.side_dof(s,:)));
+                       if all(dof_s == dof)
+                           elem.side(s).on_boundary = true;                       
+                           elem.side(s).boundary_id = id;
+                       end
+                   end
+                end
+           end
+
+        end
+        
+        function [col, value] = parse_boundary_location_input(obj, loc)
+            %PARSE_BOUNDARY_LOCATION_INPUT
+            %
+            % Syntax
+            %
+            % Description
+            %
+            % 
+            
+            switch loc;
                 case {'left', 'right'};
                     if strcmpi('right', loc);
                         value = max(obj.map.node(:,1));
                     else
                         value = min(obj.map.node(:,1));
                     end
-                    col = 1;
-                    id = varargin{2};
-                    
+                    col = 'x';
+
                 case {'top', 'bottom'};
                     if obj.n_dim < 2;
                         error('ERROR: 1D case does not have a ''%s'' location.', loc);
@@ -581,9 +702,8 @@ classdef FEmesh < mFEM.handle_hide
                     else
                         value = min(obj.map.node(:,2));
                     end
-                    col = 2;
-                    id = varargin{2};
-                
+                    col = 'y';
+
                  case {'front', 'back'};
                     if obj.n_dim < 3;
                         error('ERROR: The ''%s'' location is only valid in 3D', loc);
@@ -593,24 +713,11 @@ classdef FEmesh < mFEM.handle_hide
                     else
                         value = min(obj.map.node(:,3));
                     end      
-                    col = 3;
-                    id = varargin{1};
-                
-                otherwise
-                    if nargin ~= 3;
-                        error('ERROR: Invalid input.');
-                    end
-                    
-                    switch lower(loc);
-                        case 'x'; col = 1;
-                        case 'y'; col = 2;
-                        case 'z'; col = 3;
-                        otherwise
-                            error('ERROR: Unknown location specifier, %s', loc);
-                    end
-                    
-                    value = varargin{2};
-                    id = varargin{3};
+                    col = 'z';
+
+                 otherwise
+                    error('FEmesh:parse_boundary_location_input',...
+                    'Unknown location specifier, %s', loc);
             end  
         end
         

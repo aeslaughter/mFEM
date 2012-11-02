@@ -1,12 +1,12 @@
 function opt =  gather_user_options(opt,varargin)
 % GATHER_USER_OPTIONS collects property parings input into a function
-%__________________________________________________________________________
-% SYNTAX:
-%   opt = gatheruseroptions(opt,'PropertyName',<PropertyValue>,...);
-%   opt = gatheruseroptions(...,-PropertyName);
-%   opt = gatheruseroptions(opt,optUser);
 %
-% DESCRIPTION:
+% Syntax
+%   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
+%   opt = gather_user_options(...,-PropertyName);
+%   opt = gather_user_options(opt,optUser);
+%
+% Description
 %   opt = gatheruseroptions(opt,'PropertyName',<PropertyValue>,...)
 %       compares the property names with the default values stored in the
 %       data structure and applies the property value if the field matches
@@ -24,9 +24,13 @@ function opt =  gather_user_options(opt,varargin)
 %       data structure similar to that of opt, which is compared according
 %       to the fieldnames
 %
-% INPUT:
+% Input
 %   opt = a data structure containing the default values, e.g. opt =
-%       struct('Prop1',true,'Prop2','install','Coeffient',1);.
+%       struct('Prop1',true,'Prop2','install','Coeffient',1);. 
+%
+%       A special case exists, if opt is a multidimensional struct every 
+%       new paring is inserted into a new structure. So, if three pairings
+%       are provided the output opt will be a 1x3 structure. 
 %__________________________________________________________________________
 
 % INTILIZE THE DATA
@@ -45,6 +49,13 @@ if length(q) == 1 && isstruct(q{1});
     N = length(q);      % Number of inputs
 end
 
+% Account for the special case when opt is a structure array
+increment = false;
+inc = 1;
+if ~isscalar(opt);
+   increment = true; 
+end
+
 % COMPARE INPUT WITH THE DEFAULTS
 while k < N
     % Seperate the name
@@ -61,7 +72,7 @@ while k < N
        % Change the value, if it existing in the options structure
        if isfield(opt, itm) 
            disp('changing the value')
-            value = ~opt.(itm); 
+           value = ~opt(inc).(itm); 
             
        % Produce a warning and move on, if the item is not recognized
        else
@@ -77,7 +88,10 @@ while k < N
  
     % When the property matches, update the structure
     if isfield(opt, lower(itm));   
-        opt.(lower(itm)) = value;
+        opt(inc).(lower(itm)) = value;
+        
+        % Special case, increment the opt array
+        if increment; inc = inc + 1; end
         
     % Produce a warning if the property is not recongnized    
     else 
@@ -85,5 +99,3 @@ while k < N
         warning(mes);
     end
 end
-
-
