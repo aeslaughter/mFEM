@@ -42,7 +42,13 @@ classdef Quad4 < mFEM.Element
             N(3) = 1/4*(1+xi)*(1+eta);
             N(4) = 1/4*(1-xi)*(1+eta);
         end
-
+        
+        function GN = local_grad_basis(~, xi, eta)
+            % Returns gradient, in xi and eta, of the shape functions
+            GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
+                      xi-1, -xi-1, 1+xi, 1-xi];
+        end
+        
         function B = grad_basis(obj, xi, eta) 
             % Gradient of shape functions
             B = inv(obj.jacobian(xi, eta)) * obj.local_grad_basis(xi, eta);
@@ -51,12 +57,6 @@ classdef Quad4 < mFEM.Element
         function J = jacobian(obj, xi, eta)
             % Returns the jacobian matrix  
             J = obj.local_grad_basis(xi, eta)*obj.nodes;                 
-        end
-        
-        function GN = local_grad_basis(~, xi, eta)
-            % Returns gradient, in xi and eta, of the shape functions
-            GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
-                      xi-1, -xi-1, 1+xi, 1-xi];
         end
     end
 end

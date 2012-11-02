@@ -60,6 +60,7 @@ while k < N
        
        % Change the value, if it existing in the options structure
        if isfield(opt, itm) 
+           disp('changing the value')
             value = ~opt.(itm); 
             
        % Produce a warning and move on, if the item is not recognized
@@ -73,7 +74,7 @@ while k < N
     else
        value = q{k+1}; k = k + 2;
     end
-    
+ 
     % When the property matches, update the structure
     if isfield(opt, lower(itm));   
         opt.(lower(itm)) = value;

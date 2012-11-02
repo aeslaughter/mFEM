@@ -19,12 +19,12 @@ classdef System < mFEM.handle_hide
     % See Also FEMESH
     
     properties (SetAccess = private, GetAccess = public)
+        mesh = mFEM.FEmesh.empty;   % mesh object
         opt = ...                   % struct of default user options
             struct('time', true);
     end
     
     properties(Access = private)
-        mesh = mFEM.FEmesh.empty;
         reserved = {'N','B','x','y','z','xi','eta','zeta'};
         mat = struct('name', char, 'eqn', char, 'func', char, 'matrix',sparse([]),'boundary_id', uint32([]));
         vec = struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));

@@ -1,12 +1,12 @@
 classdef FEmesh < mFEM.handle_hide
-    %Class for managing and generating FEM spaces
+    %FEMESH Class for managing and generating FEM spaces
     
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
         n_dim = uint32([]);         % no. of space dimensions
         n_dof = uint32([]);         % total no. of global dofs
         n_dof_node = uint32(1);     % no. of dofs per node      
-        element;                    % empty array of elements [Element]
+        element;                    % empty array of elements
         initialized = false;        % initialization state
         map = ...                   % struct  of node, elem, and dof maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
@@ -56,6 +56,42 @@ classdef FEmesh < mFEM.handle_hide
             obj.element = mFEM.Quad4.empty;
         end
         
+        function grid(obj, type, varargin)
+            %GRID Create a mesh (1D, 2D, or 3D)
+            % 
+            % Syntax:
+            %   grid(type, x0, x1, xn)
+            %   grid(type, x0, x1, y0, y1, xn, yn)
+            %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %
+            % Input:
+            %   type = name of element (e.g., 'Quad4')
+            %   x0,x1 = Mesh limits in x-direction
+            %   y0,y1 = Mesh limits in y-direction
+            %   z0,z1 = Mesh limits in z-direction
+            %   xn,yn,zn = Num. of elements in x,y,z direction
+           
+            % Display wait message
+            if obj.opt.time;
+                ticID = tmessage('Generating mesh...');
+            end
+            
+            % Check the current element type is supported
+            switch type;
+                case {'Line2', 'Line3'};
+                    obj.gen1Dgrid(type, varargin{:});
+                case {'Quad4', 'Tri3', 'Tri6'};
+                    obj.gen2Dgrid(type, varargin{:});
+                otherwise
+                    error('FEmesh:grid','Grid generation is not supported for the %s elem', type);
+            end
+            
+            % Complete message
+            if obj.opt.time;
+                tmessage(ticID);
+            end;
+                end
+        
         function add_element(obj, type, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
@@ -81,13 +117,8 @@ classdef FEmesh < mFEM.handle_hide
             id = length(obj.element) + 1;
             obj.element(id) = feval(['mFEM.', type],...
                 id, nodes, obj.opt.space);
-            
-            % Append the element and node maps                    
-            nn = obj.element(end).n_nodes;
-            obj.map.elem(end+1:end+nn,:) = id;
-            obj.map.node(end+1:end+nn,:) = obj.element(id).nodes;
         end
-        
+
         function init(obj)
             % Initialization function.
             %
@@ -99,8 +130,16 @@ classdef FEmesh < mFEM.handle_hide
             % information for the elements.
             
             % The no. of elements
-            obj.n_elements = length(obj.element); 
+            obj.n_elements = length(obj.element);             
             
+            % Build element and node maps     
+            for e = 1:obj.n_elements;
+                elem = obj.element(e);
+                nn = elem.n_nodes;
+                obj.map.elem(end+1:end+nn,:) = elem.id;
+                obj.map.node(end+1:end+nn,:) = elem.nodes;
+            end
+       
             % Spatial dimension and local dimensions
             obj.n_dim = obj.element(1).n_dim;
             obj.local_n_dim = obj.element(1).local_n_dim;
@@ -209,55 +248,96 @@ classdef FEmesh < mFEM.handle_hide
         end
 
         function dof = get_dof(obj, varargin)
-            % The global degrees of freedom, account for type of space
+            %GET_DOF 
             %
-            % Syntax:
-            %   get_dof();
-            %   get_dof(boundary_id)
-            %   get_dof(boundary_id, 'ne');
+            % Syntax
+            %   dof = get_dof()
+            %   dof = get_dof('PropertyName',PropertyValue);
+            %
+            % Description
+            %
+            % Property Descriptions
+            %
+            % Component
+            %   scalar | 'x' | 'y' | 'z'
+            %   Returns the dof associated with the vector space
+            %
+            % Boundary
+            %   scalar
+            %   Extract the dofs for the boundary specified
+            %
+            % Index
+            %   {true} | false
+            %
+            %
 
-            test = 'e';
-            if nargin == 3;
-                test = varargin{2};
-            end
-
-            % Limit to the specified boundary id
-            if nargin >= 2 && isnumeric(varargin{1});
+            % Set the default values for the varius inputs
+            options.component = [];
+            options.boundary = [];
+            options.index = true;
+            options = gather_user_options(options, varargin{:});
+            
+            % Return dofs for the specified boundary id
+            if ~isempty(options.boundary);
                 
-                % Define the id to search
-                id = varargin{1};
+                % The boundary id
+                id = options.boundary;
                 
                 % Initialized the indices
                 idx = uint32(zeros(size(obj.map.dof)));
-                
+
                 % Locate the colums of boundary_id map to search
                 col = find(obj.boundary_id == id);
-                
+
                 % Loop the through the columns associated with the id and
                 % update the idx
-                for c = 1:length(col)
-                    % Not equal
-                    if strcmpi(test,'ne');
-                        idx = idx + uint32(obj.map.boundary(:,col(c)) ~= id); 
-                    
-                    % Equal
-                    else
-                        idx = idx + uint32(obj.map.boundary(:,col(c)) == id);
-                    end
+                for c = 1:length(col);
+                    idx = idx + uint32(obj.map.boundary(:,col(c)) == id);
                 end
 
                 % Collect the dofs
                 dof = unique(obj.map.dof(logical(idx)));
                 
-            % Use all dofs 
-            else
-                dof = unique(obj.map.dof);   
+            % Return all the dofs    
+            else 
+                dof = unique(obj.map.dof);  
             end
 
             % Vector FE space (uses transform_dof of an element)
             if obj.n_dof_node > 1;
                 elem = obj.element(1);
                 dof = elem.transform_dof(dof);
+            end
+
+            % Extract boundaries for certain component of vector space
+            if ~isempty(options.component);
+                
+                % Convert string to numeric
+                if ischar(options.component);
+                    switch options.component;
+                        case 'x'; ix = 1;
+                        case 'y'; ix = 2;
+                        case 'z'; ix = 3;
+                    end  
+                else
+                    ix = options.component;
+                end
+
+                % Test the dimensionality
+                if ix > obj.n_dof_node;
+                    error('FEmesh:get_dof','Desired vector component does not exist.');
+                end
+                
+                % Extract the dofs
+                ix = ix:obj.n_dof_node:length(dof);
+                dof = dof(ix);
+            end   
+
+            % Convert to indices, if desired
+            if options.index
+                index = false(obj.n_dof, 1);
+                index(dof) = true;
+                dof = index;
             end
         end
                 
@@ -274,50 +354,14 @@ classdef FEmesh < mFEM.handle_hide
                out = out(:,varargin{1});
             end
         end
-        
-        function grid(obj, type, varargin)  
-            % Create a mesh (1D, 2D, or 3D)
-            % 
-            % Syntax:
-            %   grid(type, x0, x1, xn)
-            %   grid(type, x0, x1, y0, y1, xn, yn)
-            %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
-            %
-            % Input:
-            %   type = name of element (e.g., 'Quad4')
-            %   x0,x1 = Mesh limits in x-direction
-            %   y0,y1 = Mesh limits in y-direction
-            %   z0,z1 = Mesh limits in z-direction
-            %   xn,yn,zn = Num. of elements in x,y,z direction
-           
-            % Display wait message
-            if obj.opt.time;
-                ticID = tmessage('Generating mesh...');
-            end
-            
-            % Check the current element type is supported
-            switch type;
-                case {'Line2', 'Line3'};
-                    obj.gen1Dgrid(type, varargin{:});
-                case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(type, varargin{:});
-                otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s elem', type);
-            end
-            
-            % Complete message
-            if obj.opt.time;
-                tmessage(ticID);
-            end;
-        end
-       
+
         function plot(obj, varargin)
             %PLOT Plots mesh and/or data (see FEplot function for details)
             FEplot(obj,varargin{:});
         end
     end
     
-    methods (Access = private)
+    methods (Access = private)        
         function compute_dof_map(obj)
             % Calculates the global degree-of-freedom map
             

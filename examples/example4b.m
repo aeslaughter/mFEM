@@ -25,13 +25,12 @@ K = sys.assemble('K');
 f = sys.assemble('f');
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(1,'ne'); % 1-4
-ess = mesh.get_dof(1);      % 5-8
+ess = mesh.get_dof('Boundary',1); % 1-4
 
 % Solve for the temperatures
-u = zeros(size(f));         % initialize the displacement vector
-u(ess) = 0;                 % apply essential boundary condtions
-u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
+u = zeros(size(f));              % initialize the displacement vector
+u(ess) = 0;                      % apply essential boundary condtions
+u(~ess) = K(~ess,~ess)\f(~ess);  % solve for T on the non-essential boundaries
 
 % Solve for the reaction fluxes
 r = K*u - f;

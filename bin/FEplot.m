@@ -18,7 +18,7 @@
 % The flag style input simply reversed the state from the default.
 %
 %
-%  Deformation
+%  Deform
 %       true | {false}
 %       Toggles the use to treat the input data as deformation
 %
@@ -110,51 +110,61 @@ function opt = parse_input(obj, varargin)
 
     % Define user properties
     opt.data = []; 
-    opt.deformation = false;
+    opt.deform = false;
+    opt.scale = 'auto';
     opt.component = [];
+    opt.polar = false;
     opt.colorbar = '';
     opt.shownodes = false;
     opt.elementlabels = true;
     opt.nodelabels = true;
     opt.newfigure = true;
-    opt.figurehandle = handle.empty;
-    opt.axeshandle = handle.empty; 
+    opt.figure = handle.empty;
+    opt.axes = handle.empty; 
     opt.plot = {};
     opt.hold = true;
     
-    % The first input is always the data
+    % Account for first input containing the data
     if nargin > 1 && isnumeric(varargin{1});
         opt.data =  varargin{1};
+        start_idx = 2;
         
         % Check that the data is sized correctly
         if ~isempty(opt.data) && length(opt.data) ~= obj.n_dof;
             error('FEmesh:plot', 'Data not formated correctly, it must be a vector of numbers of length %d.', obj.n_dof);
         end
+    else
+        start_idx = 1;
     end
 
-    % Parse the input
-    if nargin >= 2;
-
-        % When using data, disable the labels by default and do not
-        % create a new figure with each call
+    % When using data, disable the labels by default and do not
+    % create a new figure with each call
+    if ~isempty(opt.data);
         opt.elementlabels = false;
         opt.nodelabels = false;
         opt.newfigure = false;
-
-        % Collect options supplied by the user
-        opt = gather_user_options(opt, varargin{2:end});
     end
+    
+    % Collect options supplied by the user
+    opt = gather_user_options(opt, varargin{start_idx:end}); 
     
     % Set/Create the figure handle
     if opt.newfigure;
         figure('color','w'); hold on;   
-    elseif ishandle(opt.figurehandle)
-        figure(opt.figurehandle,'color','w'); hold on;
+    elseif ishandle(opt.figure)
+        figure(opt.figure,'color','w'); hold on;
     end
     
     % Set the axes handle
-    if ishandle(opt.axeshandle);
-        axes(opt.axeshandle);
+    if ishandle(opt.axes);
+        axes(opt.axes);
+    end
+    
+    % Determine the scale factor
+    if ~isempty(opt.data) && opt.deform && strcmpi(opt.scale,'auto');
+        % Determine the scaling
+        n = max(max(floor(log10(abs(opt.data)))));
+        opt.scale = 10^(-sign(n)*(abs(n)-1));   
     end
 end
 
@@ -257,13 +267,18 @@ function h = plot2D_vector(obj, opt)
         x = elem.nodes(:,1);
         y = elem.nodes(:,2);
         
+        % Adjust for polar coordinates
+        if opt.polar;
+            [x,y] = pol2cart(x,y);
+        end
+
         % Gather y-axis data
         z = [];
         if ~isempty(opt.data)
             dof = elem.get_dof();
             z = opt.data(dof);
             zz(:,1) = z(1:2:end);
-            zz(:,2) = z(2:2:end);
+            zz(:,2) = z(2:2:end);           
             
             if isnan(opt.component);
                 z = nan(size(x));
@@ -275,19 +290,21 @@ function h = plot2D_vector(obj, opt)
                 error('FEplot:plot2D_vector','Error with Component property value');
             end
             
+             % Adjust nodal position if deformed shape is desired
+            if opt.deform
+                zx = zz(:,1); zy = zz(:,2);
+                
+                % Adjust for polar cordinates on z
+                if opt.polar;
+                    [zx, zy] = pol2cart(zx,zy);
+                end
+                
+                % Adjust the nodal values
+                x = x + opt.scale*zx;
+                y = y + opt.scale*zy;
+            end
         end
-        
-        % Adjust nodal position if deformed shape is desired
-        if opt.deformation
-            % Determine the scaling
-            n = max(max(floor(log10(abs(zz)))));
-            scale = 10^(-sign(n)*(abs(n)-1));
-            
-            % Adjust the nodal values
-            x = x + scale*zz(:,1);
-            y = y + scale*zz(:,2);
-        end     
-        
+
         % Apply the plotting order
         order = elem.node_plot_order;
         if ~isempty(order);
@@ -300,9 +317,9 @@ function h = plot2D_vector(obj, opt)
 
         % Create the graph
         if isempty(z);
-            h = patch(x, y, 'w');
+            h(e) = patch(x, y, 'w');
         else
-            h = patch(x, y, z);
+            h(e) = patch(x, y, z);
         end
         
         if ~isempty(opt.colorbar) && ischar(opt.colorbar);
@@ -311,7 +328,6 @@ function h = plot2D_vector(obj, opt)
         end
     end
 end
-
 
 function apply_plot_options(h, opt)
     % APPLY_PLOT_OPTIONS
@@ -335,81 +351,6 @@ function apply_plot_options(h, opt)
     end
 end
 
-
-% function build_plot(obj,opt)
-%     %BUILD_PLOT
-% 
-%     % 1D case (data is added via cell_node_data)
-%     if obj.n_dim == 1;
-%         cnode = cell_node_data(obj, opt);
-%         h = plot(cnode{:}); 
-%     
-%     % 2D case    
-%     else
-%         h = zeros(obj.n_elements,1);
-%         for e = 1:obj.n_elements;
-%             % Current element
-%             elem = obj.element(e);
-%             
-%             % Get the nodal data
-%             cnode = cell_node_data(elem, opt);
-%         
-%             if ~isempty(opt.data); % with data
-%                 h(e) = patch(cnode{:}, opt.data(elem.get_dof));
-%             else % mesh only
-%                 h(e) = patch(cnode{:}, 'k', 'FaceColor','none');
-%             end
-%         end
-%     end
-% 
-%     % Show the actual nodes
-%     if opt.shownodes
-%         set(h, 'Marker','o', 'MarkerSize', 8, 'MarkerEdgeColor', 'auto',...
-%             'MarkerFaceColor', 'auto');
-%     end
-% end
-    
-% function varargout = cell_node_data(obj, opt)
-%     %GET_NODE_DATA Creates column cell arrays of nodal data
-% 
-%     % Get the node data (all elements; FEmesh object)
-%     if isa(obj,'mFEM.FEmesh');
-%         node = obj.map.node;
-%         
-%         % Adjust node data for CG or DG elements
-%         if strcmpi(obj.opt.type,'CG');
-%             node = unique(node,'rows','R2012a');
-%         end
-%         
-%     % Get the node data (single element; Element object)    
-%     elseif isa(obj,'mFEM.Element');
-%         node = obj.nodes;
-%         
-%         if ~isempty(obj.node_plot_order);
-%            node = node(obj.node_plot_order,:);
-%         end
-%         
-%     end
-%     
-%     % Create y-direction for 1D case
-%     if obj.n_dim == 1;  
-%         % If data is given, use this for the y position
-%         if isempty(opt.data); 
-%             node(:,2) = zeros(size(node(:,1)));
-%         else
-%             node(:,2) = opt.data(obj.get_dof);
-%         end
-%     end
-% 
-%     % Create cell structure of nodes
-%     varargout{1} = num2cell(node,1); % col. cell of nodes
-%     
-%     % Compute  mean locations of the nodes (only for element case)
-%     if isa(obj,'mFEM.Element') && nargout == 2;
-%     	varargout{2} = num2cell(mean(node,1)); % location of nodes
-%     end
-% end
-
 function add_element_labels(obj, opt)
     %ADD_ELEMENT_LABEL
     
@@ -421,9 +362,15 @@ function add_element_labels(obj, opt)
 
         % The current element
         elem = obj.element(e);
+        nodes = elem.nodes;
 
-        % Get the label position
-        [~,cntr] = cell_node_data(elem, opt);
+        % Adjust for polar coordinates
+        if opt.polar;
+            [nodes(:,1),nodes(:,2)] = pol2cart(nodes(:,1),nodes(:,2));
+        end
+        
+        % Determine the center position
+        cntr = num2cell(mean(nodes,1));
 
         % Add the label
         text(cntr{:}, num2str(e),'FontSize',14,...
@@ -447,22 +394,27 @@ function add_node_labels(obj, opt)
         case 'CG'; 
 
             % Extract the unique nodes
-            N = unique(obj.map.node,'rows','stable');
+            nodes = unique(obj.map.node,'rows','stable');
+            
+            % Adjust for polar coordinates
+            if opt.polar;
+                [nodes(:,1),nodes(:,2)] = pol2cart(nodes(:,1),nodes(:,2));
+            end
             
             % Adjust for the 1D case
             if obj.n_dim == 1;
                 
                 % If data is given, use this for the y position
                 if isempty(opt.data); 
-                    N(:,2) = zeros(size(N(:,1)));
+                    nodes(:,2) = zeros(size(nodes(:,1)));
                 else
-                    N(:,2) = opt.data;
+                    nodes(:,2) = opt.data;
                 end
             end
             
             % Loop through the unique nodes and create the labels=
-            for i = 1:length(N);
-                node = num2cell(N(i,:));
+            for i = 1:length(nodes);
+                node = num2cell(nodes(i,:));
                 text(node{:},num2str(i),'FontSize',12,'Color','w',...
                     'BackgroundColor','b','HorizontalAlignment','center');
             end
@@ -478,16 +430,16 @@ function add_node_labels(obj, opt)
                 
                 % Get the nodes locations
                 node = cell_node_data(elem, opt);
-                N = cell2mat(node);
+                nodes = cell2mat(node);
                   
                 % Get the global degrees of freedom for the element
                 dof = elem.get_dof();
                 
                 % Loop through the nodes and add the text
-                for i = 1:size(N,1);
+                for i = 1:size(nodes,1);
                     
                     % Locate the nodal labels
-                    [X,Y,n] = locate_node_labels(elem, N(i,:));
+                    [X,Y,n] = locate_node_labels(elem, nodes(i,:));
                     
                     % Create label
                     node = num2cell(n);

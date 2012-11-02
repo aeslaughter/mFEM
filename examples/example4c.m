@@ -43,13 +43,10 @@ r = K*u - f;
 
 % Display the displacement results
 u
-mesh.plot(u,'-Deformation','-ShowNodes',...
-    'Colorbar','Magnitude of Disp. (m)');
+mesh.plot(u,'-Deform','-ShowNodes','Colorbar','Magnitude of Disp. (m)');
 xlabel('x'); ylabel('y');
 
-
 % Compute the stress and strain at the Gauss points
-% Loop through the elements
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     
     % Extract the current element from the mesh object

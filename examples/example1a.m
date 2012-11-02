@@ -1,5 +1,4 @@
-%% Example1a
-% Reproduces Example 5.1 of Fish & Belytschko (2007) using direct assembly
+%EXAMPLE1A Reproduces Example 5.1 of Fish & Belytschko (2007) using direct assembly
 % of the stiffness matrix and force vector.
 % 
 % Syntax:
@@ -99,8 +98,8 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(1,'ne'); % 2,3
-ess = mesh.get_dof(1);      % 1
+ess = mesh.get_dof('Boundary', 1);  % 1
+non = ~ess;                         % 2,3
 
 % Solve for the temperatures
 T = zeros(size(f));         % initialize the temperature vector
