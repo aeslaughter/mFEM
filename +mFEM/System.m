@@ -131,7 +131,7 @@ classdef System < mFEM.handle_hide
         end
     end
     
-    methods (Access = private)
+    methods (Hidden = true, Access = private)
         
         function [type, idx] = locate(obj, name)
             %LOCATE Returns the type and index for the supplied name
@@ -318,7 +318,7 @@ classdef System < mFEM.handle_hide
                                 [qp,W] = side.quad.rules('cell');
 
                                 % Local dofs for the current side
-                                dof = elem.get_dof(s);
+                                dof = elem.get_dof('Side',s,'-local');
 
                                 % Perform quadrature
                                 for j = 1:size(qp,1);
@@ -442,7 +442,7 @@ classdef System < mFEM.handle_hide
                                 [qp,W] = side.quad.rules('cell');
 
                                 % Local dofs for the current side
-                                dof = elem.get_dof(s);
+                                dof = elem.get_dof('Side',s,'-local');
 
                                 % Perform quadrature
                                 for j = 1:size(qp,1);

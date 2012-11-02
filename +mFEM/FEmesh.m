@@ -1,6 +1,8 @@
 classdef FEmesh < mFEM.handle_hide
-    %FEMESH Class for managing and generating FEM spaces
-    
+    %FEMESH Class for managing and generating FEM spaces.
+    % This class handles all mesh and degree-of-freedom operations for
+    % implementing the finite element method.
+
     properties (SetAccess = private, GetAccess = public)
         n_elements = uint32([]);    % no. of elements in mesh
         n_dim = uint32([]);         % no. of space dimensions
@@ -9,45 +11,44 @@ classdef FEmesh < mFEM.handle_hide
         element;                    % empty array of elements
         initialized = false;        % initialization state
         boundary_id = uint32([]);   % list of boundary ids
-        map = ...                   % struct  of node, elem, and dof maps 
+        map = ...                   % structure of node, elem, dof, and boundary maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary', uint32([]));       
         opt = ...                   % struct of default user options
             struct('space', 'scalar', 'type', 'CG', 'time', true);
     end
     
-    properties (GetAccess = {?mFEM.System}, SetAccess = private)
-        local_n_dim = uint32([]);   % local dimensions of elements
+    properties (Access = private, GetAccess = {?mFEM.System})
+        local_n_dim = uint32([]);   % local dimensions of elements (see BUILD_SIDE)
     end
     
     methods (Access = public)
         function obj = FEmesh(varargin)
             % FEMESH Creates a finite element mesh object.
             % 
-            % Syntax:
+            % Syntax
             %   obj = FEmesh()
-            %   obj = FEmesh(name)
-            %   obj = FEmesh(..., 'PropertyName', PropertyValue)
+            %   obj = FEmesh('PropertyName', PropertyValue)
             %
-            % Description:
+            % Description
             %   obj = FEmesh() creates mesh object with default settings,
             %         equivalent to: 
-            %           obj = FEmesh('Quad4','Space','scalar','Type','CG')
+            %         obj = FEmesh('Space','scalar','Type','CG')
             %
-            %   obj = FEmesh(name) allows the element type to be set
-            %
-            %   obj = FEmesh(..., 'PropertyName', PropertyValue) allows
+            %   obj = FEmesh('PropertyName', PropertyValue) allows
             %           user to customize the behavior of the FE mesh.
             %
-            % Options:
-            %   'Type' = 'CG' (default) or 'DG'
-            %               allows the type of element conectivity to be set
-            %               as continous (CG) or discontinous (DG)
-            %   'Space' = 'scalar', 'vector', <number>
-            %               allows the type of FEM space to be set: scalar
-            %               sets the number of dofs per node to 1, vector
-            %               sets it to the no. of space dimension, and
-            %               specifing a number sets it to that value.
+            % FEMESH Property Descriptions
+            %   Type
+            %       {'CG'} | 'DG'
+            %       Allows the type of element conectivity to be set
+            %       as continous (CG) or discontinous (DG)
+            %   Space
+            %       {'scalar'} | 'vector' | numeric
+            %       Allows the type of FEM space to be set: scalar sets the 
+            %       number of dofs per node to 1, vector sets it to the no. 
+            %       of space dimension, and specifing a number sets it to 
+            %       that value.
 
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
@@ -59,13 +60,18 @@ classdef FEmesh < mFEM.handle_hide
         function grid(obj, type, varargin)
             %GRID Create a mesh (1D, 2D, or 3D)
             % 
-            % Syntax:
+            % Syntax
             %   grid(type, x0, x1, xn)
             %   grid(type, x0, x1, y0, y1, xn, yn)
             %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
             %
-            % Input:
-            %   type = name of element (e.g., 'Quad4')
+            % Description
+            %   grid(...) creates a grid across the prescribed limits with
+            %   the prescribed number of elements within the limits, see
+            %   input descriptions below for additonal details.
+            %
+            % Description of inputs
+            %   type = name of element (e.g., 'Line2')
             %   x0,x1 = Mesh limits in x-direction
             %   y0,y1 = Mesh limits in y-direction
             %   z0,z1 = Mesh limits in z-direction
@@ -120,14 +126,17 @@ classdef FEmesh < mFEM.handle_hide
         end
 
         function init(obj)
-            % Initialization function.
+            %INIT Initialization function.
             %
-            % Syntax:
+            % Syntax
             %   init()
             %
-            % This function should be called before the FEmesh object is
-            % used, it computes all of the necessary degree-of-freedom
-            % information for the elements.
+            % Description
+            %   init() initialize the FEMESH object instance for operation,
+            %   it must be called before the FEmesh object is used (except
+            %   for the GRID and ADD_ELMENENT methods), it computes all of 
+            %   the necessary degree-of-freedom information for the 
+            %   elements.
             
             % The no. of elements
             obj.n_elements = length(obj.element);             
@@ -253,27 +262,41 @@ classdef FEmesh < mFEM.handle_hide
         end
 
         function dof = get_dof(obj, varargin)
-            %GET_DOF 
+            %GET_DOF Returns the global degrees of freedom.
             %
             % Syntax
             %   dof = get_dof()
             %   dof = get_dof('PropertyName',PropertyValue);
             %
             % Description
+            %   dof = get_dof() returns the global degrees of freedom for
+            %   the entire finite element mesh.
             %
-            % Property Descriptions
+            %   dof = get_dof('PropertyName',PropertyValue) returns the
+            %   global degrees of freedom for portions of the mesh
+            %   depending on the properties (see descriptions below).
             %
-            % Component
-            %   scalar | 'x' | 'y' | 'z'
-            %   Returns the dof associated with the vector space
+            % GET_DOF Property Descriptions
+            %   Component
+            %       scalar | 'x' | 'y' | 'z'
+            %       Returns the dof associated with the vector space
             %
-            % Boundary
-            %   scalar
-            %   Extract the dofs for the boundary specified
+            %   Boundary
+            %       scalar
+            %       Extract the dofs for the boundary specified, where the
+            %       scalar value is the numeric id added using the
+            %       ADD_BOUNDARY method.
             %
-            % Index
-            %   {true} | false
-            %
+            %   Index
+            %       true | {false}
+            %       Toggles the type of output, by default the GET_DOF
+            %       returns the dofs as a logical array equal to the length
+            %       of the number of degrees of freedom. However, if the
+            %       actual numeric indice is desired set this property to
+            %       true. You can also use the flag style input, the
+            %       following are equivlent.
+            %           get_dof('index',true)
+            %           get_dof('-index')
             %
 
             % Set the default values for the varius inputs
@@ -328,7 +351,7 @@ classdef FEmesh < mFEM.handle_hide
             end   
 
             % Convert to indices, if desired
-            if options.index
+            if ~options.index
                 index = false(obj.n_dof, 1);
                 index(dof) = true;
                 dof = index;
@@ -336,12 +359,15 @@ classdef FEmesh < mFEM.handle_hide
         end
                 
         function out = get_nodes(obj,varargin)
-            % Return the spatial position of the nodes for the mesh
+            %GET_NODES Returns spatial position of the nodes for the mesh
             %
-            % Syntax:
-            %   get_nodes()
-            %   get_nodes(dim)
+            % Syntax
+            %   x = get_nodes()
+            %   x = get_nodes(dim)
             %
+            % Description
+            %   x = get_nodes()
+            %   x = get_nodes(dim)
             
             out = unique(obj.map.node, 'rows', 'stable'); 
             if nargin == 2 && isnumeric(varargin{1}) && varargin{1} <= obj.n_dim;

@@ -10,12 +10,27 @@
 % The source code for this example is documented in a step by step manner:
 % <tutorial.html *Click here for the mFEM Tutorial Documentation*>.
 % 
-%% Class Documentation
-% The classes for the mFEM library are all located in the |+mFEM|
+%% Documentation
+% The documentation for all functions, classes, and members is accessible
+% using MATLAB's existing |help| and |doc| functions.
+%
+% To see a linked list of all classes in the |+mFEM| library type the
+% following, which will open in the help browser a list of all the classes
+% in the library. Simply click the class to see the associated help.
+%
+%   doc mFEM
+%
+% All of the classes for the mFEM library are are located in the |+mFEM| 
 % directory, which is a MATLAB package. The documention for any of the
-% classes in this directory may be called using the |doc|
-% command. For example, the following opens the documentation for the
-% FEmesh class.
+% classes in this directory may be called using the |doc| command. For 
+% example, the following opens the documentation for the FEmesh class.
 %
 %   doc mFEM.FEmesh
 % 
+% Within the |+mFEM| directory is another package that contains all of the
+% element classes (which are subclasses of Element), to access the
+% documentation for these subclasses, you must also include the element
+% package.
+%
+%   doc mFEM.elements.Line2
+%

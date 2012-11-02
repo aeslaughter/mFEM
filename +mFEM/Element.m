@@ -5,9 +5,10 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     %
     % This is an abstract class, as such it must be inherited to function.
     % The abstract properties and methods must be redifined in the
-    % subclass, see Quad4.m for an example.
+    % subclass, see Line2.m for an example. In general, if you need help 
+    % for an element see the the help for the subclass itself.
     %
-    % See Also Line2
+    % See Also mFEM.elements.Line2
     %
     %----------------------------------------------------------------------
     % Copyright 2012 Andrew E. Slaughter
@@ -44,7 +45,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Public properties (read only; except FEmesh and Element)
-    properties (SetAccess = {?mFEM.FEmesh, ?mFEM.Element}, SetAccess = protected, GetAccess = public)
+    properties (SetAccess = protected, GetAccess = public, SetAccess = {?mFEM.FEmesh, ?mFEM.Element})
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         side;                       % side info, see constructor        
@@ -52,15 +53,14 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Protected properties
-    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected) 
-
-       global_dof = []; % Global dof for nodes of element, these are not 
-                        % the true dofs(except in scalar space) as such the
-                        % user should always access the dofs for an element
-                        % with the get_dof() function. 
-       neighbors; % storage of nieghbor elements (see FEmesh.find_neighbors)
-    end    
-    
+     properties (Hidden = true, Access = protected, Access = {?mFEM.FEmesh, ?mFEM.Element}) 
+       global_dof = []; % Global dof for nodes of element
+                        % (these are not the true dofs (except in scalar 
+                        % space) as such the user should always access the
+                        % dofs for an element with the get_dof() function.) 
+        neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
+     end    
+   
     % Public Methods
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
@@ -78,14 +78,14 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   Element(id, nodes, n_dof_node)
             %
             % Description
-            %   Element(id, nodes) creates an element given:
-            %       id: unique identification number for this element
-            %       nodes: matrix of node coordinates (global), should be 
-            %              arranged as column matrix [no. nodes x no. dims]
+            %   Element(id, nodes) creates an element given, where id is a
+            %   unique identification number for this element and nodes is 
+            %   a matrix of node coordinates (global) that should be 
+            %   arranged as column matrix (no. nodes x no. dims).
             %
-            %   Element(id, nodes, space) allows the user to
-            %       customize the behavior of the element, the available
-            %       properties are listed below.
+            %   Element(id, nodes, space) allows the user to customize the 
+            %   behavior of the element, the available properties are 
+            %   listed below.
             %
             % Element Property Descriptions
             %   space
@@ -232,12 +232,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Description
             %   [...] = get_position(...) returns the position in global
-            %       system given a value(s) for the local position, the
-            %       number of outputs varies according the number of
-            %       spatial dimensions.
+            %   system given a value(s) for the local position, the number 
+            %   of outputs varies according the number of spatial 
+            %   dimensions.
             %
             %   xyz = get_position(...) same as above but it returns the
-            %       positions as a single array.
+            %   positions as a single array.
            
             % The number of spatial dimensions available
             n = obj.n_dim;
@@ -265,8 +265,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Description
             %   n = get_normal(...) returns the normal vector for a given
-            %       local location. The number of inputs depends on the
-            %       number of space dimensions of the element. 
+            %   local location. The number of inputs depends on the number 
+            %   of space dimensions of the element. 
             %  
             % This function is still under development and is not fully
             % tested, expect changes.
@@ -301,8 +301,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % 
             % Description
             %   side = build_side(id) creates an element for the specified
-            %       side, the type of element is specified in the side_type
-            %       property.
+            %   side, the type of element is specified in the side_type
+            %   property.
             
             if obj.n_dim == 3;
                 warning('Element:build_side','Feature not tested in 3D');
@@ -322,28 +322,56 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         function dof = get_dof(obj, varargin)
             %GET_DOF The global degrees of freedom, account for type of space
             %
-            % Syntax:
-            %   get_dof()
-            %   get_dof(s)
-            %   get_dof(s,'global')
+            % Syntax
+            %   dof = get_dof()
+            %   dof = get_dof('PropertyName', PropertyValue,...)
             % 
-            % Description:            
-            %   get_dof() returns GLOBAL dofs for the element
-            %   get_dof(s) returns LOCAL dofs for the side s
-            %   get_dof(s,'global') returns GLOBAL dofs for the side s
+            % Description           
+            %   dof = get_dof() returns all of the global dofs for element
+            %
+            %   dof = get_dof('PropertyName', PropertyValue) returns the
+            %   dofs for the element subject to the restrictions specified
+            %   by the properties, see the descriptions below for details.           
+            %
+            % GET_DOF Property Descriptions
+            %   Side
+            %       integer
+            %       Indicates that only the degrees of freedom for the
+            %       specific side should be returned.
+            %
+            %   Local
+            %       true | {false}
+            %       Toggles the type of degrees of freedom to return, which
+            %       is generally import for sides. For example, the
+            %       following returns the local degrees of freedom for side
+            %       number 1 of an element.
+            %           dof = get_dof('Side',1,'local',true) or
+            %           dof = get_dof('SIde',1,'-local')
             
-            % Determine the type of dof to return
-            if nargin == 1; % global for entire element
-                dof = obj.global_dof;
-                
-            elseif nargin == 2; % local for  side
-                s = varargin{1};
-                dof = obj.side_dof(s,:);
-                
-            elseif nargin == 3 && strcmpi(varargin{2},'global');
-                s = varargin{1};
-                dof = obj.side_dof(s,:);
-                dof = obj.global_dof(dof);
+            % Set default options and gather the options
+            options.side = [];
+            options.local = false;
+            options = gather_user_options(options, varargin{:});
+            
+            % Extract ALL of the degrees of freedom
+            if isempty(options.side)
+                if options.local
+                    dof = 1:obj.n_dof;
+                else
+                    dof = obj.global_dof;
+                end
+            
+            % Extract dofs for the specified side    
+            elseif isnumeric(options.side) && options.side < obj.n_sides;
+                s = options.side;
+                if options.local;
+                    dof = obj.side_dof(s,:);
+                else
+                    idx = obj.side_dof(s,:);
+                    dof = obj.global_dof(idx);
+                end
+            else
+                error('Element:get_dof','Input error.');
             end
 
             % Non-scalar FE space
@@ -353,7 +381,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end  
     end
     
-    methods (Access = private)        
+    methods (Hidden = true, Access = private)        
         function D = transform_dof(obj, d)
             %TRANSFROM_DOF Converts the dofs for vector element space
             %
@@ -362,8 +390,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   
             % Description
             %   D = transform_dof(d) converts the scalar degrees of freedom
-            %       for to vector based degrees of freedom. For example,
-            %       inputing d = [1,3] returns D = [1,2,5,6]].
+            %   for to vector based degrees of freedom. For example,
+            %   inputing d = [1,3] returns D = [1,2,5,6].
             
             n = obj.n_dof_node;         % no. of dofs per node
             D = tranform_dofs(d,n);     % call general function in bin
@@ -377,8 +405,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Description
             %   d = distance() computes the distance between all nodes, so
-            %       is returns N! distances, where N is the number of nodes
-            %       minus one.
+            %   is returns N! distances, where N is the number of nodes
+            %   minus one.
            
             d = zeros(factorial(obj.n_nodes-1),1);
             k = 0;
