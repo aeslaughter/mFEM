@@ -366,24 +366,84 @@ classdef FEmesh < mFEM.handle_hide
             %   x = get_nodes(dim)
             %
             % Description
-            %   x = get_nodes()
-            %   x = get_nodes(dim)
+            %   x = get_nodes() returns the nodal coordinates for the
+            %   entire mesh.
+            %
+            %   x = get_nodes(dim) returns the nodeal coordinates for the
+            %   specified dimension, it may be a string ('x','y', or 'z')
+            %   or a numeric value (1,2, or 3).
             
-            out = unique(obj.map.node, 'rows', 'stable'); 
-            if nargin == 2 && isnumeric(varargin{1}) && varargin{1} <= obj.n_dim;
-               out = out(:,varargin{1});
+            % Extract all the nodes
+            out = unique(obj.map.node, 'rows', 'stable');       
+
+            % Extract only a portion of the nodes
+            if nargin == 2;
+                % Determine the column, if string is supplied
+                if ischar(varargin{1});
+                    switch lower(varargin{1});
+                        case 'x'; c = 1;
+                        case 'y'; c = 2;
+                        case 'z'; c = 2;
+                        otherwise
+                            error('FEmesh:get_nodes','Input error, the string %s was not understood. Must specify ''x'', ''y'', or ''z''');
+                    end
+                  
+                % Extract a numeric entry    
+                elseif isnumeric(varargin{1});
+                    c = varargin{1};
+                else
+                    error('FEmesh:get_nodes','Input error.');    
+                end   
+                
+                % Test that the coordinate dimension exists
+                if c > obj.n_dim;
+                    error('FEmesh:get_nodes','Input error, the desired nodal coordinate does not exist.');
+                end
+
+                % Extract the component
+                out = out(:,c);
             end
         end
 
         function plot(obj, varargin)
-            %PLOT Plots mesh and/or data (see FEplot function for details)
+            %PLOT Plots mesh and/or data 
+            % This is a wrapper on an independant function, FEPLOT,
+            % that is located in the bin directory. For complete details
+            % see FEPLOT.
+            %
+            % Syntax
+            %   plot()
+            %   plot(data)
+            %   plot(...,'PropertyName',PropertyValue,...)
+            %
+            % Description
+            %   plot() creates a plot of the mesh and includes that
+            %   includes the element and degree of freedom labels
+            %
+            %   plot(data) creates a plot of the data supplied, the data
+            %   must be a column vector of with the number of values equal
+            %   to the number of degrees of freedom for the mesh.
+            %
+            %   plot(...,'PropertyName',PropertyValue,...) allows for the
+            %   plot created to be customised, for a list of properties see
+            %   the help for the FEPLOT function.
+            %       doc FEPlot;
+            %
+            % See Also FEPLOT
             FEplot(obj,varargin{:});
         end
     end
     
-    methods (Access = private)        
+    methods (Hidden = true, Access = private)        
         function compute_dof_map(obj)
-            % Calculates the global degree-of-freedom map
+            %COMPUTE_DOF_MAP Calculates the global degree-of-freedom map
+            %
+            % Syntax
+            %   compute_dof_map()
+            %
+            % Description
+            %   compute_dof_map() builds a degree of freedom map for the
+            %   finite element mesh.
             
             % Display wait message
             if obj.opt.time;
@@ -413,8 +473,14 @@ classdef FEmesh < mFEM.handle_hide
         function find_neighbors(obj)
             % Locates elements that share a side
             %
-            % Syntax:
+            % Syntax
             %   find_neighbors()   
+            %
+            % Description
+            %   find_neighbors() locates neighboring elements and
+            %   neighboring sides for the finite element mesh, it sets the
+            %   various neighbor and side related properties for the
+            %   elements in the mesh.
 
             % Display wait message
             if obj.opt.time;
@@ -503,7 +569,14 @@ classdef FEmesh < mFEM.handle_hide
          end 
         
         function gen1Dgrid(obj,type, x0, x1, xn)
-            % Generate the 1D mesh (see grid)
+            %GEN1DGRID Generate the 1D mesh (see grid)
+            %
+            % Syntax
+            %   gen1Dgrid(type, x0, x1, xn)
+            %
+            % Description
+            %   gen1Dgrid(type, x0, x1, xn) creates a 1D grid ranging from
+            %   x0 to x1 with xn number of elements.
 
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
@@ -520,7 +593,15 @@ classdef FEmesh < mFEM.handle_hide
         end
         
         function gen2Dgrid(obj, type, x0, x1, y0, y1, xn, yn)
-            % Generate the 2D mesh (see grid)
+            %GEN2DGRID Generate the 2D mesh (see grid)
+            %
+            % Syntax
+            %   gen2Dgrid(type, x0, x1, y0, y1, xn, yn)
+            %
+            % Description
+            %   gen2Dgrid(type, x0, x1, y0, y1, xn, yn) creates a 2D grid 
+            %   ranging from x0 to x1 with xn number of elements in the
+            %   x-direction, similarily in the y direction.
 
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
@@ -548,65 +629,60 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
 
-        function s_n = match_side(obj, a, N)
-            % Returns the side index of the neighbor that matches 
-                        
-            % Get the handle to the neighbor element
-            if ~isa(N,'mFEM.Element');
-                N = obj.element(N); % neighbor element
-            end
-            
-            % Get the nodes for the neighbor element
-            b = N.nodes;
-            
-            % Determine where the a and b vectors are the same
-            [m,n] = size(a);
-            rowIdx = 1:m;
-            repmatRowIdx = rowIdx(:, ones(length(b),1));
-            index = zeros(length(b),n); 
-            for i = 1:m;
-                 aa = a(i,:);
-               % aa = repmat(a(i,:), size(b,1), 1);
-                index(:,i) = all(aa(repmatRowIdx(:), 1:end) == b, 2);
-            end
-
-            % Locate the nodes that are common 
-            idx = sort(find(any(index,2)));
-            side = sort(N.side_dof,2);
-            aa = repmat(idx',length(side),1);
-            s_n = find(all(side == aa, 2));
-        end
+%         function s_n = match_side(obj, a, N)
+%             %SIDE_MATCH Returns the side index of the neighbor that matches 
+%             %
+%             % Syntax
+%             %   s_n = match_side(obj, 
+%                         
+%             % Get the handle to the neighbor element
+%             if ~isa(N,'mFEM.Element');
+%                 N = obj.element(N); % neighbor element
+%             end
+%             
+%             % Get the nodes for the neighbor element
+%             b = N.nodes;
+%             
+%             % Determine where the a and b vectors are the same
+%             [m,n] = size(a);
+%             rowIdx = 1:m;
+%             repmatRowIdx = rowIdx(:, ones(length(b),1));
+%             index = zeros(length(b),n); 
+%             for i = 1:m;
+%                  aa = a(i,:);
+%                % aa = repmat(a(i,:), size(b,1), 1);
+%                 index(:,i) = all(aa(repmatRowIdx(:), 1:end) == b, 2);
+%             end
+% 
+%             % Locate the nodes that are common 
+%             idx = sort(find(any(index,2)));
+%             side = sort(N.side_dof,2);
+%             aa = repmat(idx',length(side),1);
+%             s_n = find(all(side == aa, 2));
+%         end
         
         function add_boundary_location(obj, id, loc)
            %ADD_BOUNDARY_LOCATION Adds boundary id based on location flag
            %
            % Syntax
            %    add_boundary_location(id, SideString)
-           %    add_boundary_location(id, SideCell)
            %
            % Description
-           %
+           %    add_boundary_location(id, SideString) adds a boundary id
+           %    specified by the SideString value, see the help for
+           %    ADD_BOUNDARY for a list of the available strings.
+            %
            % See Also ADD_BOUNDARY
            
-           % Convert character input into a cell
-           if ischar(loc)
-               loc = {loc};
-           end
-           
-           % Loop throug each location specified and apply the id
-           for i = 1:length(loc);
-               
-               % Locate the column in the node positions and the value to
-               % search for when applying the id
-               [col, value] = obj.parse_boundary_location_input(loc{i});
-               
-               % Build a string of the condition
-               func = [col,'==',num2str(value)];
-               
-               % Call the function based boundary function
-               obj.add_boundary_function(id, func);
-           end
+           % Locate the column in the node positions and the value to
+           % search for when applying the id
+           [col, value] = obj.parse_boundary_location_input(loc);
 
+           % Build a string of the condition
+           func = [col,'==',num2str(value)];
+
+           % Call the function based boundary function
+           obj.add_boundary_function(id, func);
         end
         
         function add_boundary_function(obj, id, func)
@@ -617,6 +693,13 @@ classdef FEmesh < mFEM.handle_hide
             %    add_boundary_function(id, FuncCell)
             %
             % Description
+            %    add_boundary_function(id, FuncString) adds a boundary id
+            %    based on the string expression in FuncString, see
+            %    ADD_BOUNDARY for details.
+            %
+            %    add_boundary_function(id, FuncCell) adds a boundary id
+            %    based on all of the string expressions in FuncCell, see
+            %    ADD_BOUNDARY for details.
             %
             % See Also ADD_BOUNDARY
            
@@ -697,11 +780,15 @@ classdef FEmesh < mFEM.handle_hide
             %PARSE_BOUNDARY_LOCATION_INPUT
             %
             % Syntax
+            %   [col, value] = parse_boundary_location_input(loc)
             %
             % Description
+            %   [col, value] = parse_boundary_location_input(loc) returns
+            %   the column and value for boundary location strings, see
+            %   ADD_BOUNDARY for details.
             %
-            % 
-            
+            % See Also ADD_BOUNDARY ADD_BOUNDARY_LOCATION
+
             switch loc;
                 case {'left', 'right'};
                     if strcmpi('right', loc);
@@ -740,7 +827,16 @@ classdef FEmesh < mFEM.handle_hide
         end
         
         function id_empty_boundary(obj, id)
-            % Mark all elements sides that were not marked previously
+            %ID_EMPTY_BOUNDARY Mark all unmarked boundaries
+            %
+            % Syntax
+            %   id_empty_boundary(id)
+            %
+            % Description
+            %   id_empty_boundary(id) tags all boundaries that are unmarked
+            %   with the specified id, see ADD_BOUNDARY for details.
+            %
+            % See Also ADD_BOUNDARY
     
             % Location for new row of boundary
             col = size(obj.map.boundary, 2) + 1;

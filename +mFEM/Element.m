@@ -54,11 +54,11 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     
     % Protected properties
      properties (Hidden = true, Access = protected, Access = {?mFEM.FEmesh, ?mFEM.Element}) 
-       global_dof = []; % Global dof for nodes of element
-                        % (these are not the true dofs (except in scalar 
-                        % space) as such the user should always access the
-                        % dofs for an element with the get_dof() function.) 
-        neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
+         neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
+         global_dof = []; % Global dof for nodes of element
+                          % (these are not the true dofs (except in scalar 
+                          % space) as such the user should always access the
+                          % dofs for an element with the get_dof() function.) 
      end    
    
     % Public Methods
