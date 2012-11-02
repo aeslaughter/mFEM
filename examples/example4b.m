@@ -10,8 +10,8 @@ mesh.add_element('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('left', 1);    % essential boundaries
-mesh.add_boundary('top', 2);     % distributed load (t = -20)
+mesh.add_boundary(1, 'left');    % essential boundaries
+mesh.add_boundary(2, 'top');     % distributed load (t = -20)
 
 % Create system and add necessary components
 sys = System(mesh);
@@ -25,12 +25,13 @@ K = sys.assemble('K');
 f = sys.assemble('f');
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',1); % 1-4
+ess = mesh.get_dof('Boundary', 1); % 5-8   
+non = ~ess; % 1-4       
 
 % Solve for the temperatures
-u = zeros(size(f));              % initialize the displacement vector
-u(ess) = 0;                      % apply essential boundary condtions
-u(~ess) = K(~ess,~ess)\f(~ess);  % solve for T on the non-essential boundaries
+u = zeros(size(f));         % initialize the displacement vector
+u(ess) = 0;                 % apply essential boundary condtions
+u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 
 % Solve for the reaction fluxes
 r = K*u - f;

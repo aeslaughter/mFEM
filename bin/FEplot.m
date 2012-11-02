@@ -58,13 +58,21 @@
 %
 %   Plot
 %       cell array
-%       Use this to pass commands directly to the plot (1D) and patch
-%       commands. For example:
+%       Use this to pass commands directly to the plot (1D), for example
 %           FEplot(...,'Plot',{'Xlim',[0,1]});
 %       executes the following:
 %           plot(...,'Xlim',[0,1]);
 %       This is the last command to be applied to the plot, thus it will
 %       override other plot related settings.
+%
+%   Patch
+%       cell array
+%       Use this to pass commands directly to patch (2D & 3D), for example
+%           FEplot(...,'Patch',{'FaceColor','k'});
+%       executes the following:
+%           patch(...,'FaceColor','k');
+%       This is the last command to be applied to the patch, thus it will
+%       override other patch related settings.
 %
 %% See also
 % FEmesh
@@ -90,7 +98,7 @@ function FEplot(obj, varargin)
         h = plot2D_vector(obj, opt);
     end
     
-    apply_plot_options(h, opt);
+    apply_plot_options(h, obj, opt);
     %build_plot(obj, opt);
     
     % Add the element labels
@@ -122,6 +130,7 @@ function opt = parse_input(obj, varargin)
     opt.figure = handle.empty;
     opt.axes = handle.empty; 
     opt.plot = {};
+    opt.patch = {};
     opt.hold = true;
     
     % Account for first input containing the data
@@ -147,7 +156,7 @@ function opt = parse_input(obj, varargin)
     
     % Collect options supplied by the user
     opt = gather_user_options(opt, varargin{start_idx:end}); 
-    
+
     % Set/Create the figure handle
     if opt.newfigure;
         figure('color','w'); hold on;   
@@ -329,7 +338,7 @@ function h = plot2D_vector(obj, opt)
     end
 end
 
-function apply_plot_options(h, opt)
+function apply_plot_options(h, obj, opt)
     % APPLY_PLOT_OPTIONS
     
     % Show the nodes as empty circles
@@ -346,8 +355,13 @@ function apply_plot_options(h, opt)
     end
    
     % Add the custom plot options
-    if ~isempty(opt.plot);
+    if ~isempty(opt.plot) && obj.n_dim == 1;
         set(h, opt.plot{:}); 
+    end
+    
+    % Add the custom patch options
+    if ~isempty(opt.patch) && obj.n_dim > 1;
+        set(h, opt.patch{:}); 
     end
 end
 

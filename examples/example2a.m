@@ -17,9 +17,9 @@ mesh.add_element('Tri3',[2,0.5; 2,1; 0,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('top', 1);     % q = 20 boundary
-mesh.add_boundary('right', 2);   % q = 0 boundary
-mesh.add_boundary(3);            % essential boundaries (all others)
+mesh.add_boundary(1, 'top');     % q = 20 boundary
+mesh.add_boundary(2, 'right');   % q = 0 boundary
+mesh.add_boundary(3);       % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
@@ -89,8 +89,8 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(3,'ne'); % 4
-ess = mesh.get_dof(3);      % 1,2,3
+ess = mesh.get_dof('Boundary',3); % 4
+non = ~ess;
 
 % Solve for the temperatures
 T = zeros(size(f));         % initialize the temperature vector

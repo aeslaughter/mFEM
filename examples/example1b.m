@@ -38,8 +38,8 @@ mesh.grid(opt.element,0,4,opt.n);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'Location','left');    % T = 0 boundary (essential)    
-mesh.add_boundary(2, 'Location','right');   % q = 20 boundary 
+mesh.add_boundary(1,'left');    % T = 0 boundary (essential)    
+mesh.add_boundary(2,'right');   % q = 20 boundary 
 
 % Build Matrix and Vector Equations
 sys = System(mesh);

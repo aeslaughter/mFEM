@@ -10,8 +10,8 @@ mesh.add_element('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('left', 1);    % essential boundaries
-mesh.add_boundary('top', 2);     % distributed load (t = -20)
+mesh.add_boundary(1, 'left');    % essential boundaries
+mesh.add_boundary(2, 'top');     % distributed load (t = -20)
 
 % Create Gauss objects for performing integration on the element and sides
 q_elem = Gauss(2);
@@ -67,8 +67,8 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(1,'ne'); % 1-4
-ess = mesh.get_dof(1);      % 5-8
+ess = mesh.get_dof('Boundary', 1); % 5-8   
+non = ~ess; % 1-4       
 
 % Solve for the temperatures
 u = zeros(size(f));         % initialize the displacement vector

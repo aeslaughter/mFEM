@@ -7,8 +7,14 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     % The abstract properties and methods must be redifined in the
     % subclass, see Quad4.m for an example.
     %
-    % see Quad4
-    
+    % See Also Line2
+    %
+    %----------------------------------------------------------------------
+    % Copyright 2012 Andrew E. Slaughter
+    % This software is for educational purposes only and may not be used
+    % without written permession.
+    %----------------------------------------------------------------------
+
     % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public) 
       n_sides;      % no. of sides
@@ -18,7 +24,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Abstract Methods (protected)
-    % (the user must redfine these in subclasse, e.g. Quad4)
+    % (the user must redfine these in subclasse, e.g. Line2)
     methods (Abstract, Access = protected)
         N = basis(obj, varargin)            % basis functions
         B = grad_basis(obj, varargin)       % basis function derivatives (dN/dx, ...)
@@ -28,13 +34,13 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         
     % Public properties (read only)
     properties (SetAccess = protected, GetAccess = public)
-        id = uint32([]);            % element id [double]
-        n_nodes = uint32([]);       % no. of nodes [double]
+        id = uint32([]);            % element id
+        n_nodes = uint32([]);       % no. of nodes 
         n_dim = uint32([]);         % no. of spatial dimensions
         n_dof = uint32([]);         % no. of global degrees of freedom
         n_dof_node = uint32(1);     % no. of dofs per node (scalar = 1)  
         nodes = [];                 % global coordinates (no. nodes, no. dim)
-        node_plot_order;            % node plotting order (see Tri6; only needed if nodes are out of order)
+        node_plot_order;            % node plotting order (only needed if nodes are out of order)
     end
     
     % Public properties (read only; except FEmesh and Element)
@@ -46,9 +52,13 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Protected properties
-    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected)
-       global_dof = []; % global dof for nodes of element 
-       neighbors;       % storage of nieghbor elements (see FEmesh.find_neighbors)
+    properties (Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected) 
+
+       global_dof = []; % Global dof for nodes of element, these are not 
+                        % the true dofs(except in scalar space) as such the
+                        % user should always access the dofs for an element
+                        % with the get_dof() function. 
+       neighbors; % storage of nieghbor elements (see FEmesh.find_neighbors)
     end    
     
     % Public Methods
@@ -56,16 +66,18 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     % access the shape functions and other necessary parameters)
     methods (Access = public)
         function obj = Element(id, nodes, varargin)
-            % Class constructor.
+            %ELEMENT Class constructor.
             %
             % This is an abstract class, it must be inherited by a subclass
-            % to operate, see Quad4.m for example.
+            % to operate, see Line2.m for example. The following syntax and
+            % descriptions apply to all subclasses unless noted otherwise
+            % in the documentation for the specific element.
             %
-            % Syntax:
+            % Syntax
             %   Element(id, nodes)
             %   Element(id, nodes, n_dof_node)
             %
-            % Description:
+            % Description
             %   Element(id, nodes) creates an element given:
             %       id: unique identification number for this element
             %       nodes: matrix of node coordinates (global), should be 
@@ -75,12 +87,13 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %       customize the behavior of the element, the available
             %       properties are listed below.
             %
-            % Properties:
-            %   space = 'scalar', 'vector', <number>
-            %               allows the type of FEM space to be set: scalar
-            %               sets the number of dofs per node to 1, vector
-            %               sets it to the no. of space dimension, and
-            %               specifing a number sets it to that value.
+            % Element Property Descriptions
+            %   space
+            %       'scalar' | 'vector' | integer
+            %       Allows the type of FEM space to be set: scalar sets the 
+            %       number of dofs per node to 1, vector  sets it to the 
+            %       no. of space dimension, and  specifing a number sets it
+            %       to that value.
 
             % Insert required values into object properties
             obj.id = id;
@@ -108,7 +121,17 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end
         
         function N = shape(obj, varargin)
-            % Returns the shape functions
+            %SHAPE Returns the shape functions
+            %
+            % Syntax
+            %   shape(xi)
+            %   shape(xi,eta)
+            %   shape(xi,eta,zeta)
+            %
+            % Description
+            %   shape(...) returns the element shape functions evaluated at
+            %   the locations specified in the inputs, the number of which
+            %   varies with the number of space dimensions.
 
             % Scalar field basis functions
             N = obj.basis(varargin{:});
@@ -128,7 +151,18 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end
         
         function B = shape_deriv(obj, varargin)
-            % Returns the shape function derivatives in x,y system
+            %SHAPE_DERIV Returns shape function derivatives in global x,y system
+            %
+            % Syntax
+            %   shape_deriv(xi)
+            %   shape_deriv(xi,eta)
+            %   shape_deriv(xi,eta,zeta)
+            %
+            % Description
+            %   shape_deriv(...) returns the element shape function 
+            %   derivatives evaluated at the locations specified in the 
+            %   inputs, the number of which varies with the number of space 
+            %   dimensions.
 
             % Scalar field basis functin derivatives
             B = obj.grad_basis(varargin{:});
@@ -149,48 +183,93 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end
         
         function L = hmax(obj)
-            % Return maximum length between ANY two points
+            %HMAX Return maximum length between ANY two points
+            %
+            % Syntax
+            %   L = max();
+            %
+            % Description
+            %   L = max() returns the maximum distance between any two
+            %   points on the element.
             L = max(obj.distance());
         end
         
         function L = hmin(obj)
-            % Return maximum length between ANY two points
+            %HMIN Return inimum length between ANY two points
+            %
+            % Syntax
+            %   L = min();
+            %
+            % Description
+            %   L = min() returns the minimum distance between any two
+            %   points on the element.
             L = min(obj.distance());
         end
             
         function J = detJ(obj, varargin)
-            % Returns the determinate of the jacobian matrix
+            %DETJ Returns the determinate of the jacobian matrix
+            %
+            % Syntax
+            %   detJ(xi)
+            %   detJ(xi,eta)
+            %   detJ(xi,eta,zeta)
+            %
+            % Description
+            %   detJ(...) returns the determinante of the jacobian 
+            %   evaluated at the locations specified in the inputs, the 
+            %   number of which varies with the number of space dimensions.
             J = det(obj.jacobian(varargin{:}));
         end 
         
         function varargout = get_position(obj, varargin)
-            % Returns the real coordinates given xi, eta, ...
+            %GET_POSITION Returns the real coordinates given xi, eta, ...
             %
-            % Syntax:
+            % Syntax
             %   x = get_position(xi)
             %   [x,y] = get_position(xi,eta)
             %   [x,y,z] = get_position(xi,eta,zeta)
+            %   xyz = get_position(...)
             %
-            % Note: This function accounts for being on a side, if the
-            % element is a side element then it will use the side_nodes
-            % variable to give you the position of the point in the real
-            % x,y,z coordinate system.
+            % Description
+            %   [...] = get_position(...) returns the position in global
+            %       system given a value(s) for the local position, the
+            %       number of outputs varies according the number of
+            %       spatial dimensions.
+            %
+            %   xyz = get_position(...) same as above but it returns the
+            %       positions as a single array.
            
             % The number of spatial dimensions available
             n = obj.n_dim;
             
-            % Initialize the output
-            varargout = cell(n);
-            
             % Loop through the dimensions and return the desired position
+            xyz = zeros(obj.n_nodes,n);
             for i = 1:n;
-               varargout{i} = obj.shape(varargin{:})*obj.nodes(:,i); 
+               xyz(:,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
             end
-
+            
+            % Reduce to single array if only a single output is given
+            if nargout == nargin && nargout > 1;
+                varargout = num2cell(xyz,1);
+            else
+                varargout{1} = xyz;
+            end
         end
         
         function n = get_normal(obj, varargin)
-            % Returns the normal vector at a given xi, eta, ...
+            %GET_NORMAL Returns the normal vector at a location
+            %
+            % Syntax
+            %   n = get_normal(xi)
+            %   n = get_normal(xi,eta)
+            %
+            % Description
+            %   n = get_normal(...) returns the normal vector for a given
+            %       local location. The number of inputs depends on the
+            %       number of space dimensions of the element. 
+            %  
+            % This function is still under development and is not fully
+            % tested, expect changes.
             
             % The number of spatial dimensions available
             n = obj.n_dim; 
@@ -215,7 +294,15 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end
                 
         function side = build_side(obj, id)
-            % Build an element for the side
+            %BUILD_SIDE Build an element for the side
+            %
+            % Syntax
+            %   side = build_side(id)
+            % 
+            % Description
+            %   side = build_side(id) creates an element for the specified
+            %       side, the type of element is specified in the side_type
+            %       property.
             
             if obj.n_dim == 3;
                 warning('Element:build_side','Feature not tested in 3D');
@@ -233,7 +320,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         end
                
         function dof = get_dof(obj, varargin)
-            % The global degrees of freedom, account for type of space
+            %GET_DOF The global degrees of freedom, account for type of space
             %
             % Syntax:
             %   get_dof()
@@ -264,23 +351,34 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                 dof = obj.transform_dof(dof);
             end
         end  
-                        
-        function D = transform_dof(obj, d)
-            % Converts the dofs for vector element space
-            
-            n = obj.n_dof_node;         % no. of dofs per node
-            D = zeros(n*length(d),1);   % size of vector space dofs
-            
-            % Loop through dimensions and build vector
-            for i = 1:n;
-                D(i:n:end) = d*n - (n-i);
-            end 
-        end
     end
     
-    methods (Access = private)
+    methods (Access = private)        
+        function D = transform_dof(obj, d)
+            %TRANSFROM_DOF Converts the dofs for vector element space
+            %
+            % Syntax
+            %   D = transform_dof(d)
+            %   
+            % Description
+            %   D = transform_dof(d) converts the scalar degrees of freedom
+            %       for to vector based degrees of freedom. For example,
+            %       inputing d = [1,3] returns D = [1,2,5,6]].
+            
+            n = obj.n_dof_node;         % no. of dofs per node
+            D = tranform_dofs(d,n);     % call general function in bin
+        end
+        
         function d = distance(obj)
-            % Compute distances between all points
+            %DISTANCE Compute distances between all points
+            %
+            % Syntax
+            %   d = distance()
+            %
+            % Description
+            %   d = distance() computes the distance between all nodes, so
+            %       is returns N! distances, where N is the number of nodes
+            %       minus one.
            
             d = zeros(factorial(obj.n_nodes-1),1);
             k = 0;

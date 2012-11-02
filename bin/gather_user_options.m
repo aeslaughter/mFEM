@@ -57,21 +57,21 @@ if ~isscalar(opt);
 end
 
 % COMPARE INPUT WITH THE DEFAULTS
-while k < N
+while k <= N
     % Seperate the name
-    itm = q{k}; 
+    itm = q{k};
     
     % Search for flag style input
     idx = strfind(itm,'-');
     
     % Case when a precedding '-' is detected
     if numel(idx) > 0 && idx(1) == 1;
+
        itm = lower(itm(2:end)); % remove the leading '-'
        k = k + 1;        % increment the counter
        
        % Change the value, if it existing in the options structure
        if isfield(opt, itm) 
-           disp('changing the value')
            value = ~opt(inc).(itm); 
             
        % Produce a warning and move on, if the item is not recognized

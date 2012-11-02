@@ -1,6 +1,8 @@
 % MAE4700/5700 HW8, Prob. 3
 function example4d
 
+warning('This function is not working correctly!');
+
 % Set known values
 a = 5;
 b = 10;
@@ -16,8 +18,8 @@ mesh.grid('Quad4', 0, pi/2, a, b, 10, 5); % x = theta; y = r
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('left', 1); 
-mesh.add_boundary('right', 2);
+mesh.add_boundary(1, 'left'); 
+mesh.add_boundary(2, 'right');
 % mesh.add_boundary({'x==pi/2','y==a'},2);
 
 % Create system and add matrix components

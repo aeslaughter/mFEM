@@ -7,7 +7,7 @@
 function Tri6_test
 
 % Importh the FEM library
-import mFEM.*
+import mFEM.* mFEM.elements.*
 
 % Test 1 Element
 elem = Tri6(1,[0,0; 6,2; 4,4], 'Space', 'vector');

@@ -10,10 +10,8 @@ mesh.grid('Quad4',0,2,0,1,1,1);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('bottom', 1);
-mesh.add_boundary('left', 1);
-mesh.add_boundary('right', 2);
-mesh.add_boundary('top', 2);
+mesh.add_boundary(1, 'bottom','left');
+mesh.add_boundary(2, 'right','top');
 
 % Create system and add matrix components
 sys = System(mesh);

@@ -136,8 +136,8 @@ end
 tmessage(ticID);
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(1,'ne'); 
-ess = mesh.get_dof(1);      
+ess = mesh.get_dof('Boundary',1);   
+non = ~ess;
 
 % Initialize the temperatures
 T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);

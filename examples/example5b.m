@@ -17,9 +17,8 @@ mesh.add_element('Tri3', 1/100*[0,0; 2,4; 0,2]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary('left',1);            % insulated (q = 0)
-mesh.add_boundary('right',1);           % insulated (q = 0)
-mesh.add_boundary('bottom',2);          % convective (q = h(T - Tinf))
+mesh.add_boundary(1, 'left','right');   % insulated (q = 0)
+mesh.add_boundary(2, 'bottom');         % convective (q = h(T - Tinf))
 mesh.add_boundary(3);                   % essential boundaries (all others)
 
 % Create system
@@ -52,8 +51,8 @@ ix = [1,4,2,3];
 % f(ix)
 
 % Define dof indices for the essential dofs and non-essential dofs
-non = mesh.get_dof(3,'ne'); % 1,2
-ess = mesh.get_dof(3);      % 3,4
+ess = mesh.get_dof('Boundary',3); % 3,4
+non = ~ess;
 
 % Solve for the temperatures
 T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector

@@ -28,8 +28,8 @@ mesh.grid('Line2',0,4,nel);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'Location','left');    % T = 0 boundary (essential)    
-mesh.add_boundary(2, 'Location','right');   % q = 20 boundary   
+mesh.add_boundary(1,'left');    % T = 0 boundary (essential)    
+mesh.add_boundary(2,'right');   % q = 20 boundary   
 
 % Create Gauss objects for performing integration on the element
 q_elem = Gauss(1);
