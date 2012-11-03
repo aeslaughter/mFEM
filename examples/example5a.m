@@ -78,7 +78,7 @@ for e = 1:mesh.n_elements;
             side = elem.build_side(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
-                d = elem.get_dof(s); % local dofs for the current side
+                d = elem.get_dof('side',s,'-local'); % local dofs for side
                 side.detJ(qp_side(i))
                 Ke(d,d) = Ke(d,d) + W_side(i) * h * N(qp_side(i))'*N(qp_side(i))*side.detJ(qp_side(i));
                 fe(d) = fe(d) + h*T_inf*W_side(i)*N(qp_side(i))'*side.detJ(qp_side(i));              

@@ -27,18 +27,13 @@ function opt =  gather_user_options(opt,varargin)
 % Input
 %   opt = a data structure containing the default values, e.g. opt =
 %       struct('Prop1',true,'Prop2','install','Coeffient',1);. 
-%
-%       A special case exists, if opt is a multidimensional struct every 
-%       new paring is inserted into a new structure. So, if three pairings
-%       are provided the output opt will be a 1x3 structure. 
-%__________________________________________________________________________
 
-% INTILIZE THE DATA
+% Intilize the data
     q = varargin;           % User supplied input
     k = 1;                  % Intilize the counter
     N = nargin - 1;         % Number of property inputs
 
-% CONVERT DATA INPUT AS A STRUCTURE TO A CELL ARRAY
+% Convert data input as a structure to a cell array
 if length(q) == 1 && isstruct(q{1});
     S = q{1}; q = {};
     fn = fieldnames(S); % Fieldnames from input structure
@@ -49,14 +44,7 @@ if length(q) == 1 && isstruct(q{1});
     N = length(q);      % Number of inputs
 end
 
-% Account for the special case when opt is a structure array
-increment = false;
-inc = 1;
-if ~isscalar(opt);
-   increment = true; 
-end
-
-% COMPARE INPUT WITH THE DEFAULTS
+% Compare input with the defaults
 while k <= N
     % Seperate the name
     itm = q{k};
@@ -72,7 +60,7 @@ while k <= N
        
        % Change the value, if it existing in the options structure
        if isfield(opt, itm) 
-           value = ~opt(inc).(itm); 
+           value = ~opt.(itm); 
             
        % Produce a warning and move on, if the item is not recognized
        else
@@ -88,11 +76,8 @@ while k <= N
  
     % When the property matches, update the structure
     if isfield(opt, lower(itm));   
-        opt(inc).(lower(itm)) = value;
-        
-        % Special case, increment the opt array
-        if increment; inc = inc + 1; end
-        
+        opt.(lower(itm)) = value;
+
     % Produce a warning if the property is not recongnized    
     else 
         mes = ['The option, ',itm,', was not recoignized.'];

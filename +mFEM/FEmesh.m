@@ -24,7 +24,7 @@ classdef FEmesh < mFEM.handle_hide
             struct('space', 'scalar', 'type', 'CG', 'time', true);
     end
     
-    properties (Access = private, GetAccess = {?mFEM.System})
+    properties (SetAccess = private, GetAccess = {?mFEM.System})
         local_n_dim = uint32([]);   % local dimensions of elements (see BUILD_SIDE)
     end
     
@@ -308,7 +308,7 @@ classdef FEmesh < mFEM.handle_hide
             % Set the default values for the varius inputs
             options.component = [];
             options.boundary = [];
-            options.index = true;
+            options.index = false;
             options = gather_user_options(options, varargin{:});
             
             % Return dofs for the specified boundary id
@@ -328,8 +328,7 @@ classdef FEmesh < mFEM.handle_hide
 
             % Vector FE space (uses transform_dof of an element)
             if obj.n_dof_node > 1;
-                elem = obj.element(1);
-                dof = elem.transform_dof(dof);
+                dof = transform_dof(dof,obj.n_dof_node);
             end
 
             % Extract boundaries for certain component of vector space
@@ -356,7 +355,7 @@ classdef FEmesh < mFEM.handle_hide
                 dof = dof(ix);
             end   
 
-            % Convert to indices, if desired
+            % Convert to indices (the default), if desired 
             if ~options.index
                 index = false(obj.n_dof, 1);
                 index(dof) = true;
@@ -634,38 +633,6 @@ classdef FEmesh < mFEM.handle_hide
                 end
             end
         end
-
-%         function s_n = match_side(obj, a, N)
-%             %SIDE_MATCH Returns the side index of the neighbor that matches 
-%             %
-%             % Syntax
-%             %   s_n = match_side(obj, 
-%                         
-%             % Get the handle to the neighbor element
-%             if ~isa(N,'mFEM.Element');
-%                 N = obj.element(N); % neighbor element
-%             end
-%             
-%             % Get the nodes for the neighbor element
-%             b = N.nodes;
-%             
-%             % Determine where the a and b vectors are the same
-%             [m,n] = size(a);
-%             rowIdx = 1:m;
-%             repmatRowIdx = rowIdx(:, ones(length(b),1));
-%             index = zeros(length(b),n); 
-%             for i = 1:m;
-%                  aa = a(i,:);
-%                % aa = repmat(a(i,:), size(b,1), 1);
-%                 index(:,i) = all(aa(repmatRowIdx(:), 1:end) == b, 2);
-%             end
-% 
-%             % Locate the nodes that are common 
-%             idx = sort(find(any(index,2)));
-%             side = sort(N.side_dof,2);
-%             aa = repmat(idx',length(side),1);
-%             s_n = find(all(side == aa, 2));
-%         end
         
         function add_boundary_location(obj, id, loc)
            %ADD_BOUNDARY_LOCATION Adds boundary id based on location flag
@@ -861,7 +828,7 @@ classdef FEmesh < mFEM.handle_hide
                     
                     % Loop through the sides
                     for s = 1:elem.n_sides;
-
+                        
                         % If side is on the boundary and contains no
                         % boundary ids, assign the desired id
                         if (elem.side(s).on_boundary || isempty(elem.side(s).neighbor)) ...
@@ -874,7 +841,7 @@ classdef FEmesh < mFEM.handle_hide
                             elem.side(s).boundary_id = id;
                             
                             % Update the mesh boundary_id map
-                            dof = elem.get_dof(s,'global');
+                            dof = elem.get_dof('Side', s); % global
                             for i = 1:length(dof);
                                 idx = obj.map.dof == dof(i);
                                 obj.map.boundary(idx, col) = id;

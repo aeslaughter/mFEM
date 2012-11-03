@@ -45,7 +45,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Public properties (read only; except FEmesh and Element)
-    properties (SetAccess = protected, GetAccess = public, SetAccess = {?mFEM.FEmesh, ?mFEM.Element})
+    properties (GetAccess = public, SetAccess = {?mFEM.FEmesh, ?mFEM.Element})
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         side;                       % side info, see constructor        
@@ -53,7 +53,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Protected properties
-     properties (Hidden = true, Access = protected, Access = {?mFEM.FEmesh, ?mFEM.Element}) 
+     properties (Hidden = true, Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected ) 
          neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
          global_dof = []; % Global dof for nodes of element
                           % (these are not the true dofs (except in scalar 
@@ -243,9 +243,9 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             n = obj.n_dim;
             
             % Loop through the dimensions and return the desired position
-            xyz = zeros(obj.n_nodes,n);
+            xyz = zeros(1,n);
             for i = 1:n;
-               xyz(:,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
+               xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
             end
             
             % Reduce to single array if only a single output is given
@@ -362,7 +362,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                 end
             
             % Extract dofs for the specified side    
-            elseif isnumeric(options.side) && options.side < obj.n_sides;
+            elseif isnumeric(options.side) && options.side <= obj.n_sides;
                 s = options.side;
                 if options.local;
                     dof = obj.side_dof(s,:);
@@ -393,8 +393,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   for to vector based degrees of freedom. For example,
             %   inputing d = [1,3] returns D = [1,2,5,6].
             
-            n = obj.n_dof_node;         % no. of dofs per node
-            D = tranform_dofs(d,n);     % call general function in bin
+            D = transform_dof(d,obj.n_dof_node); % call func in bin
         end
         
         function d = distance(obj)

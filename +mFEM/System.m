@@ -315,7 +315,7 @@ classdef System < mFEM.handle_hide
 
                             % Side elements that are not points    
                             else
-                                [qp,W] = side.quad.rules('cell');
+                                [qp,W] = side.quad.rules('-cell');
 
                                 % Local dofs for the current side
                                 dof = elem.get_dof('Side',s,'-local');
@@ -339,8 +339,7 @@ classdef System < mFEM.handle_hide
             end
             
             % Build the sparse matrix
-            %obj.mat(idx).matrix = matrix.init();
-            
+            obj.mat(idx).matrix = matrix.init();
         end
         
         function assemble_matrix_elem(obj, idx)
@@ -434,7 +433,7 @@ classdef System < mFEM.handle_hide
                             % If elem is 1D, then the side is a point that
                             % does not require intergration
                             if elem.local_n_dim == 1;
-                                dof = elem.get_dof(s);
+                                dof = elem.get_dof('Side', s, '-local');
                                 fe(dof) = fe(dof) + fcn(side);
 
                             % Side elements that are not points    

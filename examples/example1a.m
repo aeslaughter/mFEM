@@ -84,7 +84,7 @@ for e = 1:mesh.n_elements;
     for s = 1:elem.n_sides; 
         if elem.side(s).boundary_id == 2;
             side = elem.build_side(s);
-            dof = elem.get_dof(s);
+            dof = elem.get_dof('Side', s, '-local');
             fe(dof) = fe(dof) + -q_bar*A*side.shape()';  
             delete(side);
         end
@@ -100,7 +100,8 @@ end
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.get_dof('Boundary', 1);  % 1
 non = ~ess;                         % 2,3
-
+ess
+non
 % Solve for the temperatures
 T = zeros(size(f));         % initialize the temperature vector
 T(ess) = T_bar;             % apply essential boundary condtions

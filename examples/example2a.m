@@ -69,7 +69,7 @@ for e = 1:mesh.n_elements;
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
             % Local dofs for the current side
-            dof = elem.get_dof(s); 
+            dof = elem.get_dof('Side',s,'-local'); 
            
             % Build the side element
             side = elem.build_side(s);

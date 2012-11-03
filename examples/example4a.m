@@ -55,8 +55,8 @@ for e = 1:mesh.n_elements;
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 2;
-            dof = elem.get_dof(s);          % local dof for this side
-            side = elem.build_side(s);      % create side element
+            dof = elem.get_dof('side',s,'-local'); % local dof for side
+            side = elem.build_side(s);             % create side element
 
             for i = 1:length(qp_side);      
                 f(dof) = f(dof) + W_side(i)*side.shape(qp_side(i))'*t_top*side.detJ();

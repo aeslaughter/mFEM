@@ -18,7 +18,7 @@ mesh.init();
 % Label the boundaries
 mesh.add_boundary(1, 'top');     % q = 20 boundary
 mesh.add_boundary(2, 'right');   % q = 0 boundary
-mesh.add_boundary(3);       % essential boundaries (all others)
+mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
@@ -65,7 +65,7 @@ for e = 1:mesh.n_elements;
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
         if elem.side(s).boundary_id == 1;
-            dof = elem.get_dof(s); % local dofs for the current side
+            dof = elem.get_dof('Side',s,'-local'); % local dofs for the current side
             side = elem.build_side(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(qp_side);
