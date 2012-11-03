@@ -1,16 +1,21 @@
-%HANDLE_HIDE A wrapper class causing methods of handle to be hidden.
-%
-% Syntax
-%   classdef MyHandleClass < handle_hide
-%
-% Description
-%   classdef MyHandleClass < handle_hide makes MyHandleClass a subclass
-%   of the handle class, but hides all the methods, thus when the
-%   documentation is created the handle based methods to not appear.
-%
-% see also HANDLE ELEMENT FEMESH SYSTEM
-
 classdef handle_hide < handle
+    %HANDLE_HIDE A wrapper class causing methods of handle to be hidden.
+    %
+    % Syntax
+    %   classdef MyHandleClass < handle_hide
+    %
+    % Description
+    %   classdef MyHandleClass < handle_hide makes MyHandleClass a subclass
+    %   of the handle class, but hides all the methods, thus when the
+    %   documentation is created the handle based methods to not appear.
+    %
+    % see also HANDLE ELEMENT FEMESH SYSTEM
+    %
+    %----------------------------------------------------------------------
+    % Copyright 2012 Andrew E. Slaughter
+    % This software is for educational purposes only and may not be used
+    % without written permession.
+    %----------------------------------------------------------------------
     methods(Sealed)  
       function TF = eq(varargin)
          TF = eq@handle(varargin{:});
