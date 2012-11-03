@@ -1,5 +1,5 @@
 classdef System < mFEM.handle_hide
-    %SYSTEM A class for automatic assembly of finite element equations.
+    % A class for automatic assembly of finite element equations.
     % This class allows the specification of the finite element equations
     % for matrices and vectors as strings, the assembly is handled
     % automatically.

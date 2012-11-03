@@ -1,5 +1,4 @@
-%% FEplot
-% Creates graphs for finite element data derived from FEMESH.
+% FEPLOT Creates graphs for finite element data derived from FEMESH.
 %
 % Syntax
 %  FEplot(obj)
@@ -7,17 +6,22 @@
 %  FEplot(...,'PropertyName',<PropertyValue>)
 %
 % Descrtiption
+%   FEplot(obj) creates a plot of the mesh object (obj) and includes that
+%   includes the element and degree of freedom labels.
+%
+%   FEplot(obj, data) creates a plot for the mesh object (obj) and the data 
+%   supplied, the data must be a column vector of with the number of values 
+%   equal to the number of degrees of freedom for the mesh.
+%
+%   FEplot(...,'PropertyName',PropertyValue,...) allows for the
+%   plot created to be customised, for a list of properties below. Note 
+%   that all true/false may be input using a flag instead of the pairing. 
+%   For example the following two calls to FEplot are the same:
+%       FEplot(obj,data,'-Deform');
+%       FEplot(obj,data,'Deform',true);
+%   This flag style input simply reverses the state from the default.
 %
 % FEplot Property Descriptions
-% 
-% The following is a list of all the available options, note that all
-% true/false may be input using a flag instead of the pairing. For example
-% the following two calls to FEplot are the same:
-%   FEplot(obj,data,'-Deformation');
-%   FEplot(obj,data,'Deformation',true);
-% The flag style input simply reversed the state from the default.
-%
-%
 %  Deform
 %       true | {false}
 %       Toggles the use to treat the input data as deformation
@@ -42,16 +46,16 @@
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the appearence of node number labels.
 %
-%   NewFigure
+%   New
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the creation of a new figure, if it is set to false then
 %       gcf is used, unless the handle is specified via FigureHandle
 %
-%   AxesHandle
+%   Axes
 %       axes handle
 %       Add the plot to the user specified axes handle. 
 %
-%   FigureHandle
+%   Figure
 %       figure handle
 %       Add the plot to the user specified figure handle. Note, NewFigure
 %       takes presidence over FigureHandle.
@@ -74,8 +78,14 @@
 %       This is the last command to be applied to the patch, thus it will
 %       override other patch related settings.
 %
-%% See also
+% See also
 % FEmesh
+%
+%----------------------------------------------------------------------
+% Copyright 2012 Andrew E. Slaughter
+% This software is for educational purposes only and may not be used
+% without written permession.
+%----------------------------------------------------------------------
 
 function FEplot(obj, varargin)
 
@@ -126,7 +136,7 @@ function opt = parse_input(obj, varargin)
     opt.shownodes = false;
     opt.elementlabels = true;
     opt.nodelabels = true;
-    opt.newfigure = true;
+    opt.new = true;
     opt.figure = handle.empty;
     opt.axes = handle.empty; 
     opt.plot = {};

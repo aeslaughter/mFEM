@@ -1,5 +1,5 @@
 classdef Matrix < mFEM.handle_hide
-    %MATRIX A wrapper class for MATLAB's sparse matrix creation
+    % A wrapper class for MATLAB's sparse matrix creation
     % It is best to create the sparse matrices in MATLAB using an index 
     % based assembly, see doc sparse. This class automates the generation
     % of the i,j,s vector creation. The main purpose is to provide a means

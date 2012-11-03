@@ -1,32 +1,38 @@
 function opt =  gather_user_options(opt,varargin)
-% GATHER_USER_OPTIONS collects property parings input into a function
-%
-% Syntax
-%   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
-%   opt = gather_user_options(...,-PropertyName,...);
-%   opt = gather_user_options(opt,optUser);
-%
-% Description
-%   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...)
-%   compares the property names with the default values stored in the
-%   data structure and applies the property value if the field matches
-%   the property name. The opt input variable is described below.
-%
-%   opt = gather_user_options(...,-PropertyName)
-%   adds an alternative method for flipping boolean values without
-%   specifing the value. For example if the options structure is:
-%       opt.flag = true;
-%   The the following two commands are equivalent.
-%       opt = gather_user_options(opt,'-flag');
-%       opt = gather_user_options(opt,'flag',false);
-%
-%   opt = gather_user_options(opt,optUser) in this case the user suplies a
-%   data structure similar to that of opt, which is compared according
-%   to the fieldnames.
-%
-% Input
-%   opt = a data structure containing the default values, e.g. opt =
-%       struct('Prop1',true,'Prop2','install','Coeffient',1);. 
+    % Collects property parings input into a function
+    %
+    % Syntax
+    %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
+    %   opt = gather_user_options(...,-PropertyName,...);
+    %   opt = gather_user_options(opt,optUser);
+    %
+    % Description
+    %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...)
+    %   compares the property names with the default values stored in the
+    %   data structure and applies the property value if the field matches
+    %   the property name. The opt input variable is described below.
+    %
+    %   opt = gather_user_options(...,-PropertyName)
+    %   adds an alternative method for flipping boolean values without
+    %   specifing the value. For example if the options structure is:
+    %       opt.flag = true;
+    %   The the following two commands are equivalent.
+    %       opt = gather_user_options(opt,'-flag');
+    %       opt = gather_user_options(opt,'flag',false);
+    %
+    %   opt = gather_user_options(opt,optUser) in this case the user suplies a
+    %   data structure similar to that of opt, which is compared according
+    %   to the fieldnames.
+    %
+    % Input
+    %   opt = a data structure containing the default values, e.g. opt =
+    %       struct('Prop1',true,'Prop2','install','Coeffient',1);. 
+    %
+    %----------------------------------------------------------------------
+    % Copyright 2012 Andrew E. Slaughter
+    % This software is for educational purposes only and may not be used
+    % without written permession.
+    %----------------------------------------------------------------------
 
 % Intilize the data
     q = varargin;           % User supplied input

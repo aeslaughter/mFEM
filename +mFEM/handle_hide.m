@@ -1,5 +1,5 @@
 classdef handle_hide < handle
-    %HANDLE_HIDE A wrapper class causing methods of handle to be hidden.
+    % A wrapper class causing methods of handle to be hidden.
     %
     % Syntax
     %   classdef MyHandleClass < handle_hide

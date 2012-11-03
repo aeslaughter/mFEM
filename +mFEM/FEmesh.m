@@ -1,5 +1,5 @@
 classdef FEmesh < mFEM.handle_hide
-    %FEMESH Class for managing and generating FEM spaces.
+    % Class for managing and generating FEM spaces.
     % This class handles all mesh and degree-of-freedom operations for
     % implementing the finite element method.
     %
