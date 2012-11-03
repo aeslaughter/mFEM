@@ -1,5 +1,5 @@
 classdef System < mFEM.handle_hide
-    % A class for automatic assembly of finite element equations.
+    %SYSTEM A class for automatic assembly of finite element equations.
     % This class allows the specification of the finite element equations
     % for matrices and vectors as strings, the assembly is handled
     % automatically.
@@ -204,7 +204,7 @@ classdef System < mFEM.handle_hide
             [type, idx] = obj.locate(name);
             
             % Error if called on something other than a matrix or vector
-            if any(strcmpi(type,{'matrix','vector'});
+            if ~any(strcmpi(type,{'matrix','vector'}));
                 error('System:Assemble','No assembly routine for %s types', type);
             end
             
@@ -395,8 +395,8 @@ classdef System < mFEM.handle_hide
             %   K = assemble_matrix(idx) assembles the desired matrix,
             %   where idx is the location in the mat structure.
 
-            % Clear existing matrix
-            obj.mat(idx).matrix = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+            % Create the Matrix object
+            obj.mat(idx).matrix = mFEM.Matrix(obj.mesh);
           
             % Case when the vector is only applied to a side
             if ~isempty(obj.mat(idx).boundary_id);
@@ -408,7 +408,7 @@ classdef System < mFEM.handle_hide
             end
             
             % Output the global vector
-            K = obj.mat(idx).matrix;
+            K = obj.mat(idx).matrix.init();
         end   
         
         function assemble_matrix_side(obj, idx)
@@ -427,8 +427,8 @@ classdef System < mFEM.handle_hide
             % Extract the boundary ids
             id = obj.mat(idx).boundary_id;
             
-            % Create a Matrix object
-            matrix = mFEM.Matrix(obj.mesh);
+            % Get a reference to current Matrix object
+            matrix = obj.mat(idx).matrix;
             
             % Loop through each element
             for e = 1:obj.mesh.n_elements;
@@ -479,11 +479,10 @@ classdef System < mFEM.handle_hide
                 % Add the local force vector to the global vector
                 dof = elem.get_dof();    
                 matrix.add_matrix(Ke, dof, dof);
-                %obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
             end
             
-            % Build the sparse matrix
-            obj.mat(idx).matrix = matrix.init();
+            % Store the Matrix class
+            obj.mat(idx).matrix = matrix;
         end
         
         function assemble_matrix_elem(obj, idx)
@@ -500,8 +499,8 @@ classdef System < mFEM.handle_hide
             % Create function from the function string
             fcn = str2func(obj.mat(idx).func);
 
-            % Create a Matrix object
-            matrix = mFEM.Matrix(obj.mesh.n_dof, obj.mesh.n_dof);
+            % Get a reference to current Matrix object
+            matrix = obj.mat(idx).matrix;
 
             % Loop through all of the elements
             for e = 1:obj.mesh.n_elements;
@@ -513,7 +512,7 @@ classdef System < mFEM.handle_hide
                 Ke = zeros(elem.n_dof);
 
                 % Get the quadrature rules for this element
-                [qp, W] = elem.quad.rules('cell');
+                [qp, W] = elem.quad.rules('-cell');
 
                 % Loop through all of the quadrature points and add the
                 % result to the local matrix
@@ -526,11 +525,10 @@ classdef System < mFEM.handle_hide
 
                 % Add the contribution to the global matrix
                 matrix.add_matrix(Ke, dof);
-                %obj.mat(idx).matrix(dof,dof) = obj.mat(idx).matrix(dof,dof) + Ke;
             end
 
-            % Build the sparse matrix
-            obj.mat(idx).matrix = matrix.init();
+            % Store the Matrix object
+            obj.mat(idx).matrix = matrix;
         end
         
         function f = assemble_vector(obj, idx)
@@ -604,7 +602,7 @@ classdef System < mFEM.handle_hide
 
                             % Side elements that are not points    
                             else
-                                [qp,W] = side.quad.rules('cell');
+                                [qp,W] = side.quad.rules('-cell');
 
                                 % Local dofs for the current side
                                 dof = elem.get_dof('Side',s,'-local');
@@ -651,7 +649,7 @@ classdef System < mFEM.handle_hide
                 fe = zeros(elem.n_dof,1);
 
                 % Get the quadrature points in cell form
-                [qp, W] = elem.quad.rules('cell');
+                [qp, W] = elem.quad.rules('-cell');
 
                 % Loop through all of the quadrature points
                 for j = 1:size(qp,1);

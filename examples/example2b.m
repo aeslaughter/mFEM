@@ -1,10 +1,10 @@
 % Example 8.1 of Fish & Belytschko (2007).
 %
-% Syntax:
-%   example2
+% Syntax
+%   example2b
 %
-% Description:
-%   example2 solves a simple two element heat conduction problem.
+% Description
+%   example2b solves a simple two element heat conduction problem.
 function example2b
    
 % Import the mFEM library
@@ -19,7 +19,7 @@ mesh.init();
 % Label the boundaries
 mesh.add_boundary(1, 'top');     % q = 20 boundary
 mesh.add_boundary(2, 'right');   % q = 0 boundary
-mesh.add_boundary(3);       % essential boundaries (all others)
+mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create the System
 sys = System(mesh);
@@ -31,7 +31,7 @@ sys.add_vector('f_s', 'N''*b');
 sys.add_vector('f_q', 'N''*-q_top',1);
 
 % Assemble
-K = sys.assemble('K');
+K = sys.assemble('K'); full(K)
 f = sys.assemble('f_s') + sys.assemble('f_q');
 
 % Define dof indices for the essential dofs and non-essential dofs

@@ -22,10 +22,10 @@ mesh.add_boundary(3);            % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2,'quad');
+q_elem = Gauss('order',2,'type','quad');
 [qp, W] = q_elem.rules();
 
-q_face = Gauss(1,'line');
+q_face = Gauss('order',1,'type','line');
 [qp_side, W_side] = q_face.rules();
 
 % Definethe constants for the problem

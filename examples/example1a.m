@@ -32,7 +32,7 @@ mesh.add_boundary(1,'left');    % T = 0 boundary (essential)
 mesh.add_boundary(2,'right');   % q = 20 boundary   
 
 % Create Gauss objects for performing integration on the element
-q_elem = Gauss(1);
+q_elem = Gauss('Order',1);
 [qp, W] = q_elem.rules();
 
 % Definethe constants for the problem
@@ -100,8 +100,7 @@ end
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.get_dof('Boundary', 1);  % 1
 non = ~ess;                         % 2,3
-ess
-non
+
 % Solve for the temperatures
 T = zeros(size(f));         % initialize the temperature vector
 T(ess) = T_bar;             % apply essential boundary condtions

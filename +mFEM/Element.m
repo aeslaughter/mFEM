@@ -53,7 +53,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     end
     
     % Protected properties
-     properties (Hidden = true, Access = {?mFEM.FEmesh, ?mFEM.Element}, Access = protected ) 
+     properties (Hidden = true, Access = {?mFEM.FEmesh, ?mFEM.Element}) 
          neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
          global_dof = []; % Global dof for nodes of element
                           % (these are not the true dofs (except in scalar 
@@ -75,7 +75,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Syntax
             %   Element(id, nodes)
-            %   Element(id, nodes, n_dof_node)
+            %   Element(id, nodes, 'PropertyName', PropertyValue, ...)
             %
             % Description
             %   Element(id, nodes) creates an element given, where id is a
@@ -83,9 +83,9 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   a matrix of node coordinates (global) that should be 
             %   arranged as column matrix (no. nodes x no. dims).
             %
-            %   Element(id, nodes, space) allows the user to customize the 
-            %   behavior of the element, the available properties are 
-            %   listed below.
+            %   Element(id, nodes, 'PropertyName', PropertyValue, ...) 
+            %   allows the user to customize the behavior of the element, 
+            %   the available properties are listed below.
             %
             % Element Property Descriptions
             %   space

@@ -1,5 +1,5 @@
 classdef Gauss
-    % A class for Gauss quadrature points and weight functions.
+    %GAUSS A class for Gauss quadrature points and weight functions.
     % Includes rectanglar and triangular quadrature rules and weight
     % functions for use in finite element calculations. An instance of this
     % class should be attached to each Element that provides the correct
@@ -105,18 +105,17 @@ classdef Gauss
             %           [qp,w] = rules('-cell') or
             %           [qp,w] = rules('cell',true)
             
-            build_cell = false;
-            if nargin >= 2 && strcmpi(varargin{1},'cell');
-                build_cell = varargin{1};
-            end
+            % Gather the options
+            options.cell = false;
+            options = gather_user_options(options, varargin{:});
 
-
-            switch lower(obj.type)
+            % Call the appropriate methods to build the quadrature rules
+            switch lower(obj.opt.type)
                 case {'line','quad','hex'};
-                     [qp, w] = obj.rect_rules(obj.order);
+                     [qp, w] = obj.rect_rules(obj.opt.order);
                     
                 case 'tri';
-                     [qp, w] = obj.tri_rules(obj.order);
+                     [qp, w] = obj.tri_rules(obj.opt.order);
                      
                 case 'tet';
                     error('Not yet supported');
@@ -125,15 +124,10 @@ classdef Gauss
                     error('Gauss:rules', 'The %s type of quadrature is not supported.', obj.type);
             end
             
-            
-            if build_cell;
+            % Create the cell style output
+            if options.cell;
                 [qp, w] = obj.cell_rules(qp,w);
             end
-            
-            
-            
-            
-            
         end
     end
     
@@ -249,12 +243,7 @@ classdef Gauss
             %   [qp,w] = cell_rules(qp,w) converts the numeric arrays for
             %   qp and w to a consistent cell based format, see the help
             %   for the rules method for details.
-            
-            % These types only require conversion to a cell array
-            if any(strcmpi(obj.type,{'line','tet','tri'}));
-            	qp = num2cell(qp);
-            
-            % The 'quad' and 'hex' must be repeated to build a complete set
+            %
             % Example:
             % Given the following 2 point quadrature rules:
             %   qp = [a,b] w = [w1,w2]
@@ -267,6 +256,12 @@ classdef Gauss
             %   qp = {a,a,a; a,a,b; a,b,b; a,b,a; b,a,a,...}
             %   w  = {w1*w1*w1, w1*w1*w2, ...}
             %
+            
+            % These types only require conversion to a cell array
+            if any(strcmpi(obj.opt.type,{'line','tet','tri'}));
+            	qp = num2cell(qp);
+            
+            % The 'quad' and 'hex' must be repeated to build a complete set
             else
                 % Creates the 2D 
                 idx = 1:length(qp);
@@ -274,15 +269,21 @@ classdef Gauss
                 out{2} = sort(repmat(idx', length(idx), 1),1);
 
                 % Build the 3D from the 2D
-                if strcmpi('hex',obj.type);
+                if strcmpi('hex',obj.opt.type);
                    out{1} =  repmat(out{1}, n_dim, 1);
                    out{3} =  sort(repmat(out{2}, n_dim, 1),1); 
                    out{2} =  repmat(out{2}, n_dim, 1); 
                 end 
 
                 % Convert matrices to a cell array
-                idx = cell2mat(out);                
+                idx = cell2mat(out);             
                 qp = num2cell(qp(idx));
+
+                % Make sure that qp and w are a column vectors
+                if size(idx,1) == 1;
+                    idx = idx';
+                    qp = qp';
+                end
                 
                 % Compute the product weights
                 w = prod(w(idx),2);

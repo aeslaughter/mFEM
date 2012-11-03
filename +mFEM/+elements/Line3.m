@@ -8,8 +8,9 @@ classdef Line3 < mFEM.Element
     properties (SetAccess = protected, GetAccess = public)    
         n_sides = 2;                    % no. "sides" (points in 1D)
         side_dof = [1; 2];              % local dofs of the "sides"
-        side_type = 'Point';            % Sides are points
-        quad = mFEM.Gauss(2,'line');    % Instance of Gauss quadrature class
+        side_type = 'Point';            % sides are points
+        quad = ...                      % instance of Gauss quadrature class
+            mFEM.Gauss('Order', 2, 'Type', 'line');
     end
     
     methods     

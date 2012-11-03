@@ -15,7 +15,8 @@ classdef Quad4 < mFEM.Element
         n_sides = 4;                        % no. of sides
         side_dof = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
         side_type = 'Truss2';               % side is 2-node truss element
-        quad = mFEM.Gauss(2, 'quad');       % quadrature rules
+        quad = ...                          % quadrature rules
+            mFEM.Gauss('order', 2, 'type', 'quad');       
      end
     
     % Define the Quad4 constructor

@@ -14,9 +14,9 @@ mesh.add_boundary(1, 'left');    % essential boundaries
 mesh.add_boundary(2, 'top');     % distributed load (t = -20)
 
 % Create Gauss objects for performing integration on the element and sides
-q_elem = Gauss(2);
+q_elem = Gauss('order',2,'type','quad');
 [qp, W] = q_elem.rules();
-q_face = Gauss(1);
+q_face = Gauss('order',1,'type','line');
 [qp_side, W_side] = q_face.rules();
 
 % Definethe constants for the problem

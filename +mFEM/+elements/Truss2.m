@@ -10,7 +10,8 @@ classdef Truss2 < mFEM.Element
         n_sides = 2;                 % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];           % local dofs of the "sides"
         side_type = 'Point';         % 1D elements do not have side elements
-        quad = mFEM.Gauss(1,'line'); % 1-point line quadrature
+        quad = ...                  % 1-point line quadrature
+            mFEM.Gauss('order',1,'type','line');
     end
     
     % Define the Linear2 constructor

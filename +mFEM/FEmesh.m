@@ -1,5 +1,5 @@
 classdef FEmesh < mFEM.handle_hide
-    % Class for managing and generating FEM spaces.
+    %FEMESH Class for managing and generating FEM spaces.
     % This class handles all mesh and degree-of-freedom operations for
     % implementing the finite element method.
     %
@@ -24,7 +24,7 @@ classdef FEmesh < mFEM.handle_hide
             struct('space', 'scalar', 'type', 'CG', 'time', true);
     end
     
-    properties (SetAccess = private, GetAccess = {?mFEM.System})
+    properties (SetAccess = private, GetAccess = ?mFEM.System)
         local_n_dim = uint32([]);   % local dimensions of elements (see BUILD_SIDE)
     end
     

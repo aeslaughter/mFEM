@@ -48,12 +48,13 @@ sys.add_matrix('K', 'B''*k*A*B');
 sys.add_vector('f_s', 'N''*b');
 sys.add_vector('f_q', '-q_bar*A*N''', 2);
 
+% Assemble the stiffness matrix and force vector
 K = sys.assemble('K');
 f = sys.assemble('f_s') + sys.assemble('f_q');
 
 % Solve for the Temp. on non-essential boundaries
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('boundary',1); 
+ess = mesh.get_dof('boundary',1);
 
 % Solve for the temperatures
 T = zeros(size(f));             % initialize the temperature vector

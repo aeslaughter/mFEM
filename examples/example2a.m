@@ -23,10 +23,10 @@ mesh.add_boundary(3);       % essential boundaries (all others)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(3,'tri');
+q_elem = Gauss('Order',3,'Type','tri');
 [qp, W] = q_elem.rules();
 
-q_face = Gauss(1);
+q_face = Gauss('Order', 1, 'Type', 'line');
 [qp_side, W_side] = q_face.rules();
 
 % Definethe constants for the problem
@@ -56,8 +56,8 @@ for e = 1:mesh.n_elements;
     Ke = zeros(elem.n_dof);
     fe = zeros(elem.n_dof,1);
     
-    % Loop over the quadrature points in the two dimensions to perform the
-    % numeric integration
+    % Loop over the quadrature points to perform the numeric integration
+    qp
     for i = 1:size(qp,1);
         fe = fe + W(i)*b*N(qp(i,1),qp(i,2))'*elem.detJ();
         Ke = Ke + W(i)*B()'*D*B()*elem.detJ();

@@ -18,7 +18,8 @@ classdef Tri3 < mFEM.Element
         lims = [0,1; 0,1];          % limits of xi1 and xi2        
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
         side_type = 'Truss2';       % 2-node Truss element for side
-        quad = mFEM.Gauss(3,'tri'); % 3-point triangular quadrature
+        quad = ...                  % 3-point triangular quadrature 
+            mFEM.Gauss('order',3,'type','tri'); 
     end
     
     % Define the Quad4 constructor
