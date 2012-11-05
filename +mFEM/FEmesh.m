@@ -60,7 +60,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.opt = gather_user_options(obj.opt, varargin{:});
                      
             % Initialize the element property (the type does not matter)
-            obj.element = mFEM.elements.Quad4.empty;
+            obj.element = mFEM.elements.Line2.empty;
         end
         
         function grid(obj, type, varargin)

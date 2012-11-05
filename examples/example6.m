@@ -12,7 +12,7 @@ import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Space','vector');
-mesh.grid('Quad4', 0, pi/2, a, b, 30, 20,'-pol2cart'); % x = theta; y = r
+mesh.grid('Tri6', 0, pi/2, a, b, 30, 20,'-pol2cart'); % x = theta; y = r
 mesh.init();
 
 % Label the boundaries

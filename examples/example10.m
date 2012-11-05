@@ -1,4 +1,4 @@
-function example8
+function example10
     clear;
     import mFEM.*
 
@@ -10,7 +10,7 @@ function example8
         mesh = FEmesh('Type','DG');
         mesh.grid('Quad4',0,1,0,1,1,1);
         mesh.init();
-        save('example8.mat','mesh');
+%         save('example8.mat','mesh');
 %    end
 
 
@@ -149,7 +149,7 @@ end
 
 function M = mass_matrix(mesh)
 import mFEM.*
-q_elem = Gauss(2,'Quad');
+q_elem = Gauss('Order', 2,'Type','quad');
 [qp, W] = q_elem.rules();
 
 M = Matrix(mesh.n_dof);

@@ -1,9 +1,9 @@
-%BUILD A tool for building the homework problems
+%BUILDHW A tool for building the homework problems
 %
-% Syntax:
+% Syntax
 %   buildHW(num)
 %
-% Description:
+% Description
 
 function buildHW(num)
 
@@ -11,11 +11,14 @@ function buildHW(num)
 name = run_latex(num);
 
 % Define files in the +mFEM directory that are typically included
-files.mFEM = {'Element.m','Line2.m','FEmesh.m','System.m','Gauss.m'};
+files.mFEM = {'Element.m','FEmesh.m','System.m','Gauss.m','Matrix.m','handle_hide.m'};
 
-% Files in this list are added to the release/+mFEM directory (location
-% should be the current assignment directory, e.g. assignment/HW2)
-files.to_mFEM = {};
+% Define the elements to include
+files.elem = {'Point.m','Line2.m'};
+
+% Files in this list are added to the release/+mFEM/+elements directory 
+% (location should be current assignment directory, e.g. assignment/HW2)
+files.to_elements = {};
 
 % Files in this list are added to the release/ directory (location
 % should be the current assignment directory, e.g. assignment/HW2)
@@ -25,7 +28,7 @@ files.other = {};
 % relative to the current directory; the files will be added in a relative 
 % path)
 files.build = {'tutorial.m','install.m', 'info.xml',...
-    ['doc',filesep,'html',filesep,'helptoc.xml']};
+    ['doc',filesep,'html',filesep,'helptoc.xml'],['doc',filesep,'main_page.m']};
 
 % Edit/append the lists of files to copy to the release directory, 
 switch num;
@@ -34,7 +37,7 @@ switch num;
         files.build = {};
 
     case 2;
-        files.to_mFEM = {'Line3.m'};
+        files.to_elements = {'Line3.m'};
 end
    
 % Copy files to release directory
@@ -44,7 +47,7 @@ copy_to_release(name, files);
 loc = ['assignments',filesep,name,filesep,'release'];
 if exist(loc,'dir');
     cd(loc);
-    zip(['..',filesep,'..',filesep,name],{'*.*',['+mFEM',filesep,'*.*']});
+    zip(['..',filesep,'..',filesep,name],{'*.*',['+mFEM',filesep,'*.*'],['+mFEM',filesep,'+elements',filesep,'*.*']});
     cd(['..',filesep,'..',filesep,'..']);
 end
 
@@ -101,7 +104,8 @@ copyfile([hw,'.pdf'], release);
 copyfile([soln,'.pdf'], soln_loc);
 
 % Clean up the files
-delete('*.aux','*.log','*.out','*.pdf');
+pause(1);
+delete('*.aux','*.log','*.out','*.pdf','*.synctex');
 
 % Return to the original directory
 cd(['..',filesep,'..']);
@@ -121,12 +125,20 @@ for i = 1:length(files.mFEM);
     copyfile(in, [out, files.mFEM{i}],'f');
 end
 
-% Additions to the +mFEM package
-for i = 1:length(files.to_mFEM);
-    in = [assign, files.to_mFEM{i}];
-    out = [release, '+mFEM', filesep];
+% The elements
+for i = 1:length(files.elem);
+    in = ['+mFEM', filesep,'+elements',filesep, files.elem{i}];
+    out = [release, '+mFEM', filesep,'+elements',filesep];
     if ~exist(out,'dir'); mkdir(out); end
-    [~,fname,ext] = fileparts(files.to_mFEM{i});
+    copyfile(in, [out, files.elem{i}],'f');
+end
+
+% Additions to the +mFEM package
+for i = 1:length(files.to_elements);
+    in = [assign, files.to_elements{i}];
+    out = [release, '+mFEM', filesep,'+elements',filesep];
+    if ~exist(out,'dir'); mkdir(out); end
+    [~,fname,ext] = fileparts(files.to_elements{i});
     copyfile(in, [out,fname,ext],'f');
 end
 
@@ -144,4 +156,13 @@ for i = 1:length(files.build);
     out = [release, p];
     if ~exist(out,'dir'); mkdir(out); end
     copyfile(in, [out,filesep,f,e], 'f');  
+end
+
+% Copy the bin
+in = ['bin',filesep];
+out = [release,'bin',filesep];
+f = dir([in,'*.m']);
+mkdir(out);
+for i = 1:length(f);
+    copyfile([in,f(i).name], out);
 end

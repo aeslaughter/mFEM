@@ -1,8 +1,9 @@
 %INSTALL Sets up the documentation for the mFEM library.
 
-% Add the necessary paths
+% Add the necessary paths and save 
 addpath(cd);
-savepath; % saves for later recall
+addpath('bin');
+savepath; 
 
 % Set the pusblishing options
 opt.format = 'html';

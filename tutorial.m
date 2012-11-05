@@ -53,11 +53,11 @@ mesh.init();
 % method implemented without a keyword applies the id to any unmarked
 % boundary, which for this case is only the right hand side.
 %
-%   mesh.add_boundary('left', 1);
+%   mesh.add_boundary(1,'left');
 %   mesh.add_boundary(2);
 %
-mesh.add_boundary('left', 1);   % T = 0 boundary (essential)    
-mesh.add_boundary('right', 2);  % q = 5 boundary  
+mesh.add_boundary(1, 'left');   % T = 0 boundary (essential)    
+mesh.add_boundary(2, 'right');  % q = 5 boundary  
 
 %% Define Finite Element Equations
 % The finite element matrix and vector creation as well as their assembly
@@ -136,11 +136,12 @@ f = sys.assemble('f_s') + sys.assemble('f_q');
 % The solution is done manually, the first step is to extract the
 % degree of freedom indices for the essential and non-essential boundaries.
 % The FEmesh class |get_dof| method provides this functionality. First, the
-% non-essential boundaries are extracted, where the 'ne' flag indicates not
-% equal, so in this case the |get_dof| method returns the global degrees of
-% freedom not associated with boundary id 1. 
-non = mesh.get_dof(1,'ne'); % 2,3
-ess = mesh.get_dof(1);      % 1
+% essential boundaries are extracted, which returns a logical vector
+% containing 1's marking the essential degrees of freedom for boundary id 
+% 1. The non-essential degrees of freedom is simply the opposite, which can 
+% be constructed using the MATLAB ~ operator.
+ess = mesh.get_dof('Boundary',1);       % 1
+non = ~ess;                             % 2,3
 
 %%
 % Solve for the temperatures first by initializing the solution vector and
@@ -162,7 +163,7 @@ T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 % To create a plot of the results simply call the |plot| method with the
 % temperature data as an input. The |plot| method is simply a wrapper to
 % the |FEplot| function, see |doc FEplot| for details on this program.
-mesh.plot(T);
+mesh.plot(T,'-ShowNodes');
 
 %%
 % The exact solution for this problem is known, this can easily be added to
@@ -171,7 +172,7 @@ mesh.plot(T);
 x = 0:0.1:4;
 Tex = -12.5*x.^2 + 97.5*x;
 hold on;
-plot(x,Tex,'k-o','LineWidth',1);
+plot(x,Tex,'k-','LineWidth',1);
 legend({'FEM','Exact'},'location','best');
 xlabel('x (m)','interpreter','tex');
 ylabel('Temperature (\circC)','interpreter','tex');

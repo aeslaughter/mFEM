@@ -10,8 +10,8 @@ mesh.grid(type,0,4,nel);
 mesh.init();
 
 %Add boundary identification
-mesh.add_boundary('left', 1);   % convective boundary
-mesh.add_boundary('right', 2);  % q = 5 boundary  
+mesh.add_boundary(1, 'left');   % convective boundary
+mesh.add_boundary(2, 'right');  % q = 5 boundary  
 
 % Define system
 sys = System(mesh);
@@ -35,7 +35,6 @@ mesh.plot(T,'AxesHandle',h,'ShowNodes','on'); hold on;
 xlabel('x (m)','interpreter','tex');
 ylabel('Temperature (\circC)','interpreter','tex');
 
-% Compute the temperature gradients for the elements
 % Compute the temperature gradients for the elements
 k = 1;
 for e = 1:mesh.n_elements; % loop through the elements

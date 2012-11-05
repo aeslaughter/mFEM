@@ -10,8 +10,8 @@ mesh.grid('Line2',0,4,2);
 mesh.init();
 
 %Add boundary identification
-mesh.add_boundary('left', 1);   % convective boundary
-mesh.add_boundary('right', 2);  % q = 5 boundary  
+mesh.add_boundary(1, 'left');   % convective boundary
+mesh.add_boundary(2, 'right');  % q = 5 boundary  
 
 % Define system
 sys = System(mesh);

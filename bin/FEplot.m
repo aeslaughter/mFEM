@@ -217,6 +217,9 @@ function h = plot1D_scalar(obj, opt)
             y = zeros(size(x));
         end
         
+        % Make sure y is a column vector
+        if ~iscolumn(y); y = y'; end
+        
         % Get the plotting order
         order = elem.node_plot_order;
         if ~isempty(order);
@@ -383,11 +386,6 @@ function add_element_labels(obj, opt)
         elem = obj.element(e);
         nodes = elem.nodes;
 
-        % Adjust for polar coordinates
-        if opt.polar;
-            [nodes(:,1),nodes(:,2)] = pol2cart(nodes(:,1),nodes(:,2));
-        end
-        
         % Determine the center position
         cntr = num2cell(mean(nodes,1));
 
@@ -414,11 +412,6 @@ function add_node_labels(obj, opt)
 
             % Extract the unique nodes
             nodes = unique(obj.map.node,'rows','stable');
-            
-            % Adjust for polar coordinates
-            if opt.polar;
-                [nodes(:,1),nodes(:,2)] = pol2cart(nodes(:,1),nodes(:,2));
-            end
             
             % Adjust for the 1D case
             if obj.n_dim == 1;

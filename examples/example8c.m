@@ -6,7 +6,7 @@
 % Description:
 %   example5 solves a simple transient heat conduction problem, using a
 %   mixed finite element mesh.
-function example5c
+function example8c
 
 warning('This function is not working correctly!');
 
@@ -50,7 +50,7 @@ K = sys.assemble('K'); + sys.assemble('K_h');
 f = sys.assemble('f');
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',3); % 3,4
+ess = mesh.get_dof('Boundary',3);
 non = ~ess;
 
 % Solve for the temperatures
@@ -58,7 +58,7 @@ T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector
 T(ess,1) = sys.get('T_s');               % apply essential boundaries
 
 % Create the plot, at the intitial time step
-mesh.plot(T);
+mesh.plot(T,'-new');
 title('t = 0');
 xlabel('x');
 ylabel('y');
@@ -67,16 +67,18 @@ set(get(cbar,'YLabel'),'String','Temperature');
 
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries
-R(:,1) = f(non) - K(non,ess)*T(ess,1);
+% R(:,1) = f(non) - K(non,ess)*T(ess,1);
 
 % Use a general time integration scheme
-dt = 30;
+dt = 10;
 theta = 0.5;
 K_hat = M(non,non) + theta*dt*K(non,non);
 f_K   = M(non,non) - (1-theta)*dt*K(non,non);
 
 % Perform 10 time-steps
-for t = 1:10;
+for t = 1:300/dt;
+    
+    R(:,1) = f(non) - K(non,ess)*T(ess,t);
 
     % Compute the force componenet using previous time step T
     f_hat = dt*R + f_K*T(non,t);

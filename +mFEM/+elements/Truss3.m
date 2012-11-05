@@ -1,8 +1,8 @@
-classdef Truss2 < mFEM.Element
-    % A 2-node 1D linear element, but located in 2D space
+classdef Truss3 < mFEM.Element
+    % A 3-node 1D quadratic element, located in 2D space
     %
-    %      (-1)   (1)   (1)
-    %         1---------2
+    %      (-1)         (1)
+    %         1----3----2
     %
 
     % Define the inherited abstract properties
@@ -43,22 +43,23 @@ classdef Truss2 < mFEM.Element
     methods (Access = protected)      
         function N = basis(~, xi)
             % Returns a row vector of local shape functions
-            N(1) = 1/2*(1 - xi);
-            N(2) = 1/2*(1 + xi);
+            N(1) = 1/2*xi*(xi-1);
+            N(3) = 1-xi^2;
+            N(2) = 1/2*xi*(1 + xi);
         end
 
-        function B = grad_basis(obj, varargin) 
+        function B = grad_basis(obj, xi) 
             % Gradient of shape functions
-            B = inv(obj.jacobian()) * obj.local_grad_basis;
+            B = inv(obj.jacobian(xi)) * obj.local_grad_basis(xi);
         end
              
-        function J = jacobian(obj, varargin)
+        function J = jacobian(obj, xi)
             % Returns the jacobian matrix (1/2 the length)
-            J = 1/2 * obj.size();               
+            J = obj.local_grad_basis(xi)*obj.nodes;     
         end
         
-        function G = local_grad_basis(obj, varargin)
-            G = [-1/2, 1/2];
+        function G = local_grad_basis(~, xi)
+            G = [xi-1/2, xi+1/2, -2*xi];
         end
     end
 end
