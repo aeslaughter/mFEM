@@ -26,6 +26,14 @@
 %       true | {false}
 %       Toggles the use to treat the input data as deformation
 %
+%  Scale
+%       {'auto'} | numeric
+%       Set the deformation scale factor, which is only appliciable if the
+%       deformation property is used. My default a factor is automatically
+%       computed based on the order of the data. It may be changed by
+%       specifing a value (e.g., FEplot(obj,'Scale',100)). To see the
+%       actual displacement set the value to 1.
+%
 %  Component
 %       interger
 %       Gives the vector component to plot as the countour variable, for
@@ -42,7 +50,7 @@
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the appearence of element number labels.
 %       
-%   NodeLabels
+%  NodeLabels
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the appearence of node number labels.
 %
@@ -131,7 +139,6 @@ function opt = parse_input(obj, varargin)
     opt.deform = false;
     opt.scale = 'auto';
     opt.component = [];
-    opt.polar = false;
     opt.colorbar = '';
     opt.shownodes = false;
     opt.elementlabels = true;
@@ -161,17 +168,17 @@ function opt = parse_input(obj, varargin)
     if ~isempty(opt.data);
         opt.elementlabels = false;
         opt.nodelabels = false;
-        opt.newfigure = false;
+        opt.new = false;
     end
     
     % Collect options supplied by the user
     opt = gather_user_options(opt, varargin{start_idx:end}); 
 
     % Set/Create the figure handle
-    if opt.newfigure;
-        figure('color','w'); hold on;   
+    if opt.new;
+        figure(); hold on;   
     elseif ishandle(opt.figure)
-        figure(opt.figure,'color','w'); hold on;
+        figure(opt.figure); hold on;
     end
     
     % Set the axes handle
@@ -179,11 +186,10 @@ function opt = parse_input(obj, varargin)
         axes(opt.axes);
     end
     
-    % Determine the scale factor
+    % Case when automatic scale factor for deformation is desired
     if ~isempty(opt.data) && opt.deform && strcmpi(opt.scale,'auto');
-        % Determine the scaling
         n = max(max(floor(log10(abs(opt.data)))));
-        opt.scale = 10^(-sign(n)*(abs(n)-1));   
+        opt.scale = 10^(-sign(n)*(abs(n)-1));  
     end
 end
 
@@ -286,11 +292,6 @@ function h = plot2D_vector(obj, opt)
         x = elem.nodes(:,1);
         y = elem.nodes(:,2);
         
-        % Adjust for polar coordinates
-        if opt.polar;
-            [x,y] = pol2cart(x,y);
-        end
-
         % Gather y-axis data
         z = [];
         if ~isempty(opt.data)
@@ -311,16 +312,9 @@ function h = plot2D_vector(obj, opt)
             
              % Adjust nodal position if deformed shape is desired
             if opt.deform
-                zx = zz(:,1); zy = zz(:,2);
-                
-                % Adjust for polar cordinates on z
-                if opt.polar;
-                    [zx, zy] = pol2cart(zx,zy);
-                end
-                
                 % Adjust the nodal values
-                x = x + opt.scale*zx;
-                y = y + opt.scale*zy;
+                x = x + opt.scale*zz(:,1);
+                y = y + opt.scale*zz(:,2);
             end
         end
 
@@ -340,11 +334,12 @@ function h = plot2D_vector(obj, opt)
         else
             h(e) = patch(x, y, z);
         end
-        
-        if ~isempty(opt.colorbar) && ischar(opt.colorbar);
-            cbar = colorbar;
-            set(get(cbar,'YLabel'),'String',opt.colorbar);
-        end
+    end
+    
+    % Create the colorbar        
+    if ~isempty(opt.colorbar) && ischar(opt.colorbar);
+        cbar = colorbar;
+        set(get(cbar,'YLabel'),'String',opt.colorbar);
     end
 end
 

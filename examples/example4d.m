@@ -1,8 +1,6 @@
 % MAE4700/5700 HW8, Prob. 3
 function example4d
 
-warning('This function is not working correctly!');
-
 % Set known values
 a = 5;
 b = 10;
@@ -14,13 +12,13 @@ import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Space','vector');
-mesh.grid('Quad4', 0, pi/2, a, b, 10, 5); % x = theta; y = r
+mesh.grid('Quad4', 0, pi/2, a, b, 30, 20,'-pol2cart'); % x = theta; y = r
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'left'); 
-mesh.add_boundary(2, 'right');
-% mesh.add_boundary({'x==pi/2','y==a'},2);
+mesh.add_boundary(1, 'bottom');                     % y = 0 boundary (traction)
+mesh.add_boundary(2, 'x < 0.001');                  % x = 0 boundary (rollers)
+mesh.add_boundary(3,{'x < 0.001', ['y==',num2str(a)]});  % x = 0 and y = a (pin)
 
 % Create system and add matrix components
 sys = System(mesh);
@@ -31,41 +29,25 @@ sys.add_matrix('K', 'B''*D*B');
 % Assemble the matrix and vector
 K = sys.assemble('K');
 
-% Define dof indices for the essential dofs 
-% (fixed displacement in theta direction)
-ess(:,1) = mesh.get_dof('Boundary', 1, 'Component', 'x');
-
-% Locate theta = pi/2 and r = a location (this will be automatic)
-idx = mesh.map.node(:,1) == pi/2 & mesh.map.node(:,2) == a;
-dof = mesh.map.dof(idx);
-dof = transform_dof(dof, mesh.n_dof_node);
-ess(dof,1) = true;
-
-% Define dofs indices for u_0 (displacement in r-direction)
-ess(:,2) = mesh.get_dof('Boundary', 2, 'Component', 'y');
+% Define dofs indices
+ess(:,1) = mesh.get_dof('Boundary', 1, 'Component', 'x'); % traction
+ess(:,2) = mesh.get_dof('Boundary', 2, 'Component', 'x'); % rollers
+ess(:,3) = mesh.get_dof('Boundary', 3);                   % pin
 
 % Define known displacements
 u = zeros(mesh.n_dof,1);         % initialize the displacement vector
-u(ess(:,1)) = 0;                 % fixed displacements
-u(ess(:,2)) = u0;                % traction displacements
+u(ess(:,1)) = u0;                % traction displacements
+u(ess(:,2)) = 0;                 % zero displacements at rollers
+u(ess(:,3)) = 0;                 % zero displacement at pin
 
 % Combine essential boundaries for solution
 ess = any(ess,2);
 
 % Solve for the unknown displacements
+ticID = tmessage('Solution step...');
 u(~ess) = K(~ess,~ess)\(-K(ess,~ess)'*u(ess));
-% u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
+tmessage(ticID);
 
-% Display the results
-mesh.plot(u,'polar',true,'component',2);
-
-% Display the displacement results
-% subplot(2,1,1);
-% mesh.plot(u,'component',1,'colorbar','theta-displacement');
-% xlabel('theta'); ylabel('r');
-% 
-% subplot(2,1,2);
-% mesh.plot(u,'component',2,'colorbar','r-displacement');
-% xlabel('theta'); ylabel('r');
-
-
+% Display the result
+mesh.plot(u,'-new','component',1,'-deform','scale',100,'colorbar','u_x-displacement');
+mesh.plot(u,'-new','component',2,'-deform','scale',100,'colorbar','u_y-displacement');

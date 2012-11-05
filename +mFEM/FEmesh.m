@@ -70,6 +70,7 @@ classdef FEmesh < mFEM.handle_hide
             %   grid(type, x0, x1, xn)
             %   grid(type, x0, x1, y0, y1, xn, yn)
             %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %   grid(..., 'PropertyName', PropertyValue,...)
             %
             % Description
             %   grid(...) creates a grid across the prescribed limits with
@@ -82,6 +83,14 @@ classdef FEmesh < mFEM.handle_hide
             %   y0,y1 = Mesh limits in y-direction
             %   z0,z1 = Mesh limits in z-direction
             %   xn,yn,zn = Num. of elements in x,y,z direction
+            %
+            % GRID Property Descriptions
+            %   pol2cart
+            %       true | {false}
+            %       Converts the inputted polar cordinates to cartesian
+            %       coordinates when creating the elements. Only available
+            %       for 2D and 3D grids. The flag style input may also be 
+            %       used (i.e., '-pol2car').
            
             % Display wait message
             if obj.opt.time;
@@ -597,7 +606,7 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
         
-        function gen2Dgrid(obj, type, x0, x1, y0, y1, xn, yn)
+        function gen2Dgrid(obj, type, x0, x1, y0, y1, xn, yn, varargin)
             %GEN2DGRID Generate the 2D mesh (see grid)
             %
             % Syntax
@@ -607,7 +616,18 @@ classdef FEmesh < mFEM.handle_hide
             %   gen2Dgrid(type, x0, x1, y0, y1, xn, yn) creates a 2D grid 
             %   ranging from x0 to x1 with xn number of elements in the
             %   x-direction, similarily in the y direction.
-
+            %
+            % GRID Property Descriptions
+            %   pol2cart
+            %       true | {false}
+            %       Converts the inputted polar cordinates to cartesian
+            %       coordinates when creating the elements. The flag style 
+            %       input may also be used (i.e., '-pol2car').
+            
+            % Collect user options
+            options.pol2cart = false;
+            options = gather_user_options(options,varargin{:});
+            
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
             y = y0 : (y1-y0)/yn : y1;
@@ -620,7 +640,13 @@ classdef FEmesh < mFEM.handle_hide
                     nodes(2,:) = [x(i+1), y(j)];
                     nodes(3,:) = [x(i+1), y(j+1)];
                     nodes(4,:) = [x(i), y(j+1)];
-                   
+                    
+                    % Adust for polar input
+                    if options.pol2cart;
+                        [nodes(:,1),nodes(:,2)] = ...
+                            pol2cart(nodes([1,4,3,2],1), nodes([1,4,3,2],2));
+                    end
+                    
                     % Add the element(s)
                     switch type;
                         case {'Quad4'};
