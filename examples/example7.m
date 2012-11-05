@@ -1,5 +1,5 @@
 % MAE4700/5700 HW8, Ex. Prob.
-function example4e
+function example7
 
 % Import the mFEM library
 import mFEM.*;

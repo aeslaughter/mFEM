@@ -1,5 +1,5 @@
 % MAE4700/5700 HW8, Prob. 3
-function example4d
+function example6
 
 % Set known values
 a = 5;

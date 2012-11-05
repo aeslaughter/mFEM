@@ -1,11 +1,11 @@
 % Example 8.1 from Bhatti, 2005 (p. 553)
 %
 % Syntax:
-%   example5
+%   example8
 %
 % Description:
-%   example5 solves a simple transient heat conduction problem.
-function example5b
+%   example8b solves a simple transient heat conduction problem.
+function example8b
    
 % Import the mFEM library
 import mFEM.*;
