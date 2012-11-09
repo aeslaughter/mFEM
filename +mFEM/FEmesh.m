@@ -21,7 +21,8 @@ classdef FEmesh < mFEM.handle_hide
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary', uint32([]));       
         opt = ...                   % struct of default user options
-            struct('space', 'scalar', 'type', 'CG', 'time', true);
+            struct('space', 'scalar', 'type', 'CG', 'time', true,...
+                'mixed', false);
     end
     
     properties (SetAccess = private, GetAccess = ?mFEM.System)
@@ -49,12 +50,22 @@ classdef FEmesh < mFEM.handle_hide
             %       {'CG'} | 'DG'
             %       Allows the type of element conectivity to be set
             %       as continous (CG) or discontinous (DG)
+            %
             %   Space
             %       {'scalar'} | 'vector' | numeric
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector sets it to the no. 
             %       of space dimension, and specifing a number sets it to 
             %       that value.
+            %
+            %   Mixed
+            %       true | {false}
+            %       Set this flag to true if the mesh contains mixed
+            %       elements, this changes how the quadrature rules are
+            %       applied. If true the quadrature rules are called from
+            %       every element when assembled using the System class,
+            %       which takes more time. The default uses the quadrature
+            %       rule from the first element for all the elements.
 
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
@@ -188,6 +199,9 @@ classdef FEmesh < mFEM.handle_hide
             % Compute the total number of dofs
             obj.n_dof = length(unique(obj.map.dof)) * obj.n_dof_node;
             
+            % Tag all boundaries as 0
+            obj.id_empty_boundary(0);          
+            
             % Locates the neighbor elements for each element
             obj.find_neighbors();
 
@@ -199,14 +213,14 @@ classdef FEmesh < mFEM.handle_hide
             %ADD_BOUNDARY Labels elements with numeric tags.
             %
             % Syntax
-            %   add_boundary(id)
             %   add_boundary(id,Limit1,...)
+            %   add_boundary(id)
             %
             % Description
             %   add_boundary(id) labels all unidentified elements and sides
             %       with the specified id, which must be an interger
-            %       value.
-            %
+            %       value greater than zero.
+            
             %   add_boundary(id, Limit1,...) allows 
             %       for customization to what boundaries are tagged, see 
             %       the descriptions below. It is possible to
@@ -242,9 +256,9 @@ classdef FEmesh < mFEM.handle_hide
             %       
 
             % Check that the id is a numeric value
-            if ~isnumeric(id);
+            if ~isnumeric(id) || id == 0;
                 error('FEmesh:add_boundary',...
-                    'The boundary id must be a number');
+                    'The boundary id must be a number greater than 0');
             end
             
             % Check if system is initialized
@@ -372,16 +386,20 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
                 
-        function out = get_nodes(obj,varargin)
+        function varargout = get_nodes(obj,varargin)
             %GET_NODES Returns spatial position of the nodes for the mesh
             %
             % Syntax
             %   x = get_nodes()
+            %   [x,y,z] = get_nodes()
             %   x = get_nodes(dim)
             %
             % Description
             %   x = get_nodes() returns the nodal coordinates for the
             %   entire mesh.
+            %
+            %   [x,y,z] = get_nodes() returns the nodal coordinates for
+            %   each spatial dimension as a seperate output.
             %
             %   x = get_nodes(dim) returns the nodeal coordinates for the
             %   specified dimension, it may be a string ('x','y', or 'z')
@@ -417,6 +435,14 @@ classdef FEmesh < mFEM.handle_hide
                 % Extract the component
                 out = out(:,c);
             end
+            
+            % Determine output format
+            if nargout == 1;
+                varargout{1} = out;
+            else
+                varargout = num2cell(out,1);
+            end
+            
         end
 
         function plot(obj, varargin)
@@ -503,9 +529,11 @@ classdef FEmesh < mFEM.handle_hide
 
             % Create a dof map for searching out neighbors
             [~, ~, CGdof] = unique(obj.map.node, 'rows','stable');
-                                    
+            
             % Loop through elements and store ids of neighboring elements
-            for e = 1:obj.n_elements;
+            parfor e = 1:obj.n_elements;
+                
+                % The current element
                 elem = obj.element(e);      % current element
 
                 % Define vectors of nodal values
@@ -565,11 +593,13 @@ classdef FEmesh < mFEM.handle_hide
 
                     % Store the values for the current element
                     elem.side(s_e).neighbor = neighbor;
-                    elem.side(s_e).neighbor_side = uint32(s_n);  
+                    elem.side(s_e).neighbor_side = uint32(s_n);
+                    elem.side(s_e).on_boundary = false;
 
                     % Store the values for the neighbor element
                     neighbor.side(s_n).neighbor = elem;
                     neighbor.side(s_n).neighbor_side = uint32(s_e);  
+                    neighbor.side(s_n).on_boundary = false;
 
                     % Store current element in vector for comparision 
                     neighbor.neighbors(end+1) = elem;
@@ -749,6 +779,9 @@ classdef FEmesh < mFEM.handle_hide
                 obj.boundary_id(end+1) = id;
             end
            
+            % Remove the new boundary from 0 id
+            obj.map.boundary(idx,1) = false;
+            
             % Locate the elements on the boundary
             E = unique(obj.map.elem(idx),'R2012a');
 
@@ -858,10 +891,11 @@ classdef FEmesh < mFEM.handle_hide
                         % If side is on the boundary and contains no
                         % boundary ids, assign the desired id
                         if (elem.side(s).on_boundary || isempty(elem.side(s).neighbor)) ...
-                                && isempty(elem.side(s).boundary_id);
+                                && (isempty(elem.side(s).boundary_id) || elem.side(s).boundary_id == 0);
                             
-                            % Be sure to tag side as boundary
+                            % Be sure to tag side and elemen as boundary
                             elem.side(s).on_boundary = true;
+                            elem.on_boundary = true;
                             
                             % Apply the id to the element side data
                             elem.side(s).boundary_id = id;
@@ -869,8 +903,13 @@ classdef FEmesh < mFEM.handle_hide
                             % Update the mesh boundary_id map
                             dof = elem.get_dof('Side', s); % global
                             for i = 1:length(dof);
-                                idx = obj.map.dof == dof(i);
-                                obj.map.boundary(idx, col) = id;
+                                idx = obj.map.dof == dof(i);  
+                                obj.map.boundary(idx, col) = true;
+                                
+                                % Remove from unmarked boundaries
+                                if col > 1
+                                    obj.map.boundary(idx,1) = false;
+                                end
                             end
                         end
                     end

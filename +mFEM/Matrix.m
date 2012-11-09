@@ -12,7 +12,7 @@ classdef Matrix < mFEM.handle_hide
     % without written permession.
     %----------------------------------------------------------------------
 
-    properties (Access = private)
+    properties (SetAccess = private, GetAccess = public)
       I;    % i vector (see doc sparse)
       J;    % j vector (see doc sparse)
       Aij;  % s vector (see doc sparse)
@@ -39,8 +39,17 @@ classdef Matrix < mFEM.handle_hide
 
            % Case when creating from an FEmesh object
            if nargin == 1 && isa(varargin{1},'mFEM.FEmesh');
-               obj.m = varargin{1}.n_dof;
+               mesh = varargin{1};
+               obj.m = mesh.n_dof;
                obj.n = obj.m;
+               
+%                N = 0;
+%                for e = 1:mesh.n_elements;
+%                    N = N + mesh.element(e).n_dof^2;
+%                end
+%                obj.I = zeros(N,1);
+%                obj.J = zeros(N,1);
+%                obj.Aij = zeros(N,1);
            
            % Case when only m is specfied     
            elseif nargin == 1;

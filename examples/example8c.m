@@ -14,7 +14,7 @@ warning('This function is not working correctly!');
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
+mesh = FEmesh('-mixed');
 mesh.grid('Quad4',0,0.02,0,0.02,2,2);
 mesh.add_element('Tri3', 1/100*[0,2; 1,2; 1,3]);
 mesh.add_element('Tri3', 1/100*[1,3; 2,3; 2,4]);
@@ -42,7 +42,7 @@ sys.add_constant('T_0', 50);            % initial temperature (C)
 sys.add_matrix('M', 'rho*c_p*N''*N');
 sys.add_matrix('K', 'B''*D*B');
 sys.add_matrix('K_h', 'h*N''*N', 2);
-sys.add_vector('f','h*T_inf*N''', 2);
+sys.add_vector('f','-h*T_inf*N''', 2);
 
 % Assemble the matrices
 M = sys.assemble('M');

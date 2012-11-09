@@ -22,8 +22,8 @@ classdef Tri6 < mFEM.Element
         n_sides = 3;                        % no. of sides
         side_dof = [1,2,4; 2,3,5; 3,1,6];   % define the side dofs (ordered as associated with Line3 element)
         side_type = 'Truss3';               % uses 3-node line element for sides
-        quad = ...                          % 3-point triangular quadrature 
-            mFEM.Gauss('order',3,'type','tri'); 
+        quad = ...                          % 4-point triangular quadrature 
+            mFEM.Gauss('order',4,'type','tri'); 
     end
     
     % Define the Tri6 constructor

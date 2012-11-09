@@ -38,6 +38,8 @@ classdef System < mFEM.handle_hide
             struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));
         const = ... % constant storage structure
             struct('name', char, 'value',[]);
+        func = ... % vector storage structure
+            struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));
     end
     
     methods (Access = public)
@@ -84,7 +86,7 @@ classdef System < mFEM.handle_hide
             %   evaluated using MATLAB's eval function.
             %
             % Examples
-            %   sys.add_constant('k',10);
+            %   sys.add_constant('k',10,'r',2);
             %   sys.add_cosntant('D','k^2');
             
             % Location of last ConstantName
@@ -96,12 +98,16 @@ classdef System < mFEM.handle_hide
             end
         end
         
+        function add_function(obj, varargin)
+            
+        end
+        
         function add_matrix(obj, name, eqn, varargin)  
             %ADD_MATRIX Create a sparse finite element matrix for assembly
             %
             % Syntax
             %   add_matrix('MatrixName', MatrixEqn)
-            %   add_matrix('MatrixName', MatrixEqn, id)
+            %   add_matrix('MatrixName', MatrixEqn, 'PropertyName', PropertyValue)
             %
             % Description
             %   add_matrix('MatrixName', MatrixEqn) adds
@@ -113,14 +119,26 @@ classdef System < mFEM.handle_hide
             %   functions vector and B is pre-defined as grad(N). Any
             %   constant added with the ADD_CONSTANT method may be used.
             %
-            %   add_matrix('MatrixName', MatrixEqn, id) same as above, but
-            %   the equation is only applied on the boundaries with the
-            %   same id (see FEMESH.ADD_BOUNDARY)
+            %   add_matrix('MatrixName', MatrixEqn, 'PropertyName',
+            %       PropertyValue) same as above, but the equation is 
+            %   limited according to the supplied options. For example, the
+            %   'Boundary' property limits the equation application to the 
+            %   boundaries with the same id (see FEMESH.ADD_BOUNDARY)
+            %
+            % ADD_MATRIX Property Descriptions
+            %   Boundary
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       boundaries with the id, see FEMESH.ADD_BOUNDARY
             %
             % Examples
             %   sys.add_matrix('M','N''*N');
-            %   sys.add_matrix('K','B''*B');
+            %   sys.add_matrix('K','B''*B','Boundary',1);
             
+            % Gather the user options
+            options.boundary = [];
+            options = gather_user_options(options, varargin{:});
+   
             % Storate location in matrix array
             idx = length(obj.mat) + 1;
             
@@ -129,7 +147,7 @@ classdef System < mFEM.handle_hide
             obj.mat(idx).eqn = eqn;
             obj.mat(idx).func = obj.parse_equation(eqn);
             obj.mat(idx).matrix = mFEM.Matrix.empty;
-            obj.mat(idx).boundary_id = varargin{:};
+            obj.mat(idx).boundary_id = options.boundary;
         end
 
         function add_vector(obj, name, eqn, varargin)  
@@ -137,7 +155,7 @@ classdef System < mFEM.handle_hide
             %
             % Syntax
             %   add_vector('VectorName', VectorEqn)
-            %   add_vector('VectorName', VectorEqn, id)
+            %   add_vector('VectorName', VectorEqn, 'PropertyName', PropertyValue)
             %
             % Description
             %   add_vector('VectorName', VectorEqn) adds
@@ -149,13 +167,24 @@ classdef System < mFEM.handle_hide
             %   functions vector and B is pre-defined as grad(N). Any
             %   constant added with the ADD_CONSTANT method may be used.
             %
-            %   add_vector('VectorName', VectorEqn, id) same as above, but
-            %   the equation is only applied on the boundaries with the
-            %   same id (see FEMESH.ADD_BOUNDARY)
+            %   add_vector('VectorName', VectorEqn, 'PropertyName',
+            %       PropertyValue) same as above, but the equation is 
+            %   limited according to the supplied options. For example, the
+            %   'Boundary' property limits the equation application to the 
+            %   boundaries with the same id (see FEMESH.ADD_BOUNDARY)
+            %
+            % ADD_VECTOR Property Descriptions
+            %   Boundary
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       boundaries with the id, see FEMESH.ADD_BOUNDARY
             %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
+            % Gather the user options
+            options.boundary = [];
+            options = gather_user_options(options, varargin{:});
             % Storage location for the vector
             idx = length(obj.vec) + 1;
             
@@ -164,7 +193,7 @@ classdef System < mFEM.handle_hide
             obj.vec(idx).eqn = eqn;
             obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
-            obj.vec(idx).boundary_id = varargin{:};   
+            obj.vec(idx).boundary_id = options.boundary;   
         end
         
         function X = get(obj, name)
@@ -459,7 +488,11 @@ classdef System < mFEM.handle_hide
 
                             % Side elements that are not points    
                             else
-                                [qp,W] = side.quad.rules('-cell');
+                                            
+                                % Get side quadrature rule (non mixed mesh)
+                                if obj.mesh.opt.mixed || ~exist('qp','var');
+                                    [qp,W] = side.quad.rules('-cell');
+                                end
 
                                 % Local dofs for the current side
                                 dof = elem.get_dof('Side',s,'-local');
@@ -512,7 +545,9 @@ classdef System < mFEM.handle_hide
                 Ke = zeros(elem.n_dof);
 
                 % Get the quadrature rules for this element
-                [qp, W] = elem.quad.rules('-cell');
+                if obj.mesh.opt.mixed || ~exist('qp','var');
+                    [qp,W] = elem.quad.rules('-cell');
+                end
 
                 % Loop through all of the quadrature points and add the
                 % result to the local matrix
@@ -602,7 +637,10 @@ classdef System < mFEM.handle_hide
 
                             % Side elements that are not points    
                             else
-                                [qp,W] = side.quad.rules('-cell');
+                                % Get side quadrature rule (non mixed mesh)
+                                if obj.mesh.opt.mixed || ~exist('qp','var');
+                                    [qp,W] = side.quad.rules('-cell');
+                                end
 
                                 % Local dofs for the current side
                                 dof = elem.get_dof('Side',s,'-local');
@@ -648,8 +686,10 @@ classdef System < mFEM.handle_hide
                 % Intialize the force fector
                 fe = zeros(elem.n_dof,1);
 
-                % Get the quadrature points in cell form
-                [qp, W] = elem.quad.rules('-cell');
+                % Get side quadrature rule (non mixed mesh)
+                if obj.mesh.opt.mixed || ~exist('qp','var');
+                    [qp,W] = elem.quad.rules('-cell');
+                end
 
                 % Loop through all of the quadrature points
                 for j = 1:size(qp,1);

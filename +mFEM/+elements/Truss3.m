@@ -16,12 +16,12 @@ classdef Truss3 < mFEM.Element
     
     % Define the Linear2 constructor
     methods 
-        function obj = Truss2(id, nodes, varargin)
+        function obj = Truss3(id, nodes, varargin)
            % Class constructor; calls base class constructor
            
            % Test that nodes is sized correctly
-           if ~all(size(nodes) == [2,2]);
-                error('Truss2:Truss2','Nodes not specified correctly; expected a [2x2] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
+           if ~all(size(nodes) == [3,2]);
+                error('Truss3:Truss3','Nodes not specified correctly; expected a [2x2] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Call the base class constructor

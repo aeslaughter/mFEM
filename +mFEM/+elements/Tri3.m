@@ -65,12 +65,7 @@ classdef Tri3 < mFEM.Element
 
         function B = grad_basis(obj, varargin) 
             % Gradient of shape functions (Fish, p. 174)
-            
-            % The Jacobian is constant, produce a warning for agruements
-%             if nargin > 1;
-%                 warning('Tri3:grad_basis', 'The shape functin dervatives for the Tri3 element are constant, thus no spatial coordinates are needed.');
-%             end
-            
+
             % Define short-hand for difference between two points
             x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
             y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);

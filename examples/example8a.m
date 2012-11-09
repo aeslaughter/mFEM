@@ -23,10 +23,10 @@ mesh.add_boundary(3);                             % essential
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(3,'tri');
+q_elem = Gauss('Order',3,'Type','tri');
 [qp, W] = q_elem.rules();
 
-q_face = Gauss(1,'line');
+q_face = Gauss('Order',1,'Type','line');
 [qp_side, W_side] = q_face.rules();
 
 % Problem specifics

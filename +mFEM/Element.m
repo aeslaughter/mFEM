@@ -112,7 +112,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             obj.n_dof = obj.n_nodes * obj.n_dof_node;
             
             % Intialize the side data structure
-            obj.side = struct('on_boundary', false, ...
+            obj.side = struct('on_boundary', true, ...
                 'boundary_id', cell(obj.n_sides,1),...
                 'neighbor',[], 'neighbor_side', []);
             
@@ -249,7 +249,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             end
             
             % Reduce to single array if only a single output is given
-            if nargout == nargin && nargout > 1;
+            if nargout > 1;
                 varargout = num2cell(xyz,1);
             else
                 varargout{1} = xyz;
@@ -277,7 +277,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % 2D: Side is defined by a line
             if n == 2;
                 % Compute the tangent at the point
-                n = obj.local_grad_basis(varargin{:}) * obj.side_nodes;
+                n = obj.local_grad_basis(varargin{:}) * obj.nodes;
                 
                 % Re-arrange tangent to give the normal (outward from
                 % element face is positive)
