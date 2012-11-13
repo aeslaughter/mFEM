@@ -46,7 +46,7 @@ sys = System(mesh);
 sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5);
 sys.add_matrix('K', 'B''*k*A*B');
 sys.add_vector('f_s', 'N''*b');
-sys.add_vector('f_q', '-q_bar*A*N''', 2);
+sys.add_vector('f_q', '-q_bar*A*N''', 'Boundary', 2);
 
 % Assemble the stiffness matrix and force vector
 K = sys.assemble('K');

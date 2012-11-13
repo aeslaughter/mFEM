@@ -20,8 +20,8 @@ sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
 
 % Add force components
-sys.add_vector('f_1', 'N''*t', 1);
-sys.add_vector('f_2', 'N''*-t', 2);
+sys.add_vector('f_1', 'N''*t', 'Boundary', 1);
+sys.add_vector('f_2', 'N''*-t', 'Boundary', 2);
 
 % Assemble the matrix and vector
 K = sys.assemble('K'); 

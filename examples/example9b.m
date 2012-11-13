@@ -22,7 +22,7 @@
 %   Specifies the type of element for the mesh
 %
 
-function example6b(varargin)
+function example9b(varargin)
 
 % Set the default options and apply the user defined options
 opt.n = 32;

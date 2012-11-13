@@ -23,6 +23,10 @@ classdef System < mFEM.handle_hide
     % without written permession.
     %----------------------------------------------------------------------
     
+    properties(Access = public);
+        time = 0;                   % system time, used in functions
+    end
+    
     properties (SetAccess = private, GetAccess = public)
         mesh = mFEM.FEmesh.empty;   % mesh object
         opt = ...                   % struct of default user options
@@ -31,17 +35,19 @@ classdef System < mFEM.handle_hide
     
     properties(Access = private)
         reserved = ... % reserved variables
-            {'N','B','x','y','z','xi','eta','zeta'};
+            {'N','B','x','t','xi','eta','zeta'};
         mat = ... % matrix storage structure
-            struct('name', char, 'eqn', char, 'func', char, 'matrix',sparse([]),'boundary_id', uint32([]));
+            struct('name', char, 'eqn', char, 'func', char, ...
+            'matrix', {}, 'functions', [], 'boundary_id', uint32([]));
         vec = ... % vector storage structure
-            struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));
+            struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],...
+            'functions', [], 'boundary_id', uint32([]));
         const = ... % constant storage structure
-            struct('name', char, 'value',[]);
+            struct('name', char, 'value',[]);        
         func = ... % vector storage structure
-            struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],'boundary_id', uint32([]));
+            struct('name', {}, 'handle', {});
     end
-    
+
     methods (Access = public)
         function obj = System(mesh, varargin)
             %SYSTEM Class constructor.    
@@ -98,10 +104,40 @@ classdef System < mFEM.handle_hide
             end
         end
         
-        function add_function(obj, varargin)
+        function add_function(obj, name, fhandle)
+            %ADD_CONSTANT Adds constant(s) variables to the system.
+            %
+            % Syntax
+            %   add_function('FunctionName', FunctionHandle)
+            %
+            % Description
+            %   add_function('FunctionName', FunctionHandle) adds
+            %   a single function to the System, the 'FunctionName' may be 
+            %   any string identifier and the FunctionHandle may be any
+            %   valid MATLAB function handle (e.g., f = @(x) x^2). The
+            %   function MUST be a function of x and t, where x is a vector
+            %   of the coordinates in the mesh (computed at the Gauss
+            %   points with GET_POSITION), where x(1) is the x-direction, 
+            %   x(2) is the y-direction, and x(3) is the z-direction.
+            %   t is the time which is stored in the time property of the 
+            %   system itself. If the function is not a function of x or t
+            %   then just do not use the variable in the equation, but it 
+            %   must be present in the @ list of variables
+            %
+            % Examples
+            %   sys.add_function('k',@(x,t) x(1)^2 + x(2)^2);
             
+            % Storate location in function array
+            idx = length(obj.func) + 1;
+            
+            % Add to the matrix structure, this uses cell arrays instead of
+            % an array of structures due to a limitation in MATLAB with
+            % calling function handles from within an indexed structure 
+            % using str2func.
+            obj.func(idx).name = name;
+            obj.func(idx).handle = fhandle;
         end
-        
+
         function add_matrix(obj, name, eqn, varargin)  
             %ADD_MATRIX Create a sparse finite element matrix for assembly
             %
@@ -146,8 +182,9 @@ classdef System < mFEM.handle_hide
             obj.mat(idx).name = name;
             obj.mat(idx).eqn = eqn;
             obj.mat(idx).func = obj.parse_equation(eqn);
+            obj.mat(idx).functions = obj.locate_functions(eqn);
             obj.mat(idx).matrix = mFEM.Matrix.empty;
-            obj.mat(idx).boundary_id = options.boundary;
+            obj.mat(idx).boundary_id = options.boundary; 
         end
 
         function add_vector(obj, name, eqn, varargin)  
@@ -192,6 +229,7 @@ classdef System < mFEM.handle_hide
             obj.vec(idx).name = name;
             obj.vec(idx).eqn = eqn;
             obj.vec(idx).func = obj.parse_equation(eqn);
+            obj.vec(idx).functions = obj.locate_functions(eqn);
             obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
             obj.vec(idx).boundary_id = options.boundary;   
         end
@@ -215,6 +253,7 @@ classdef System < mFEM.handle_hide
                 case 'matrix'; X = obj.mat(idx).matrix;
                 case 'vector'; X = obj.vet(idx).vector;
                 case 'constant'; X = obj.const(idx).value;
+                case 'function'; X = obj.func(idx).handle;
             end
         end
         
@@ -270,8 +309,8 @@ classdef System < mFEM.handle_hide
             
             % Initialize variables
             idx = [];                       % location of name
-            types = {'mat','vec','const'};  % type of entity 
-            type_out = {'matrix', 'vector', 'constant'}; % output
+            types = {'mat','vec','const','func'};  % type of entity 
+            type_out = {'matrix', 'vector', 'constant','function'}; % output
             
             % Loop throug the types
             for t = 1:length(types);
@@ -322,19 +361,19 @@ classdef System < mFEM.handle_hide
             obj.const(idx).value = value;   % constant value
         end
         
-        function fcn = parse_equation(obj, eqn, varargin)
+        function func = parse_equation(obj, eqn, varargin)
             %PARSE_EQUATION Converts given equation into a useable function
             %
             % Syntax
-            %   parse_equation(eqn)
-            %   parse_equation(eqn,'-side')
+            %   func = parse_equation(eqn)
+            %   func = parse_equation(eqn,'-side')
             %
             % Description
-            %   parse_equation(eqn) given an equation string, as detailed
-            %   in ADD_MATRIX and ADD_VECTOR, create a working an equation
-            %   for use in the assembly routines.
+            %   func = parse_equation(eqn) given an equation string, as 
+            %   detailed in ADD_MATRIX and ADD_VECTOR, create a working 
+            %   equation for use in the assembly routines.
             %
-            %   parse_equation(eqn,'-side') same as above but builds the
+            %   func = parse_equation(eqn,'-side') same as above but builds 
             %   equation for use as a side integral (lowers the dimension)
 
             % Get the dimensions of the FE space (use the local, it is what
@@ -372,9 +411,9 @@ classdef System < mFEM.handle_hide
 
             % Create the function string
             if isempty(var);
-                fcn = ['@(elem) ', eqn];     
+                func = ['@(elem) ', eqn];     
             else
-                fcn = ['@(elem,',var,') ', eqn];
+                func= ['@(elem,',var,') ', eqn];
             end
         end
         
@@ -391,27 +430,51 @@ classdef System < mFEM.handle_hide
                         
             % Loop through each constant and add if present
             for i = 1:length(obj.const);
-                
+
                 % Current constant name and value
                 str = obj.const(i).name;    
-                val = obj.const(i).value;  
+                val = mat2str(obj.const(i).value);  
 
-                % Look for the constant as a complete string    
-                x1 = regexpi(eqn, str);
-                
-                % Look for the constant without mathmatical symbols
-                s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
-                s = strtrim(s); % remove leading/trailing whitespace
-                x2 = find(strcmp(obj.const(i).name, s),1);
-
-                % If the constant is present in both cases above, then
-                % insert it into the equation. Using the two cases
-                % elimnates problems with having constant names that are
-                % within other constant names (e.g., b and Qb)
-                if ~isempty(x1) && ~isempty(x2);
-                   eqn = regexprep(eqn, str, mat2str(val));
-                end
+                % Insert the value                
+                eqn = obj.insert_string(eqn, str, val);
             end
+        end
+             
+        function idx = locate_functions(obj, eqn)
+            
+            % Initialize output
+            idx = [];
+
+            % Loop through each function and store location, if found
+            for i = 1:length(obj.func);
+                [~, flag] = obj.insert_string(eqn, obj.func(i).name, '');
+                if flag;
+                    idx(end+1) = i;
+                end 
+            end    
+        end
+        
+        function fcn = apply_func(obj, eqn, fidx, x)
+            %APPLY_FUNC Inserts the function handle into the equation
+            %
+            % Syntax
+            %   fcn = apply_func(fcn, fidx, x)
+            %
+            % Description
+            %   fcn = apply_func(fcn, fidx, x) 
+            
+            % Loop through all the functions
+            for i = 1:length(fidx);
+                % Value to insert
+                value = feval(obj.func(i).handle, x, obj.time);
+                
+               % Insert the value for the current location
+                eqn = obj.insert_string(eqn, ...
+                    obj.func(i).name, mat2str(value));             
+            end
+
+            % Convert to a function
+            fcn = str2func(eqn);
         end
         
         function K = assemble_matrix(obj, idx)
@@ -499,6 +562,14 @@ classdef System < mFEM.handle_hide
 
                                 % Perform quadrature
                                 for j = 1:size(qp,1);
+                                    
+                                    % Apply spatial/temporal functions
+                                    if ~isempty(obj.mat(idx).functions);
+                                        x = elem.get_position(qp{i,:});
+                                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, x);
+                                    end
+
+                                    % Build local matrix
                                     Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                 end
                             end
@@ -551,7 +622,15 @@ classdef System < mFEM.handle_hide
 
                 % Loop through all of the quadrature points and add the
                 % result to the local matrix
-                for i = 1:size(qp,1);
+                for i = 1:size(qp,1);       
+                    
+                    % Apply spatial/temporal functions
+                    if ~isempty(obj.mat(idx).functions);
+                        x = elem.get_position(qp{i,:});
+                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, x);
+                    end
+                        
+                    % Case without spatial/temporal functions
                     Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
                 end
 
@@ -632,6 +711,14 @@ classdef System < mFEM.handle_hide
                             % If elem is 1D, then the side is a point that
                             % does not require intergration
                             if elem.local_n_dim == 1;
+                                
+                                % Apply spatial/temporal functions
+                                if ~isempty(obj.mat(idx).functions);
+                                    x = side.nodes;
+                                    fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                                end
+                                
+                                % Build local vector
                                 dof = elem.get_dof('Side', s, '-local');
                                 fe(dof) = fe(dof) + fcn(side);
 
@@ -647,6 +734,14 @@ classdef System < mFEM.handle_hide
 
                                 % Perform quadrature
                                 for j = 1:size(qp,1);
+                                    
+                                    % Apply spatial/temporal functions
+                                    if ~isempty(obj.mat(idx).functions);
+                                        x = elem.get_position(qp{i,:});
+                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                                    end
+                                    
+                                    % Build local vector
                                     fe(dof) = fe(dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                 end
                             end
@@ -693,12 +788,55 @@ classdef System < mFEM.handle_hide
 
                 % Loop through all of the quadrature points
                 for j = 1:size(qp,1);
+                    
+                    % Apply spatial/temporal functions
+                    if ~isempty(obj.mat(idx).functions);
+                        x = elem.get_position(qp{j,:});
+                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                    end
+                    
+                    % Build the local vector
                     fe = fe + W(j)*fcn(elem,qp{j,:})*elem.detJ(qp{j,:});
                 end
 
                 % Add the local force vector to the global vector
                 dof = elem.get_dof();    
                 obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
+            end
+        end
+    end
+    
+    methods (Static)
+        function [eqn, found] = insert_string(eqn, str, val)
+            %INSERT_STRING Inserts the variables into eqn string
+            %
+            % Syntax
+            %   [eqn, found] = insert_string(eqn, str, val)
+            %
+            % Description
+            %   [eqn, found] = insert_string(eqn, str, val) searchs the eqn
+            %   string for str and replaces it with val, if it is found. If
+            %   the str is located, then the found output variable is set
+            %   to true.
+
+            % Set default value for TF flag
+            found = false;
+
+            % Look for the constant as a complete string    
+            x1 = regexpi(eqn, str);
+
+            % Look for the constant without mathmatical symbols
+            s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
+            s = strtrim(s); % remove leading/trailing whitespace
+            x2 = find(strcmp(str, s),1);
+
+            % If the constant is present in both cases above, then
+            % insert it into the equation. Using the two cases
+            % elimnates problems with having constant names that are
+            % within other constant names (e.g., b and Qb)
+            if ~isempty(x1) && ~isempty(x2);
+                eqn = regexprep(eqn, str, val);
+                found = true;
             end
         end
     end

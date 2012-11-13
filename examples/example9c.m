@@ -22,7 +22,7 @@
 %   Specifies the type of element for the mesh
 
 
-function example6c(varargin)
+function example9c(varargin)
 
 % Import the mFEM library
 import mFEM.*;

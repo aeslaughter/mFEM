@@ -20,7 +20,7 @@ sys = System(mesh);
 sys.add_constant('c', c, 'L', L, 'E', 1e7, 'v', 0.3, 'P', [0;100]);
 sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
-sys.add_vector('f', 'N''*P', 2);
+sys.add_vector('f', 'N''*P', 'Boundary', 2);
 
 % Assemble the matrix and vector
 K = sys.assemble('K');

@@ -41,8 +41,8 @@ sys.add_constant('T_0', 50);            % initial temperature (C)
 % Add matrices
 sys.add_matrix('M', 'rho*c_p*N''*N');
 sys.add_matrix('K', 'B''*D*B');
-sys.add_matrix('K_h', 'h*N''*N', 2);
-sys.add_vector('f','-h*T_inf*N''', 2);
+sys.add_matrix('K_h', 'h*N''*N', 'Boundary', 2);
+sys.add_vector('f','-h*T_inf*N''', 'Boundary', 2);
 
 % Assemble the matrices
 M = sys.assemble('M');

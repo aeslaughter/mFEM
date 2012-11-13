@@ -28,7 +28,7 @@ sys.add_constant('k', 5*eye(2), 'b', 6, 'q_top', 20);
 % Create matrices
 sys.add_matrix('K', 'B''*k*B');
 sys.add_vector('f_s', 'N''*b');
-sys.add_vector('f_q', 'N''*-q_top',1);
+sys.add_vector('f_q', 'N''*-q_top', 'Boundary', 1);
 
 % Assemble
 K = sys.assemble('K'); full(K)

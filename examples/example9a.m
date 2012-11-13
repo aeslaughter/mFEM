@@ -31,7 +31,7 @@
 %   example, for a 100 x 100 grid the normal assembly took 25.6 sec. and the
 %   alternative method 23.8 sec.
 
-function example6a(varargin)
+function example9a(varargin)
 
 % Import the mFEM library
 import mFEM.*;
