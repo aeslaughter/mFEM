@@ -33,6 +33,11 @@ classdef Line3 < mFEM.Element
            % Set the node plot order
            obj.node_plot_order = [1,3,2];
         end
+        
+        % Define the size function
+        function L = size(obj)
+        	L = norm(diff(obj.nodes,1));
+        end
     end
     
     methods (Access = protected)          

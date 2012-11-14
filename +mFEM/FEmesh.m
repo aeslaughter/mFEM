@@ -180,7 +180,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.local_n_dim = obj.element(1).local_n_dim;
 
             % Determine the no. of dofs per node
-            if strcmpi(obj.opt.space, 'scalar');
+            if any(strcmpi(obj.opt.space, {'scalar','truss'}));
                 obj.n_dof_node = 1;
                 
             elseif strcmpi(obj.opt.space, 'vector');

@@ -22,32 +22,22 @@ classdef Line2 < mFEM.Element
             %   Line2(id, nodes, 'PropertyName', PropertyValue, ...)
             %
             % Description
-            %   Line2(id, nodes) creates an element given, where id is a
-            %   unique identification number for this element and nodes is 
-            %   a matrix of node coordinates (global) that should be 
-            %   arranged as column matrix (no. nodes x no. dims).
-            %
-            %   Line2(id, nodes, 'PropertyName', PropertyValue, ...) 
-            %   allows the user to customize the behavior of the element, 
-            %   the available properties are listed below.
-            %
-            % Element Property Descriptions
-            %   space
-            %       'scalar' | 'vector' | integer
-            %       Allows the type of FEM space to be set: scalar sets the 
-            %       number of dofs per node to 1, vector  sets it to the 
-            %       no. of space dimension, and  specifing a number sets it
-            %       to that value.
+            %   see mFEM.Element
             %
             % See Also mFEM.Element
            
             % Test that nodes is sized correctly
-            if ~all(size(nodes) == [2,1]);
-                error('Line2:Line2','Nodes not specified correctly; expected a [2x1] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
+            if ~all(size(nodes) == [2,1]) && ~all(size(nodes) == [2,2]) && ~all(size(nodes) == [2,3]) ;
+                error('Line2:Line2','Nodes not specified correctly; expected a [2x1], [2x2], or [2x3] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
             end
 
             % Call the base class constructor
             obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+        end
+        
+        % Define the size function
+        function L = size(obj)
+        	L = norm(diff(obj.nodes,1));
         end
     end
     
@@ -64,8 +54,8 @@ classdef Line2 < mFEM.Element
         end
              
         function J = jacobian(obj, varargin)
-            % Returns the jacobian matrix  
-            J = obj.local_grad_basis()*obj.nodes;                 
+            % Returns the jacobian matrix (1/2 the length)
+            J = 1/2 * obj.size();                 
         end
         
         function GN = local_grad_basis(obj, varargin)

@@ -3,16 +3,63 @@ function test
 clear;
 import mFEM.*
 
-mesh = FEmesh();
-mesh.grid('Quad4',0,1,0,1,1,1);
+mesh = FEmesh('Space', 'Truss');
+mesh.add_element('Truss2',[0,0; 8.66,0]);
 mesh.init();
 
-sys = System(mesh);
-sys.add_constant('k', 10);
-sys.add_matrix('K','B''*k*B');
-%sys.add_matrix('K','B''*k*B');
+elem = mesh.element(1);
+B = elem.shape_deriv(0)
 
-K = sys.assemble('K'); full(K)
+L = elem.hmax()
+E = 1e6;
+A = 0.01;
+
+A*E/L
+
+B'*B
+
+
+return;
+
+
+
+B = @(xi) elem.shape(xi);
+
+
+
+[qp,W] = elem.quad.rules(); 
+K = zeros(elem.n_dof*2)
+for i = 1:length(qp);
+    K = K + W(i)*A*E/L*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
+end
+K
+% sys = System(mesh);
+% sys.add_matrix('K','B''*B');
+% 
+% K = sys.assemble('K'); full(K)
+
+
+
+
+
+
+
+
+
+
+
+
+
+% mesh = FEmesh();
+% mesh.grid('Quad4',0,1,0,1,1,1);
+% mesh.init();
+
+% sys = System(mesh);
+% sys.add_constant('k', 10);
+% sys.add_matrix('K','B''*k*B');
+% %sys.add_matrix('K','B''*k*B');
+
+% K = sys.assemble('K'); full(K)
 
 % func.fhandle{1} = @(x,t) test_fcn(x,t);
 % 
@@ -46,8 +93,8 @@ K = sys.assemble('K'); full(K)
 % 
 % M = sys.assemble('M');
 % % full(M)
-
-function output = test_fcn(x,t)
-    output = 2;
-    %output = 2*x(1)*x(2)*t;
+% 
+% function output = test_fcn(x,t)
+%     output = 2;
+%     %output = 2*x(1)*x(2)*t;
 

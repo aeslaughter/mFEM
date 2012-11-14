@@ -790,7 +790,7 @@ classdef System < mFEM.handle_hide
                             if elem.local_n_dim == 1;
                                 
                                 % Apply spatial/temporal functions
-                                if ~isempty(obj.mat(idx).functions);
+                                if ~isempty(obj.vec(idx).functions);
                                     x = side.nodes;
                                     fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
                                 end

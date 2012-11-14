@@ -43,7 +43,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         nodes = [];                 % global coordinates (no. nodes, no. dim)
         node_plot_order;            % node plotting order (only needed if nodes are out of order)
         opt = ...                   % Options structure
-          struct('space', 'scalar', 'truss', false);
+          struct('space', 'scalar');
     end
     
     % Public properties (read only; except FEmesh and Element)
@@ -91,15 +91,13 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Element Property Descriptions
             %   space
-            %       {'scalar'} | 'vector' | integer
+            %       {'scalar'} | 'vector'  | integer | 'truss'
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
-            %       to that value.
-            %
-            %   truss
-            %       true | {false}
-            
+            %       to that value. The 'truss' option will pad the N and B
+            %       matrix with zeros, to make the 1D element output in a
+            %       2D or 3D space (see Truss2 for an example).
 
             % Insert required values into object properties
             obj.id = id;
@@ -110,8 +108,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % Change dofs per node
             if nargin == 3 && strcmpi(varargin{1},'vector');
                 obj.n_dof_node = obj.n_dim;  
+                obj.opt.space = varargin{1};
             elseif nargin == 3 && isnumeric(varargin{1});
             	obj.n_dof_node = varargin{1};
+                obj.opt.space = varargin{1};
+            elseif nargin == 3 && strcmpi(varargin{1},'truss');
+                obj.opt.space = varargin{1};
             end   
             
             % Determine the total number of global dofs
@@ -153,7 +155,13 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                 for i = 1:r;
                     N(i,i:r:c) = n;
                 end
-            end            
+             
+            % Truss space    
+            elseif strcmpi(obj.opt.space, 'truss');
+                n = N;
+                N = zeros(1,obj.n_nodes*obj.n_dim);
+                N(1:obj.n_dim:end) = n; 
+            end      
         end
         
         function B = shape_deriv(obj, varargin)
@@ -185,6 +193,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                     B(i,i:r:c)  = b(i,:);
                     B(r+1, i:r:c) = b((r+1)-i,:);
                 end
+           
+            % Truss space    
+            elseif strcmpi(obj.opt.space, 'truss');
+                b = B;
+                B = zeros(1,obj.n_nodes*obj.n_dim);
+                B(1:obj.n_dim:end) = b; 
             end
         end
         
