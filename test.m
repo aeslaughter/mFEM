@@ -3,20 +3,21 @@ function test
 clear;
 import mFEM.*
 
-mesh = FEmesh('Space', 'Truss');
-mesh.add_element('Truss2',[0,0; 8.66,0]);
+mesh = FEmesh();
+mesh.add_element('Truss',[0,0; 8.66,0]);
 mesh.init();
 
 elem = mesh.element(1);
-B = elem.shape_deriv(0)
+N = elem.shape();
+T = elem.transformation()
 
-L = elem.hmax()
+L = elem.size()
 E = 1e6;
 A = 0.01;
 
-A*E/L
+A*E/L*N'*N
 
-B'*B
+
 
 
 return;

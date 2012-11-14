@@ -24,6 +24,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
       quad;         % Instance of Gauss quadrature class to use
     end
     
+    % Abstract Methods (public)
+    % (the user must redfine these in subclasse, e.g. Line2)
+    methods (Abstract, Access = public)
+        L = size(obj)  % the lenght, area, or volume of the element
+    end
+    
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Line2)
     methods (Abstract, Access = protected)
@@ -106,14 +112,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             obj.local_n_dim = obj.n_dim;
 
             % Change dofs per node
-            if nargin == 3 && strcmpi(varargin{1},'vector');
+            if nargin == 4 && (strcmpi(varargin{2},'vector') || strcmpi(varargin{2},'truss'));
                 obj.n_dof_node = obj.n_dim;  
-                obj.opt.space = varargin{1};
-            elseif nargin == 3 && isnumeric(varargin{1});
-            	obj.n_dof_node = varargin{1};
-                obj.opt.space = varargin{1};
-            elseif nargin == 3 && strcmpi(varargin{1},'truss');
-                obj.opt.space = varargin{1};
+                obj.opt.space = varargin{2};
+            elseif nargin == 4 && isnumeric(varargin{2});
+            	obj.n_dof_node = varargin{2};
+                obj.opt.space = varargin{2};
             end   
             
             % Determine the total number of global dofs
@@ -143,9 +147,15 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
 
             % Scalar field basis functions
             N = obj.basis(varargin{:});
-
+            
+            % Truss space    
+            if strcmpi(obj.opt.space, 'truss');
+                n = N;
+                N = zeros(1,obj.n_nodes*obj.n_dim);
+                N(1:obj.n_dim:end) = n; 
+            
             % Non-scalar fields
-            if obj.n_dof_node > 1;
+            elseif obj.n_dof_node > 1;
                 n = N;                          % re-assign scalar basis
                 r = obj.n_dof_node;             % no. of rows
                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
@@ -155,12 +165,6 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                 for i = 1:r;
                     N(i,i:r:c) = n;
                 end
-             
-            % Truss space    
-            elseif strcmpi(obj.opt.space, 'truss');
-                n = N;
-                N = zeros(1,obj.n_nodes*obj.n_dim);
-                N(1:obj.n_dim:end) = n; 
             end      
         end
         
@@ -194,11 +198,11 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
                     B(r+1, i:r:c) = b((r+1)-i,:);
                 end
            
-            % Truss space    
-            elseif strcmpi(obj.opt.space, 'truss');
-                b = B;
-                B = zeros(1,obj.n_nodes*obj.n_dim);
-                B(1:obj.n_dim:end) = b; 
+%             % Truss space    
+%             elseif strcmpi(obj.opt.space, 'truss');
+%                 b = B;
+%                 B = zeros(1,obj.n_nodes*obj.n_dim);
+%                 B(1:obj.n_dim:end) = b; 
             end
         end
         

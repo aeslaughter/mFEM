@@ -35,7 +35,7 @@ classdef System < mFEM.handle_hide
     
     properties(Access = private)
         reserved = ... % reserved variables
-            {'N','B','x','t','xi','eta','zeta'};
+            {'N','B','T','L','x','t','xi','eta','zeta'};
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'func', char, ...
             'matrix', {}, 'functions', [], 'boundary_id', uint32([]));

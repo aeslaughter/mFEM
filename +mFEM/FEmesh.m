@@ -52,7 +52,7 @@ classdef FEmesh < mFEM.handle_hide
             %       as continous (CG) or discontinous (DG)
             %
             %   Space
-            %       {'scalar'} | 'vector' | numeric
+            %       {'scalar'} | 'vector' | numeric | 'truss'
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector sets it to the no. 
             %       of space dimension, and specifing a number sets it to 
@@ -148,7 +148,7 @@ classdef FEmesh < mFEM.handle_hide
             % Create the element
             id = length(obj.element) + 1;
             obj.element(id) = feval(['mFEM.elements.', type],...
-                id, nodes, obj.opt.space);
+                id, nodes, 'Space', obj.opt.space);
         end
 
         function init(obj)

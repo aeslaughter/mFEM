@@ -1,27 +1,28 @@
-classdef Truss2 < mFEM.Element
-    % A 2-node 1D linear element, but located in 2D space
+classdef Truss < mFEM.Element
+    % A 2-node Truss element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
     %         1---------2
+    %
+    % This is a special case...
     %
 
     % Define the inherited abstract properties
     properties (SetAccess = protected, GetAccess = public)
         n_sides = 2;                 % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];           % local dofs of the "sides"
-        side_type = 'Point';         % 1D elements do not have side elements
-        quad = ...                   % 1-point line quadrature
-            mFEM.Gauss('order',1,'type','line');
+        side_type = 'Point';         % 1D elements have points on sides
+        quad = []                    % quadrature not necessary
     end
     
-    % Define the Linear2 constructor
-    methods 
-        function obj = Truss2(id, nodes, varargin)
+    methods  
+        % Define the Truss constructor
+        function obj = Truss(id, nodes, varargin)
            % Class constructor; calls base class constructor
            
            % Test that nodes is sized correctly
-           if ~all(size(nodes) == [2,2]);
-                error('Truss2:Truss2','Nodes not specified correctly; expected a [2x2] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
+           if ~all(size(nodes) == [2,2]) && ~all(size(nodes) == [2,3]) ;
+               error('Truss:Truss','Nodes not specified correctly; expected a [2x2] or [2x3] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Call the base class constructor
@@ -30,35 +31,52 @@ classdef Truss2 < mFEM.Element
            % Set the local dimensionality, only needed if the number of 
            % element local coordinates (xi,eta,...) are different from the 
            % number of spatial coordinates (x,y,...).
-           obj.local_n_dim = 1;
+           %obj.local_n_dim = 1;
+           
+           % Set the number of dofs per node on the element
+           %obj.n_dof_node = obj.n_dim; 
         end
         
         % Define the size function
         function L = size(obj)
         	L = norm(diff(obj.nodes,1));
         end
+        
+        function T = transformation(obj, varargin)
+           %TRANSFORMATION Outputs the transformation matrix, T
+           d = diff(obj.nodes)/obj.size();
+           c = d(1); s = d(2);
+
+           T = zeros(4,4);
+           T(1:2,1:2) = [c,s;-s,c];
+           T(3:4,3:4) = [c,s;-s,c];
+
+        end
+%         function N = shape(obj, varargin)
+%            N = zeros(1,obj.n_nodes*obj.n_dim);
+%            N(1:obj.n_dim:end) = [1,-1];     
+%         end
     end
     
-    % Define the inherited abstract methods (protected)
-    methods (Access = protected)      
-        function N = basis(~, xi)
+    methods (Access = protected)  
+        function N = basis(obj, varargin)
             % Returns a row vector of local shape functions
-            N(1) = 1/2*(1 - xi);
-            N(2) = 1/2*(1 + xi);
+            N = [1,-1];
         end
 
-        function B = grad_basis(obj, varargin) 
+        function grad_basis(~, varargin) 
             % Gradient of shape functions
-            B = inv(obj.jacobian()) * obj.local_grad_basis;
+            error('Truss:grad_basis','The gradient of the basis functions is not defined for the Truss element.');   
         end
              
-        function J = jacobian(obj, varargin)
+        function jacobian(~, varargin)
             % Returns the jacobian matrix (1/2 the length)
-            J = 1/2 * obj.size();               
+            error('Truss:jacobian','The jacabian matrix is not defined for the Truss element.');   
         end
         
-        function G = local_grad_basis(obj, varargin)
-            G = [-1/2, 1/2];
+        function local_grad_basis(~, varargin)
+            % Does nothing for the Truss dlement
+            error('Truss:local_grad_basis','The gradient in local coordinte system is not defined for the Truss element.');   
         end
     end
 end
