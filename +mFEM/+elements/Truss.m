@@ -26,7 +26,7 @@ classdef Truss < mFEM.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.Element(id, nodes, 'Space', 2); 
            
            % Set the local dimensionality, only needed if the number of 
            % element local coordinates (xi,eta,...) are different from the 
@@ -42,16 +42,25 @@ classdef Truss < mFEM.Element
         	L = norm(diff(obj.nodes,1));
         end
         
-        function T = transformation(obj, varargin)
-           %TRANSFORMATION Outputs the transformation matrix, T
-           d = diff(obj.nodes)/obj.size();
-           c = d(1); s = d(2);
+        function K = stiffness(obj, varargin)
+           
+            N = [1,0,-1,0];
+                       
+            d = diff(obj.nodes)/obj.size();
+            c = d(1); s = d(2);
 
-           T = zeros(4,4);
-           T(1:2,1:2) = [c,s;-s,c];
-           T(3:4,3:4) = [c,s;-s,c];
-
+            T = zeros(4,4);
+            T(1:2,1:2) = [c,s;-s,c];
+            T(3:4,3:4) = [c,s;-s,c];
+            
+            
+            K = T'*(N'*N)*T;
         end
+        
+%         function T = transformation(obj, varargin)
+%            %TRANSFORMATION Outputs the transformation matrix, T
+% 
+%         end
 %         function N = shape(obj, varargin)
 %            N = zeros(1,obj.n_nodes*obj.n_dim);
 %            N(1:obj.n_dim:end) = [1,-1];     
@@ -59,9 +68,9 @@ classdef Truss < mFEM.Element
     end
     
     methods (Access = protected)  
-        function N = basis(obj, varargin)
+        function basis(obj, varargin)
             % Returns a row vector of local shape functions
-            N = [1,-1];
+            error('Truss:basis','The gradient of the basis functions is not defined for the Truss element.');   
         end
 
         function grad_basis(~, varargin) 

@@ -280,7 +280,7 @@ function h = plot2D_scalar(obj, opt)
 end
 
 function h = plot2D_vector(obj, opt)
-    %PLOT1D create a 2D plot for vector spaces
+    %PLOT2D_vector create a 2D plot for vector spaces
 
     % Initialize the x and y values
     h = zeros(obj.n_elements,1);
@@ -335,7 +335,7 @@ function h = plot2D_vector(obj, opt)
         if isempty(z);
             h(e) = patch(x, y, 'w');
         else
-            h(e) = patch(x, y, z);
+            h(e) = patch(x, y, z,'EdgeColor','interp');
         end
     end
     

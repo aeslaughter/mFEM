@@ -22,7 +22,7 @@ classdef FEmesh < mFEM.handle_hide
             'boundary', uint32([]));       
         opt = ...                   % struct of default user options
             struct('space', 'scalar', 'type', 'CG', 'time', true,...
-                'mixed', false);
+                'element', 'Line2');
     end
     
     properties (SetAccess = private, GetAccess = ?mFEM.System)
@@ -40,7 +40,7 @@ classdef FEmesh < mFEM.handle_hide
             % Description
             %   obj = FEmesh() creates mesh object with default settings,
             %         equivalent to: 
-            %         obj = FEmesh('Space','scalar','Type','CG')
+            %         obj = FEmesh('Space','scalar','Type','CG','Element','Line2')
             %
             %   obj = FEmesh('PropertyName', PropertyValue) allows
             %           user to customize the behavior of the FE mesh.
@@ -52,20 +52,17 @@ classdef FEmesh < mFEM.handle_hide
             %       as continous (CG) or discontinous (DG)
             %
             %   Space
-            %       {'scalar'} | 'vector' | numeric | 'truss'
+            %       {'scalar'} | 'vector' 
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector sets it to the no. 
-            %       of space dimension, and specifing a number sets it to 
-            %       that value.
+            %       of space dimension.
             %
-            %   Mixed
-            %       true | {false}
-            %       Set this flag to true if the mesh contains mixed
-            %       elements, this changes how the quadrature rules are
-            %       applied. If true the quadrature rules are called from
-            %       every element when assembled using the System class,
-            %       which takes more time. The default uses the quadrature
-            %       rule from the first element for all the elements.
+            %   Element
+            %       char
+            %       Specifies the type of element that the mesh will be
+            %       composed of, the default is the Line2 element. Any
+            %       class derivied from the Element class, located in the 
+            %       +element directory may be specified.
 
             % Parse the user-defined options
             obj.opt = gather_user_options(obj.opt, varargin{:});
@@ -78,9 +75,9 @@ classdef FEmesh < mFEM.handle_hide
             %GRID Create a mesh (1D, 2D, or 3D)
             % 
             % Syntax
-            %   grid(type, x0, x1, xn)
-            %   grid(type, x0, x1, y0, y1, xn, yn)
-            %   grid(type, x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %   grid(x0, x1, xn)
+            %   grid(x0, x1, y0, y1, xn, yn)
+            %   grid(x0, x1, y0, y1, z0, z1, xn, yn, zn)
             %   grid(..., 'PropertyName', PropertyValue,...)
             %
             % Description
@@ -109,11 +106,11 @@ classdef FEmesh < mFEM.handle_hide
             end
             
             % Check the current element type is supported
-            switch type;
+            switch obj.opt.element;
                 case {'Line2', 'Line3'};
-                    obj.gen1Dgrid(type, varargin{:});
+                    obj.gen1Dgrid(obj.opt.element, varargin{:});
                 case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(type, varargin{:});
+                    obj.gen2Dgrid(obj.opt.element, varargin{:});
                 otherwise
                     error('FEmesh:grid','Grid generation is not supported for the %s elem', type);
             end
@@ -122,9 +119,9 @@ classdef FEmesh < mFEM.handle_hide
             if obj.opt.time;
                 tmessage(ticID);
             end;
-                end
+        end
         
-        function add_element(obj, type, nodes)
+        function add_element(obj, nodes)
             % Add element to FEmesh object (must be reinitialized)
             %
             % Syntax:
@@ -147,7 +144,7 @@ classdef FEmesh < mFEM.handle_hide
                         
             % Create the element
             id = length(obj.element) + 1;
-            obj.element(id) = feval(['mFEM.elements.', type],...
+            obj.element(id) = feval(['mFEM.elements.', obj.opt.element],...
                 id, nodes, 'Space', obj.opt.space);
         end
 
@@ -178,20 +175,18 @@ classdef FEmesh < mFEM.handle_hide
             % Spatial dimension and local dimensions
             obj.n_dim = obj.element(1).n_dim;
             obj.local_n_dim = obj.element(1).local_n_dim;
-
-            % Determine the no. of dofs per node
-            if any(strcmpi(obj.opt.space, {'scalar','truss'}));
-                obj.n_dof_node = 1;
-                
-            elseif strcmpi(obj.opt.space, 'vector');
-                obj.n_dof_node = obj.n_dim;
-                
-            elseif isnumeric(obj.opt.space);
-                obj.n_dof_node = obj.opt.space;
-                
-            else
-                error('FEmesh:FEmesh', 'The element space, %s, was not recongnized.',obj.opt.space);
-            end
+            obj.n_dof_node = obj.element(1).n_dof_node;
+            
+%             % Determine the no. of dofs per node
+%             if strcmpi(obj.opt.space, 'scalar');
+%                 obj.n_dof_node = 1;
+%                 
+%             elseif strcmpi(obj.opt.space, 'vector');
+%                 obj.n_dof_node = obj.n_dim;
+%                 
+%             else
+% 
+%             end
             
             % Computes the global degree-of-freedom map
             obj.compute_dof_map();
@@ -295,7 +290,8 @@ classdef FEmesh < mFEM.handle_hide
             %
             % Syntax
             %   dof = get_dof()
-            %   dof = get_dof('PropertyName',PropertyValue);
+            %   dof = get_dof('PropertyName',PropertyValue,...);
+            %   dof = get_dof(C1,C2,...);
             %
             % Description
             %   dof = get_dof() returns the global degrees of freedom for
@@ -304,6 +300,23 @@ classdef FEmesh < mFEM.handle_hide
             %   dof = get_dof('PropertyName',PropertyValue) returns the
             %   global degrees of freedom for portions of the mesh
             %   depending on the properties (see descriptions below).
+            %
+            %   dof = get_dof(C1,C2,...) operates in the same fashion as
+            %   above, but allows for multiple criteria to be specified.
+            %   C1,C2, etc. are each cell arrays of property pairings which
+            %   are looped over, the resulting dof that meet ANY of the
+            %   criteria are returned. The following two examples are
+            %   identical:
+            %       ess(:,1) = get_dof('Boundary',1,'Component','x');
+            %       ess(:,2) = get_dof('Boundary',2,'Component','y');   
+            %       ess = any(ess,2);
+            %
+            %       ess = get_dof({'Boundary',1,'Component','x'},...
+            %           {'Boundary',2,'Component','y'})
+            %
+            %       Note: This method will not return the dofs in index 
+            %       format, that option is disable automtically for each 
+            %       input property parring.
             %
             % GET_DOF Property Descriptions
             %   Component
@@ -328,61 +341,30 @@ classdef FEmesh < mFEM.handle_hide
             %           get_dof('-index')
             %
 
-            % Set the default values for the varius inputs
-            options.component = [];
-            options.boundary = [];
-            options.index = false;
-            options = gather_user_options(options, varargin{:});
-            
-            % Return dofs for the specified boundary id
-            if ~isempty(options.boundary);
+            % Cell input case
+            if nargin > 0 && iscell(varargin{1});
                 
-                % Extract the column of boundary_id map
-                col = obj.boundary_id == options.boundary;
-                idx = obj.map.boundary(:,col);
-
-                % Collect the dofs
-                dof = unique(obj.map.dof(logical(idx)));
+                % Initilize the dof output
+                dof = false(obj.n_dof, length(varargin));
                 
-            % Return all the dofs    
-            else 
-                dof = unique(obj.map.dof);  
-            end
-
-            % Vector FE space (uses transform_dof of an element)
-            if obj.n_dof_node > 1;
-                dof = transform_dof(dof,obj.n_dof_node);
-            end
-
-            % Extract boundaries for certain component of vector space
-            if ~isempty(options.component);
-                
-                % Convert string to numeric
-                if ischar(options.component);
-                    switch options.component;
-                        case 'x'; ix = 1;
-                        case 'y'; ix = 2;
-                        case 'z'; ix = 3;
-                    end  
-                else
-                    ix = options.component;
-                end
-
-                % Test the dimensionality
-                if ix > obj.n_dof_node;
-                    error('FEmesh:get_dof','Desired vector component does not exist.');
+                % Loop through each input, they should all be cells
+                for i = 1:length(varargin);
+                    
+                    % Give an error if the input is not a cell
+                    if ~iscell(varargin{i});
+                        error('FEmesh:get_dof', 'Expected a cell, but recieved a %s', class(varargin{i}));
+                    end
+                    
+                    % Add to the dof
+                    dof(:,i) = obj.get_dof_private(varargin{i}{:},'index',false);  
                 end
                 
-                % Extract the dofs
-                ix = ix:obj.n_dof_node:length(dof);
-                dof = dof(ix);
-            end   
-
-            % Convert to indices (the default), if desired 
-            if ~options.index
-                index = false(obj.n_dof, 1);
-                index(dof) = true;
-                dof = index;
+                % Reduce the matrix to a column array
+                dof = any(dof,2);
+               
+            % Traditional input case    
+            else
+                dof = obj.get_dof_private(varargin{:});
             end
         end
                 
@@ -474,7 +456,7 @@ classdef FEmesh < mFEM.handle_hide
         end
     end
     
-    methods (Hidden = true, Access = private)        
+    methods (Hidden = true, Access = private)    
         function compute_dof_map(obj)
             %COMPUTE_DOF_MAP Calculates the global degree-of-freedom map
             %
@@ -610,7 +592,102 @@ classdef FEmesh < mFEM.handle_hide
             if obj.opt.time;
                 tmessage(ticID);
             end;
-         end 
+        end 
+         
+        function dof = get_dof_private(obj, varargin)
+            %GET_DOF_PRIVATE Returns the global degrees of freedom.
+            %
+            % Syntax
+            %   dof = get_dof()
+            %   dof = get_dof('PropertyName',PropertyValue);
+            %
+            % Description
+            %   dof = get_dof() returns the global degrees of freedom for
+            %   the entire finite element mesh.
+            %
+            %   dof = get_dof('PropertyName',PropertyValue) returns the
+            %   global degrees of freedom for portions of the mesh
+            %   depending on the properties (see descriptions below).
+            %
+            % GET_DOF Property Descriptions
+            %   Component
+            %       scalar | 'x' | 'y' | 'z'
+            %       Returns the dof associated with the vector space
+            %
+            %   Boundary
+            %       scalar
+            %       Extract the dofs for the boundary specified, where the
+            %       scalar value is the numeric id added using the
+            %       ADD_BOUNDARY method.
+            %
+            %   Index
+            %       true | {false}
+            %       Toggles the type of output, by default the GET_DOF
+            %       returns the dofs as a logical array equal to the length
+            %       of the number of degrees of freedom. However, if the
+            %       actual numeric indice is desired set this property to
+            %       true. You can also use the flag style input, the
+            %       following are equivlent.
+            %           get_dof('index',true)
+            %           get_dof('-index')
+
+            % Set the default values for the varius inputs
+            options.component = [];
+            options.boundary = [];
+            options.index = false;
+            options = gather_user_options(options, varargin{:});
+            
+            % Return dofs for the specified boundary id
+            if ~isempty(options.boundary);
+                
+                % Extract the column of boundary_id map
+                col = obj.boundary_id == options.boundary;
+                idx = obj.map.boundary(:,col);
+
+                % Collect the dofs
+                dof = unique(obj.map.dof(logical(idx)));
+                
+            % Return all the dofs    
+            else 
+                dof = unique(obj.map.dof);  
+            end
+
+            % Vector FE space (uses transform_dof of an element)
+            if obj.n_dof_node > 1;
+                dof = transform_dof(dof,obj.n_dof_node);
+            end
+
+            % Extract boundaries for certain component of vector space
+            if ~isempty(options.component);
+                
+                % Convert string to numeric
+                if ischar(options.component);
+                    switch options.component;
+                        case 'x'; ix = 1;
+                        case 'y'; ix = 2;
+                        case 'z'; ix = 3;
+                    end  
+                else
+                    ix = options.component;
+                end
+
+                % Test the dimensionality
+                if ix > obj.n_dof_node;
+                    error('FEmesh:get_dof','Desired vector component does not exist.');
+                end
+                
+                % Extract the dofs
+                ix = ix:obj.n_dof_node:length(dof);
+                dof = dof(ix);
+            end   
+
+            % Convert to indices (the default), if desired 
+            if ~options.index
+                index = false(obj.n_dof, 1);
+                index(dof) = true;
+                dof = index;
+            end
+        end
         
         function gen1Dgrid(obj,type, x0, x1, xn)
             %GEN1DGRID Generate the 1D mesh (see grid)

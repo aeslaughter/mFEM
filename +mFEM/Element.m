@@ -24,12 +24,6 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
       quad;         % Instance of Gauss quadrature class to use
     end
     
-    % Abstract Methods (public)
-    % (the user must redfine these in subclasse, e.g. Line2)
-    methods (Abstract, Access = public)
-        L = size(obj)  % the lenght, area, or volume of the element
-    end
-    
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Line2)
     methods (Abstract, Access = protected)
@@ -57,7 +51,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
         side;                       % side info, see constructor        
-        local_n_dim;                % local dimensions (default is n_dim; see Truss2 for exception)
+        local_n_dim;                % local dimensions
+        direct = false;             % a flag for using direct assembly, see Truss
     end
     
     % Protected properties
@@ -97,13 +92,11 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Element Property Descriptions
             %   space
-            %       {'scalar'} | 'vector'  | integer | 'truss'
+            %       {'scalar'} | 'vector'  | integer
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
-            %       to that value. The 'truss' option will pad the N and B
-            %       matrix with zeros, to make the 1D element output in a
-            %       2D or 3D space (see Truss2 for an example).
+            %       to that value.
 
             % Insert required values into object properties
             obj.id = id;
@@ -112,7 +105,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             obj.local_n_dim = obj.n_dim;
 
             % Change dofs per node
-            if nargin == 4 && (strcmpi(varargin{2},'vector') || strcmpi(varargin{2},'truss'));
+            if nargin == 4 && strcmpi(varargin{2},'vector');
                 obj.n_dof_node = obj.n_dim;  
                 obj.opt.space = varargin{2};
             elseif nargin == 4 && isnumeric(varargin{2});
@@ -148,14 +141,14 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             % Scalar field basis functions
             N = obj.basis(varargin{:});
             
-            % Truss space    
-            if strcmpi(obj.opt.space, 'truss');
-                n = N;
-                N = zeros(1,obj.n_nodes*obj.n_dim);
-                N(1:obj.n_dim:end) = n; 
+%             % Truss space    
+%             if strcmpi(obj.opt.space, 'truss');
+%                 n = N;
+%                 N = zeros(1,obj.n_nodes*obj.n_dim);
+%                 N(1:obj.n_dim:end) = n; 
             
             % Non-scalar fields
-            elseif obj.n_dof_node > 1;
+            if obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector');
                 n = N;                          % re-assign scalar basis
                 r = obj.n_dof_node;             % no. of rows
                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
@@ -186,7 +179,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             B = obj.grad_basis(varargin{:});
                         
             % Non-scalar fields
-            if obj.n_dof_node > 1;
+            if obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector');
                 b = B;                      % Re-assign scalar basis
                 r = obj.n_dof_node;         % no. of rows
                 c = r*size(b,2);            % no. of cols
@@ -204,6 +197,31 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
 %                 B = zeros(1,obj.n_nodes*obj.n_dim);
 %                 B(1:obj.n_dim:end) = b; 
             end
+        end
+        
+        function size(obj)
+            %SIZE Returns the length, area, or volume of the element
+            %
+            % Syntax
+            %   L = size()
+            %
+            % Description 
+            %   L = size() returns the size of the element, the meaning of
+            %   the size depends on the element, 1D, 2D, or 3D, which
+            %   should return the length, area, or volume, respectively.
+            %
+            % This function must be defined within the subclass, e.g., see
+            % Line2. If it is not defined you will recieve an error if an
+            % attempt use is made. This was not made an abstract method,
+            % because in many cases this property is not needed. However,
+            % the System class has a variable reserved L for it, so it
+            % should be available for all Elements, even if it is an error.
+            %
+            % See Also
+            %   Line2
+            
+            % The default behavior is an error message
+            error('Element:size','The size method is not defined for the %s element type',class(obj));
         end
         
         function L = hmax(obj)
@@ -370,7 +388,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %       following returns the local degrees of freedom for side
             %       number 1 of an element.
             %           dof = get_dof('Side',1,'local',true) or
-            %           dof = get_dof('SIde',1,'-local')
+            %           dof = get_dof('Side',1,'-local')
             
             % Set default options and gather the options
             options.side = [];

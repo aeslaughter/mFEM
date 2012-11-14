@@ -1,40 +1,61 @@
-%EXAMPLE12a A truss example
+%EXAMPLE12a A truss example.
 
 function example12a
 
-
+% Import the mFEM library
 import mFEM.*
 
+% Create the truss structure
 mesh = FEmesh('Space','Truss');
-mesh.add_element('Truss',[0,0; 8.66,0]);
-mesh.add_element('Truss',[8.66,0; 0,5]);
-mesh.add_element('Truss',[0,5; 0,0]);
+mesh.add_element('Truss',[-1,1; 0,0]);
+mesh.add_element('Truss',[0,1; 0,0]);
+mesh.add_element('Truss',[1,1; 0,0]);
 mesh.init();
 
-E = 1e6;
-A = 0.01;
+% Label the various boundaries
+mesh.add_boundary(1,{'x<=0','y>0'}); % pin connections
+mesh.add_boundary(2,{'x>0','y>0'});  % roller connection
+mesh.add_boundary(3,'bottom');       % applied load
+
+% Define the known parameters
+P = 10^3;
+E = 10^7;
+a = 10^-2;
+A = [a,2*a,a];
+
+% Initilize the stiffness matrix and force vector
 K = Matrix(mesh);
+f = zeros(mesh.n_dof,1);
+
+% Loop through the elements and append global stiffness
 for e = 1:mesh.n_elements;
-    elem = mesh.element(e)
     
+    % The current element
+    elem = mesh.element(e);
+    
+    % The element length
     L = elem.size();
-    T = elem.transformation();
-    N = elem.shape()
-    Ke = A*E/L*T'*(N'*N)*T
-    elem.get_dof()
+
+    % Element stiffness matrix
+    Ke = A(e)*E/L*elem.stiffness();
+
+    % Add to the global
     K.add_matrix(Ke,elem.get_dof());
-    
-    
 end
 
-K = K.init(); full(K)
+% Extract the essential boundary conditions
+ess = mesh.get_dof({'Boundary',1},{'Boundary',2,'Component','y'});
 
-idx = [3,4,5,6,1,2];
+% Create the stiffness matrix
+K = K.init();
 
-full(K(idx,idx))
+% Apply the external force
+nat = mesh.get_dof('Boundary',3,'Component','x');
+f(nat) = P;
 
-% sys = System(mesh);
-% sys.add_matrix('K','A*E/L*T''*(N''*N)*T');
+% Solve for the displacements
+u(ess) = 0;
+u(~ess) = K(~ess,~ess)\f(~ess);
 
-
-
+% Plot results
+mesh.plot(u,'-deform','colorbar','Magnitude of Displacement (m)');

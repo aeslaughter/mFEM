@@ -30,12 +30,12 @@ classdef System < mFEM.handle_hide
     properties (SetAccess = private, GetAccess = public)
         mesh = mFEM.FEmesh.empty;   % mesh object
         opt = ...                   % struct of default user options
-            struct('time', true);
+            struct('time', false, 'direct', false);
     end
     
     properties(Access = private)
         reserved = ... % reserved variables
-            {'N','B','T','L','x','t','xi','eta','zeta'};
+            {'N','B','L','x','t','xi','eta','zeta'};
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'func', char, ...
             'matrix', {}, 'functions', [], 'boundary_id', uint32([]));
@@ -68,6 +68,19 @@ classdef System < mFEM.handle_hide
             %       true | {false}
             %       A toggle for displaying the matrix and vector 
             %       assembly time.
+            %
+            %   Direct
+            %       true | {false}
+            %       A toggle for implementing the direct assembly, this
+            %       option uses the 'Ke' and 'fe' variables (see 
+            %       ADD_MATRIX and ADD_VECTOR) and calls the STIFFNESS and
+            %       FORCE functions directly from the element, which should
+            %       return the full assembled element stiffness matrix and
+            %       force vector. This must be used for Truss elements when
+            %       using the System class, thus it is automatically set if
+            %       a FEmesh with element type Truss is called. It may also
+            %       be used with Beam elements, but in this case it is
+            %       optional as N and B are prescribed for Beam elements.
             %   
             % See Also FEMESH
             
@@ -534,9 +547,6 @@ classdef System < mFEM.handle_hide
             
             % Insert the L variable (L = elem.size())
             eqn = regexprep(eqn,'L','elem.size()');
-            
-            % Insert the Transformation matrix
-            eqn = regexprep(eqn,'T','elem.transformation()');
 
             % Create the function string
             if isempty(var);
