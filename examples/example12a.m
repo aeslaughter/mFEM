@@ -33,7 +33,8 @@ idx = [3,4,5,6,1,2];
 
 full(K(idx,idx))
 
-
+% sys = System(mesh);
+% sys.add_matrix('K','A*E/L*T''*(N''*N)*T');
 
 
 

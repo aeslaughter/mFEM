@@ -531,6 +531,12 @@ classdef System < mFEM.handle_hide
             % Insert element shape function and shape function derivatives
             eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
             eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
+            
+            % Insert the L variable (L = elem.size())
+            eqn = regexprep(eqn,'L','elem.size()');
+            
+            % Insert the Transformation matrix
+            eqn = regexprep(eqn,'T','elem.transformation()');
 
             % Create the function string
             if isempty(var);
