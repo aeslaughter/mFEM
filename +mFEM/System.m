@@ -94,7 +94,7 @@ classdef System < mFEM.handle_hide
             % Examples
             %   sys.add_constant('k',10,'r',2);
             %   sys.add_cosntant('D','k^2');
-            
+
             % Location of last ConstantName
             n = nargin - 2;
             
@@ -126,6 +126,12 @@ classdef System < mFEM.handle_hide
             %
             % Examples
             %   sys.add_function('k',@(x,t) x(1)^2 + x(2)^2);
+            
+            % Limit the use of name
+            [~,idx] = obj.locate(name); 
+            if ~isempty(idx);
+                error('ERROR:ADD_FUNCTION', 'The name, %s, was previously used, function names must be unique.', name);
+            end
             
             % Storate location in function array
             idx = length(obj.func) + 1;
@@ -174,7 +180,13 @@ classdef System < mFEM.handle_hide
             % Gather the user options
             options.boundary = [];
             options = gather_user_options(options, varargin{:});
-   
+    
+            % Limit the use of name
+            [type, x] = obj.locate(name, {'vec','const','func'}); 
+            if ~isempty(x);
+                error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
+            end
+            
             % Storate location in matrix array
             idx = length(obj.mat) + 1;
             
@@ -222,6 +234,13 @@ classdef System < mFEM.handle_hide
             % Gather the user options
             options.boundary = [];
             options = gather_user_options(options, varargin{:});
+            
+            % Limit the use of name
+            [~,idx] = obj.locate(name, 'mat'); 
+            if ~isempty(idx);
+                error('ERROR:ADD_VECTOR', 'The name, %s, was previously used for defining a matrix, vectors and matrices may not share names.', name);
+            end
+            
             % Storage location for the vector
             idx = length(obj.vec) + 1;
             
@@ -248,10 +267,15 @@ classdef System < mFEM.handle_hide
             % Determine the type and location in the structure
             [type, idx] = obj.locate(name);
             
+            % Throw and error if the name was not found
+            if isempty(idx);
+                error('System:locate', 'The entity with name %s was not found.', name);
+            end   
+            
             % Extract the value based on the type
             switch type;
-                case 'matrix'; X = obj.mat(idx).matrix;
-                case 'vector'; X = obj.vet(idx).vector;
+                case 'matrix';   X = obj.mat(idx).matrix;
+                case 'vector';   X = obj.vet(idx).vector;
                 case 'constant'; X = obj.const(idx).value;
                 case 'function'; X = obj.func(idx).handle;
             end
@@ -296,41 +320,86 @@ classdef System < mFEM.handle_hide
     
     methods (Hidden = true, Access = private)
         
-        function [type, idx] = locate(obj, name)
+        function [type, idx] = locate(obj, name, varargin)
             %LOCATE Returns the type and index for the supplied name
             % 
             % Syntax
             %   [type,idx] = locate(name)
+            %   [type,idx] = locate(name, type)
             %
             % Description
             %   [type,idx] = locate(name) given the string name, the type
             %   ('matrix','vector','constant') and the index within the
             %   storage structure that the name exists.
+            %
+            %   [type,idx] = locate(name, type) limits the search to the 
+            %   specified type, which can be a single type or a cell of
+            %   array of types.
             
-            % Initialize variables
-            idx = [];                       % location of name
+            % Gather type input, if any
             types = {'mat','vec','const','func'};  % type of entity 
-            type_out = {'matrix', 'vector', 'constant','function'}; % output
+            if nargin == 3;
+                if ~iscell(varargin{1});
+                    types = varargin(1);
+                else
+                    types = varargin{1};
+                end
+            end
+            
+            % Initialize output index (location of name in the type)
+            idx = [];                    
             
             % Loop throug the types
             for t = 1:length(types);
-                type = type_out{t}; % the current type
+                type = types{t}; % the current type
                 
                 % Loop through all array values for the current type
                 for i = 1:length(obj.(types{t}));
                     
                     % If name is found return the index
                     if strcmp(obj.(types{t})(i).name, name);
-                        idx = i;
-                        return;
+                        idx(end+1) = i;
                     end
+                end
+                
+                % It is impossible to have the same name of a different
+                % type, so exit if the idx is not empty
+                if ~isempty(idx);
+                    break;
                 end
             end
             
-            % Throw and error if the name was not found
-            if isempty(idx);
-                error('System:locate', 'The entity with name %s was not found.', name);
-            end   
+            % Output fullname types
+            switch type;
+                case 'mat';   type = 'matrix';
+                case 'vec';   type = 'vector';
+                case 'const'; type = 'constant';
+                case 'func';  type = 'function';
+            end
+        end
+        
+        function idx = locate_functions(obj, eqn)
+            %LOCATE_FUNCTIONS Searchs eqn for the presence of functions
+            %
+            % Syntax
+            %   idx = locate_functions(eqn)
+            %
+            % Description
+            %   idx = locate_functions(eqn) searches the equation string,
+            %   eqn, for the existance of function variables (i.e., those
+            %   added with ADD_FUNCTION). It returns the indices for the
+            %   func property for the variables that exist in eqn.
+
+            % Initialize output
+            idx = [];
+
+            % Loop through each function and store location, if found
+            for i = 1:length(obj.func);
+                [~, flag] = obj.insert_string(eqn, obj.func(i).name, '');
+                if flag;
+                    idx(end+1) = i;
+                end 
+            end    
         end
         
         function add_const(obj, name, value)
@@ -347,6 +416,12 @@ classdef System < mFEM.handle_hide
             if any(strcmp(name,obj.reserved));
                 error('System:add_const', 'The constant %s is a reserved string, select a different name.', name);
             end
+                        
+            % Limit the use of name
+            [~,idx] = obj.locate(name); 
+            if ~isempty(idx);
+                error('ERROR:ADD_CONST', 'The name, %s, was previously used, csontant names must be unique.', name);
+            end
             
             % Add the constant
             idx = length(obj.const) + 1;    % location
@@ -360,6 +435,54 @@ classdef System < mFEM.handle_hide
             % Assign the numeric constant
             obj.const(idx).value = value;   % constant value
         end
+        
+        function eqn = apply_constants(obj, eqn)
+            %APPLY_CONSTANTS applies constants to a string equation
+            %
+            % Syntax
+            %   eqn = apply_constant(eqn)
+            %
+            % Description
+            %   eqn = apply_constant(eqn) given the eqn string (see 
+            %   ADD_MATRIX and ADD_VECTOR) and applies any constants that
+            %   were given via ADD_CONSTANT.
+                        
+            % Loop through each constant and add if present
+            for i = 1:length(obj.const);
+
+                % Current constant name and value
+                str = obj.const(i).name;    
+                val = mat2str(obj.const(i).value);  
+
+                % Insert the value                
+                eqn = obj.insert_string(eqn, str, val);
+            end
+        end
+             
+        function fcn = apply_func(obj, eqn, fidx, x)
+            %APPLY_FUNC Inserts the function handle into the equation
+            %
+            % Syntax
+            %   fcn = apply_func(fcn, fidx, x)
+            %
+            % Description
+            %   fcn = apply_func(fcn, fidx, x) applies the function
+            %   variables given by the indices in fidx for the position x
+            %   to the string fcn supplied.
+            
+            % Loop through all the functions
+            for i = 1:length(fidx);
+                % Value to insert
+                value = feval(obj.func(i).handle, x, obj.time);
+                
+               % Insert the value for the current location
+                eqn = obj.insert_string(eqn, ...
+                    obj.func(i).name, mat2str(value));             
+            end
+
+            % Convert to a function
+            fcn = str2func(eqn);
+        end     
         
         function func = parse_equation(obj, eqn, varargin)
             %PARSE_EQUATION Converts given equation into a useable function
@@ -416,67 +539,7 @@ classdef System < mFEM.handle_hide
                 func= ['@(elem,',var,') ', eqn];
             end
         end
-        
-        function eqn = apply_constants(obj, eqn)
-            %APPLY_CONSTANTS applies constants to a string equation
-            %
-            % Syntax
-            %   eqn = apply_constant(eqn)
-            %
-            % Description
-            %   eqn = apply_constant(eqn) given the eqn string (see 
-            %   ADD_MATRIX and ADD_VECTOR) and applies any constants that
-            %   were given via ADD_CONSTANT.
-                        
-            % Loop through each constant and add if present
-            for i = 1:length(obj.const);
 
-                % Current constant name and value
-                str = obj.const(i).name;    
-                val = mat2str(obj.const(i).value);  
-
-                % Insert the value                
-                eqn = obj.insert_string(eqn, str, val);
-            end
-        end
-             
-        function idx = locate_functions(obj, eqn)
-            
-            % Initialize output
-            idx = [];
-
-            % Loop through each function and store location, if found
-            for i = 1:length(obj.func);
-                [~, flag] = obj.insert_string(eqn, obj.func(i).name, '');
-                if flag;
-                    idx(end+1) = i;
-                end 
-            end    
-        end
-        
-        function fcn = apply_func(obj, eqn, fidx, x)
-            %APPLY_FUNC Inserts the function handle into the equation
-            %
-            % Syntax
-            %   fcn = apply_func(fcn, fidx, x)
-            %
-            % Description
-            %   fcn = apply_func(fcn, fidx, x) 
-            
-            % Loop through all the functions
-            for i = 1:length(fidx);
-                % Value to insert
-                value = feval(obj.func(i).handle, x, obj.time);
-                
-               % Insert the value for the current location
-                eqn = obj.insert_string(eqn, ...
-                    obj.func(i).name, mat2str(value));             
-            end
-
-            % Convert to a function
-            fcn = str2func(eqn);
-        end
-        
         function K = assemble_matrix(obj, idx)
             %ASSEMBLE_MATRIX Assembles a matrix for given index.
             %
@@ -487,20 +550,27 @@ classdef System < mFEM.handle_hide
             %   K = assemble_matrix(idx) assembles the desired matrix,
             %   where idx is the location in the mat structure.
 
-            % Create the Matrix object
-            obj.mat(idx).matrix = mFEM.Matrix(obj.mesh);
-          
-            % Case when the vector is only applied to a side
-            if ~isempty(obj.mat(idx).boundary_id);
-               obj.assemble_matrix_side(idx);
-               
-            % Case when the vector is applied to entire element    
-            else
-                obj.assemble_matrix_elem(idx);
-            end
+            % Initialize the output
+            K = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
             
-            % Output the global vector
-            K = obj.mat(idx).matrix.init();
+            % Loop through the indices
+            for i = 1:length(idx);
+                
+                % Create the Matrix object
+                obj.mat(idx(i)).matrix = mFEM.Matrix(obj.mesh);
+
+                % Case when the vector is only applied to a side
+                if ~isempty(obj.mat(idx(i)).boundary_id);
+                   obj.assemble_matrix_side(idx(i));
+
+                % Case when the vector is applied to entire element    
+                else
+                    obj.assemble_matrix_elem(idx(i));
+                end
+
+                % Add the matrix to the global matrix
+                K = K + obj.mat(idx(i)).matrix.init();
+            end
         end   
         
         function assemble_matrix_side(obj, idx)
@@ -655,20 +725,27 @@ classdef System < mFEM.handle_hide
             %   K = assemble_vector(idx) assembles the desired vector,
             %   where idx is the location in the vec structure.
             
-            % Clear existing vector
-            obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
-          
-            % Case when the vector is only applied to a side
-            if ~isempty(obj.vec(idx).boundary_id);
-               obj.assemble_vector_side(idx);
-               
-            % Case when the vector is applied to entire element    
-            else
-                obj.assemble_vector_elem(idx);
-            end
+            % Initialize the output
+            f = zeros(obj.mesh.n_dof, 1);
             
-            % Output the global vector
-            f = obj.vec(idx).vector;
+            % Loop through the indices
+            for i = 1:length(idx);
+                
+                % Clear existing vector
+                obj.vec(idx(i)).vector = zeros(obj.mesh.n_dof, 1);
+
+                % Case when the vector is only applied to a side
+                if ~isempty(obj.vec(idx(i)).boundary_id);
+                   obj.assemble_vector_side(idx(i));
+
+                % Case when the vector is applied to entire element    
+                else
+                    obj.assemble_vector_elem(idx(i));
+                end
+
+                % Output the global vector
+                f = f + obj.vec(idx(i)).vector;
+            end
         end  
         
         function assemble_vector_side(obj, idx)
@@ -736,7 +813,7 @@ classdef System < mFEM.handle_hide
                                 for j = 1:size(qp,1);
                                     
                                     % Apply spatial/temporal functions
-                                    if ~isempty(obj.mat(idx).functions);
+                                    if ~isempty(obj.vec(idx).functions);
                                         x = elem.get_position(qp{i,:});
                                         fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
                                     end
@@ -790,7 +867,7 @@ classdef System < mFEM.handle_hide
                 for j = 1:size(qp,1);
                     
                     % Apply spatial/temporal functions
-                    if ~isempty(obj.mat(idx).functions);
+                    if ~isempty(obj.vec(idx).functions);
                         x = elem.get_position(qp{j,:});
                         fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
                     end

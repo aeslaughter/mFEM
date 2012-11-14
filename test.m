@@ -4,8 +4,15 @@ clear;
 import mFEM.*
 
 mesh = FEmesh();
-mesh.grid('Quad4',0,1,0,1,2,2);
+mesh.grid('Quad4',0,1,0,1,1,1);
 mesh.init();
+
+sys = System(mesh);
+sys.add_constant('k', 10);
+sys.add_matrix('K','B''*k*B');
+%sys.add_matrix('K','B''*k*B');
+
+K = sys.assemble('K'); full(K)
 
 % func.fhandle{1} = @(x,t) test_fcn(x,t);
 % 
@@ -31,14 +38,14 @@ mesh.init();
 % 
 % full(M.init())
 
-sys = System(mesh);
-sys.add_constant('c', 1);
-sys.add_function('k', @(x,t) test_fcn(x,t));
-sys.time = 2;
-sys.add_matrix('M', 'N''*c*k*N');
-
-M = sys.assemble('M');
-% full(M)
+% sys = System(mesh);
+% sys.add_constant('c', 1);
+% sys.add_function('k', @(x,t) test_fcn(x,t));
+% sys.time = 2;
+% sys.add_matrix('M', 'N''*c*k*N');
+% 
+% M = sys.assemble('M');
+% % full(M)
 
 function output = test_fcn(x,t)
     output = 2;

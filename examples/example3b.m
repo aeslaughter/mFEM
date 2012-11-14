@@ -26,12 +26,16 @@ sys.add_constant('k', 5*eye(2), 'b', 6, 'q_top', 20);
 
 % Create matrices
 sys.add_matrix('K', 'B''*k*B');
-sys.add_vector('f_s', 'N''*b');
-sys.add_vector('f_q', 'N''*-q_top', 'Boundary', 1);
+sys.add_vector('f', 'N''*b');
+sys.add_vector('f', 'N''*-q_top', 'Boundary', 1);
+
+% sys.add_vector('f_s', 'N''*b');
+% sys.add_vector('f_q', 'N''*-q_top', 'Boundary', 1);
 
 % Assemble
 K = sys.assemble('K');
-f = sys.assemble('f_s') + sys.assemble('f_q');
+f = sys.assemble('f');
+%f = sys.assemble('f_s') + sys.assemble('f_q');
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.get_dof('Boundary',3); % 4

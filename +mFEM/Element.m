@@ -42,6 +42,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
         n_dof_node = uint32(1);     % no. of dofs per node (scalar = 1)  
         nodes = [];                 % global coordinates (no. nodes, no. dim)
         node_plot_order;            % node plotting order (only needed if nodes are out of order)
+        opt = ...                   % Options structure
+          struct('space', 'scalar', 'truss', false);
     end
     
     % Public properties (read only; except FEmesh and Element)
@@ -54,7 +56,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     
     % Protected properties
      properties (Hidden = true, Access = {?mFEM.FEmesh, ?mFEM.Element}) 
-         neighbors;      % storage of nieghbor elements (see FEmesh.find_neighbors)
+         neighbors;       % storage of nieghbor elements (see FEmesh.find_neighbors)
          global_dof = []; % Global dof for nodes of element
                           % (these are not the true dofs (except in scalar 
                           % space) as such the user should always access the
@@ -89,11 +91,15 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             % Element Property Descriptions
             %   space
-            %       'scalar' | 'vector' | integer
+            %       {'scalar'} | 'vector' | integer
             %       Allows the type of FEM space to be set: scalar sets the 
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
             %       to that value.
+            %
+            %   truss
+            %       true | {false}
+            
 
             % Insert required values into object properties
             obj.id = id;
