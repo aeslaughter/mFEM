@@ -109,6 +109,9 @@ function FEplot(obj, varargin)
     if obj.n_dim == 1 && obj.n_dof_node == 1;
         h = plot1D_scalar(obj, opt);
         
+    elseif obj.n_dim == 1 && obj.n_dof_node == 2;
+        h = plot1D_vector(obj, opt);
+        
     elseif obj.n_dim == 2 && obj.n_dof_node == 1;
         h = plot2D_scalar(obj, opt);
         
@@ -235,6 +238,74 @@ function h = plot1D_scalar(obj, opt)
 
     % Create the graph
     h = plot(X,Y); hold on;
+end
+
+function h = plot1D_vector(obj, opt)
+    %PLOT1D_vector create a plot for 1D with multiple dofs per node
+
+    % Initialize the x and y values
+    h = zeros(obj.n_elements,1);
+    
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
+        
+        % The node positions
+        x = elem.nodes(:,1);
+        y = zeros(size(x));
+        
+        % Gather y-axis data
+        z = [];
+        if ~isempty(opt.data)
+            dof = elem.get_dof();
+            z = opt.data(dof);
+            zz(:,1) = z(1:2:end);
+            zz(:,2) = z(2:2:end);           
+            
+            if isnan(opt.component);
+                z = nan(size(x));
+            elseif isempty(opt.component);
+                z = sqrt(zz(:,1).^2 + zz(:,2).^2);
+            elseif isnumeric(opt.component) && isscalar(opt.component);
+                z = zz(:,opt.component);
+            else
+                error('FEplot:plot2D_vector','Error with Component property value');
+            end
+            
+             % Adjust nodal position if deformed shape is desired
+            if opt.deform
+                % Adjust the nodal values
+                x = x + opt.scale*zz(:,1);
+                y = z + opt.scale*zz(:,2);
+            end
+        end
+
+        % Apply the plotting order
+        order = elem.node_plot_order;
+        if ~isempty(order);
+            x = x(order);
+            y = y(order);
+            if ~isempty(z);
+                z = z(order);
+            end
+        end
+
+        % Create the graph
+        if isempty(z);
+            h(e) = patch(x, y, 'w');
+        else
+            h(e) = patch(x, y, z,'EdgeColor','interp');
+        end
+    end
+    
+    % Create the colorbar        
+    if ~isempty(opt.colorbar) && ischar(opt.colorbar);
+        cbar = colorbar;
+        set(get(cbar,'YLabel'),'String',opt.colorbar);
+    end    
+
 end
 
 function h = plot2D_scalar(obj, opt)
@@ -368,7 +439,7 @@ function apply_plot_options(h, obj, opt)
     end
     
     % Add the custom patch options
-    if ~isempty(opt.patch) && obj.n_dim > 1;
+    if ~isempty(opt.patch);
         set(h, opt.patch{:}); 
     end
 end

@@ -1,76 +1,103 @@
 %EXAMPLE14a Beam element
+% Fish and Belytschko (2009), Ex. 10.1, p. 262
+%
+% This is a specialized example problem, refer that replicates the example
+% problem from the text exactly. For a more rubust approach refer to
+% example 14b
+%
+% See Also EXAMPLE14b
 
 function example14a
 
+% Load the mFEM library
 import mFEM.*
 
+% Create the 2-element mesh
 mesh = FEmesh('Element','Beam');
 mesh.add_element([0;8]);
 mesh.add_element([8;12]);
 mesh.init();
 
-mesh.add_boundary(1,'right');
-mesh.add_boundary(2,'x==8');
-mesh.add_boundary(3,'left');
+% Add flags for the boundary elements
+mesh.add_boundary(1,'left');    % fixed connection
+mesh.add_boundary(2,'right');   % prescribed force and rotation
 
-P1 = -10;
-P2 = 5;
-EI = 10^4;
-c = [-20,20]; % presecribed force and moment on boundary
+% Add flag for the distributed load
+mesh.add_subdomain(10, 'x<8');    % distributed load, b
 
+% Difine the paramters for the problem
+b = -1;         % body force
+P1 = -10;       % load at x = 4
+P2 = 5;         % load at x = 8
+EI = 10^4;      % modulus and moment of intertia
+c = [-20;20];   % presecribed force and moment on boundary
+
+% Initialize global stiffness matrix and force vector
 K = Matrix(mesh);
 f = zeros(mesh.n_dof,1);
+
+% Loop through the elements
 for e = 1:mesh.n_elements;
     
+    % Current element
     elem = mesh.element(e);
     
-    [qp,w] = elem.quad.rules();
+    % Initilize local K and f
+    Ke = zeros(elem.n_dof);    
+    fe = zeros(elem.n_dof,1);    
+    
+    % Create functions for N and B
     B = @(xi) elem.shape_deriv(xi);
     N = @(xi) elem.shape(xi);
     
-    Ke = zeros(elem.n_dof);    
-    fe = zeros(elem.n_dof,1);
+    % Extract quadrature points
+    [qp,w] = elem.quad.rules();
+
+    % Perform quadrature for stiffness matrix
     for i = 1:length(qp);
-        b = body_force(elem);
         Ke = Ke + w(i)*EI*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
-        fe = fe + w(i)*N(qp(i))'*b*elem.detJ(qp(i));
     end
 
-    if e == 1;
-        fe = fe + N(0)'*P1;
-    end
-    
-    if elem.boundary_id == 1;
-        for s = 1:length(elem.side);
-            if elem.side(s).boundary_id == 1;
-                dof = elem.get_dof('Side',s,'-local');
-                fe(dof) = c;
-            end
+    % Account for the body force, only on subdomain
+    if any(elem.subdomain == 10);
+        for i = 1:length(qp);  
+            fe = fe + w(i)*N(qp(i))'*b*elem.detJ(qp(i));
         end
     end
+    
+    % Account for point loads and the boundary loads at right end
+    if e == 1;
+        fe = fe + N(0)'*P1;
+    elseif e == 2;
+        fe = fe + N(-1)'*P2;
+        dof = elem.get_dof('Side',2,'-local');
+        fe(dof) = fe(dof) + c;
+    end
 
+    % Add the local matrix and vector to the global
     dof = elem.get_dof();
     K.add_matrix(Ke, dof);
     f(dof) = f(dof) + fe;
 end
+
+% Create the stiffness matrix
 K = K.init();
-
-dofP2 = mesh.get_dof('Boundary',2,'Component',1);
-f(dofP2) = f(dofP2) + P2;
-
-ess = mesh.get_dof('Boundary',3);
-u = zeros(size(f));
+full(K)
+f
+% Solve for the unknowns
+ess = mesh.get_dof('Boundary' , 1);
 u(ess) = 0;
 u(~ess) = K(~ess,~ess)\f(~ess);
+u
+% Plot the results
+h = subplot(2,1,1);
+%mesh.plot(u,'Axes', h, 'Component', 1, 'colorbar', 'Displacement (m)');
+mesh.plot(u, 'Axes', h, 'Component', 1, '-deform', 'patch', {'EdgeColor','k'});
+xlabel('x (m)');
+ylabel('Displacement (m)');
 
-full(K)
-
-
-
-
-function p = body_force(elem)
-    x = elem.nodes(2);
-    p = 0;
-    if x <= 8;
-        p = -1;
-    end
+h = subplot(2,1,2);
+% mesh.plot(u,'Axes', h, 'Component',2, 'colorbar', 'Rotation');
+mesh.plot(u, 'Axes', h, 'Component', 2, '-deform', 'patch', {'EdgeColor','k'});
+xlabel('x (m)');
+ylabel('Rotation (rad.)');

@@ -50,6 +50,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
     properties (GetAccess = public, SetAccess = {?mFEM.FEmesh, ?mFEM.Element})
         on_boundary;                % flag if element is on a boundary
         boundary_id = uint32([]);   % list of all boundary ids for element
+        subdomain = uint32([]);     % list of all subdomain ids for element
         side;                       % side info, see constructor        
         local_n_dim;                % local dimensions
         direct = false;             % a flag for using direct assembly, see Truss
@@ -283,11 +284,12 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
            
             % The number of spatial dimensions available
             n = obj.n_dim;
-            
+            N = obj.shape(varargin{:});
             % Loop through the dimensions and return the desired position
             xyz = zeros(1,n);
             for i = 1:n;
-               xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
+               %xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
+               xyz(1,i) = N([1,3])*obj.nodes(:,i); 
             end
             
             % Reduce to single array if only a single output is given

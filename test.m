@@ -3,37 +3,40 @@ function test
 clear;
 import mFEM.*
 
-mesh = FEmesh();
-mesh.add_element('Truss',[0,0; 8.66,0]);
+mesh = FEmesh('Element','Quad4');
+mesh.grid(0,1,0,1,10,10);
 mesh.init();
 
-elem = mesh.element(1);
-N = elem.shape();
-T = elem.transformation()
-
-L = elem.size()
-E = 1e6;
-A = 0.01;
-
-A*E/L*N'*N
+mesh.add_subdomain(1,'x>0.5');
 
 
-
-
-return;
-
-
-
-B = @(xi) elem.shape(xi);
-
-
-
-[qp,W] = elem.quad.rules(); 
-K = zeros(elem.n_dof*2)
-for i = 1:length(qp);
-    K = K + W(i)*A*E/L*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
-end
-K
+% elem = mesh.element(1);
+% N = elem.shape();
+% T = elem.transformation()
+% 
+% L = elem.size()
+% E = 1e6;
+% A = 0.01;
+% 
+% A*E/L*N'*N
+% 
+% 
+% 
+% 
+% return;
+% 
+% 
+% 
+% B = @(xi) elem.shape(xi);
+% 
+% 
+% 
+% [qp,W] = elem.quad.rules(); 
+% K = zeros(elem.n_dof*2)
+% for i = 1:length(qp);
+%     K = K + W(i)*A*E/L*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
+% end
+% K
 % sys = System(mesh);
 % sys.add_matrix('K','B''*B');
 % 

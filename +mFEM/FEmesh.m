@@ -16,10 +16,11 @@ classdef FEmesh < mFEM.handle_hide
         n_dof_node = uint32(1);     % no. of dofs per node      
         element;                    % empty array of elements
         initialized = false;        % initialization state
-        boundary_id = uint32([]);   % list of boundary ids
+        boundary_id = uint32([]);   % list of boundary id tags
+        subdomain = uint32([]);     % list of subdomain tags
         map = ...                   % structure of node, elem, dof, and boundary maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
-            'boundary', uint32([]));       
+            'boundary', uint32([]),'subdomain',uint32([]));       
         opt = ...                   % struct of default user options
             struct('space', 'scalar', 'type', 'CG', 'time', true,...
                 'element', 'Line2');
@@ -71,7 +72,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.element = mFEM.elements.Line2.empty;
         end
         
-        function grid(obj, type, varargin)
+        function grid(obj, varargin)
             %GRID Create a mesh (1D, 2D, or 3D)
             % 
             % Syntax
@@ -107,12 +108,12 @@ classdef FEmesh < mFEM.handle_hide
             
             % Check the current element type is supported
             switch obj.opt.element;
-                case {'Line2', 'Line3'};
-                    obj.gen1Dgrid(obj.opt.element, varargin{:});
+                case {'Line2', 'Line3', 'Truss', 'Beam'};
+                    obj.gen1Dgrid(varargin{:});
                 case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(obj.opt.element, varargin{:});
+                    obj.gen2Dgrid( varargin{:});
                 otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s elem', type);
+                    error('FEmesh:grid','Grid generation is not supported for the %s elem', obj.opt.element);
             end
             
             % Complete message
@@ -205,17 +206,17 @@ classdef FEmesh < mFEM.handle_hide
         end
                 
         function add_boundary(obj, id, varargin)
-            %ADD_BOUNDARY Labels elements with numeric tags.
+            %ADD_BOUNDARY Labels elements and sides with numeric tags.
             %
             % Syntax
-            %   add_boundary(id,Limit1,...)
+            %   add_boundary(id, Limit1,...)
             %   add_boundary(id)
             %
             % Description
             %   add_boundary(id) labels all unidentified elements and sides
             %       with the specified id, which must be an interger
             %       value greater than zero.
-            
+            %
             %   add_boundary(id, Limit1,...) allows 
             %       for customization to what boundaries are tagged, see 
             %       the descriptions below. It is possible to
@@ -248,7 +249,9 @@ classdef FEmesh < mFEM.handle_hide
             %   The following labels the right hand side of the mesh and
             %   the elements with nodes on x == 1 OR y == 1 to 1.
             %       add_boundary(1,'right','x==1','y==1'});
-            %       
+            % 
+            % See Also
+            %   ADD_SUBDOMAIN
 
             % Check that the id is a numeric value
             if ~isnumeric(id) || id == 0;
@@ -280,11 +283,50 @@ classdef FEmesh < mFEM.handle_hide
                 
                 % Apply id based on function flag
                 else
-                    obj.add_boundary_function(id, varargin{i});
+                    obj.add_tag(id, varargin{i},'boundary');
                 end
             end
         end
 
+        function add_subdomain(obj, id, varargin)
+            %ADD_SUBDOMAIN Labels elements with numeric tags.
+            %
+            % Syntax
+            %   add_subdomain(id, Limit1,...)
+            %
+            % Description
+            %   add_boundary(id, Limit1,...) allows user to seperate the
+            %   domain into subdomains based on a variety of spatial
+            %   criteria functions, see the description below.
+            %
+            % Descriptions of Limits
+            %   Functions:
+            %       string | cell array of strings
+            %       It is possible to tag domains using test functions.
+            %       For example, 'x==1' will tag elements that have a
+            %       node location at 1. Mutliple conditions should be
+            %       expressed in a cell array. For example, {'x==1','y<2'}
+            %       will id elements with nodes at x = 1 AND y < 2.
+            %   
+            
+            % Check that the id is a numeric value
+            if ~isnumeric(id) || id == 0;
+                error('FEmesh:add_subdomain',...
+                    'The subdomain tag must be a number greater than 0');
+            end
+            
+            % Check if system is initialized
+            if ~obj.initialized;
+                error('FEmesh:add_subdomain',...
+                    'The FEmesh object must be initialized');
+            end
+                        
+            % Apply the subdomain flags
+            for i = 1:length(varargin);
+                obj.add_tag(id, varargin{i},'subdomain');
+            end
+        end
+        
         function dof = get_dof(obj, varargin)
             %GET_DOF Returns the global degrees of freedom.
             %
@@ -321,13 +363,19 @@ classdef FEmesh < mFEM.handle_hide
             % GET_DOF Property Descriptions
             %   Component
             %       scalar | 'x' | 'y' | 'z'
-            %       Returns the dof associated with the vector space
+            %       Returns the dof associated with the vector space or
+            %       multipe dof per node elements like the Beam element.
             %
             %   Boundary
             %       scalar
             %       Extract the dofs for the boundary specified, where the
             %       scalar value is the numeric id added using the
             %       ADD_BOUNDARY method.
+            %
+            %   Subdomain
+            %       scalar
+            %       Extract the dofs for the subdomain specified, where the
+            %       scalar is the numeric tag added using ADD_SUBDOMAIN.
             %
             %   Index
             %       true | {false}
@@ -609,30 +657,15 @@ classdef FEmesh < mFEM.handle_hide
             %   global degrees of freedom for portions of the mesh
             %   depending on the properties (see descriptions below).
             %
-            % GET_DOF Property Descriptions
-            %   Component
-            %       scalar | 'x' | 'y' | 'z'
-            %       Returns the dof associated with the vector space
+            % GET_DOF_PRIVATE Property Descriptions
+            %   see GET_DOF
             %
-            %   Boundary
-            %       scalar
-            %       Extract the dofs for the boundary specified, where the
-            %       scalar value is the numeric id added using the
-            %       ADD_BOUNDARY method.
-            %
-            %   Index
-            %       true | {false}
-            %       Toggles the type of output, by default the GET_DOF
-            %       returns the dofs as a logical array equal to the length
-            %       of the number of degrees of freedom. However, if the
-            %       actual numeric indice is desired set this property to
-            %       true. You can also use the flag style input, the
-            %       following are equivlent.
-            %           get_dof('index',true)
-            %           get_dof('-index')
+            % See Also
+            %   GET_DOF
 
             % Set the default values for the varius inputs
             options.component = [];
+            options.subdomain = [];
             options.boundary = [];
             options.index = false;
             options = gather_user_options(options, varargin{:});
@@ -643,6 +676,16 @@ classdef FEmesh < mFEM.handle_hide
                 % Extract the column of boundary_id map
                 col = obj.boundary_id == options.boundary;
                 idx = obj.map.boundary(:,col);
+
+                % Collect the dofs
+                dof = unique(obj.map.dof(logical(idx)));
+                
+            % Return dofs for the specfied subdomain tag
+            elseif ~isempty(options.subdomain);
+                
+                % Extract the column of boundary_id map
+                col = obj.subdomain == options.subdomain;
+                idx = obj.map.subdomain(:,col);
 
                 % Collect the dofs
                 dof = unique(obj.map.dof(logical(idx)));
@@ -689,14 +732,14 @@ classdef FEmesh < mFEM.handle_hide
             end
         end
         
-        function gen1Dgrid(obj,type, x0, x1, xn)
+        function gen1Dgrid(obj, x0, x1, xn)
             %GEN1DGRID Generate the 1D mesh (see grid)
             %
             % Syntax
-            %   gen1Dgrid(type, x0, x1, xn)
+            %   gen1Dgrid(x0, x1, xn)
             %
             % Description
-            %   gen1Dgrid(type, x0, x1, xn) creates a 1D grid ranging from
+            %   gen1Dgrid(x0, x1, xn) creates a 1D grid ranging from
             %   x0 to x1 with xn number of elements.
 
             % Generate the generic grid points
@@ -709,18 +752,18 @@ classdef FEmesh < mFEM.handle_hide
                 nodes(2) = x(i+1);
 
                 % Add the element(s)
-                obj.add_element(type, nodes');
+                obj.add_element(nodes');
             end
         end
         
-        function gen2Dgrid(obj, type, x0, x1, y0, y1, xn, yn, varargin)
+        function gen2Dgrid(obj, x0, x1, y0, y1, xn, yn, varargin)
             %GEN2DGRID Generate the 2D mesh (see grid)
             %
             % Syntax
-            %   gen2Dgrid(type, x0, x1, y0, y1, xn, yn)
+            %   gen2Dgrid(x0, x1, y0, y1, xn, yn)
             %
             % Description
-            %   gen2Dgrid(type, x0, x1, y0, y1, xn, yn) creates a 2D grid 
+            %   gen2Dgrid(x0, x1, y0, y1, xn, yn) creates a 2D grid 
             %   ranging from x0 to x1 with xn number of elements in the
             %   x-direction, similarily in the y direction.
             %
@@ -755,13 +798,13 @@ classdef FEmesh < mFEM.handle_hide
                     end
                     
                     % Add the element(s)
-                    switch type;
+                    switch obj.opt.element;
                         case {'Quad4'};
-                            obj.add_element(type, nodes);
+                            obj.add_element( nodes);
                             
                         case {'Tri3', 'Tri6'};
-                            obj.add_element(type, nodes(1:3,:));
-                            obj.add_element(type, nodes([1,3,4],:));
+                            obj.add_element(nodes(1:3,:));
+                            obj.add_element(nodes([1,3,4],:));
                     end
                 end
             end
@@ -788,27 +831,35 @@ classdef FEmesh < mFEM.handle_hide
            func = [col,'==',num2str(value)];
 
            % Call the function based boundary function
-           obj.add_boundary_function(id, func);
+           obj.add_tag(id, func, 'boundary');
         end
         
-        function add_boundary_function(obj, id, func)
-            %ADD_BOUNDARY_FUNCTION Adds boundary id based on function
+        function add_tag(obj, id, func, type)
+            %ADD_TAG Adds boundary and subdomain tags based on function
             %
             % Syntax
-            %    add_boundary_function(id, FuncString)
-            %    add_boundary_function(id, FuncCell)
+            %    add_tag(id, FuncString, type)
+            %    add_tag(id, FuncCell, type)
             %
             % Description
-            %    add_boundary_function(id, FuncString) adds a boundary id
+            %    add_tag(id, FuncString) adds a boundary id
             %    based on the string expression in FuncString, see
-            %    ADD_BOUNDARY for details.
+            %    ADD_BOUNDARY and ADD_SUBDOMAIN for details. Type should be
+            %    either 'boundary' or 'subdomain'
             %
-            %    add_boundary_function(id, FuncCell) adds a boundary id
+            %    add_tag(id, FuncCell, type) same as above, but adds a tag
             %    based on all of the string expressions in FuncCell, see
-            %    ADD_BOUNDARY for details.
+            %    ADD_BOUNDARY and ADD_SUBDOMAIN for details.
             %
-            % See Also ADD_BOUNDARY
+            % See Also ADD_BOUNDARY ADD_SUBDOMAIN
            
+            % Create a boolean flag for distigushing types
+            if strcmpi(type, 'boundary');
+                is_boundary = true;
+            else
+                is_boundary = false;
+            end
+            
             % Convert character input into a cell
             if ischar(func)
                func = {func};
@@ -829,8 +880,8 @@ classdef FEmesh < mFEM.handle_hide
                 elseif strcmpi(f(1),'z') && obj.n_dim == 3;
                    col = 3;
                 else
-                    error('FEmesh:add_boundary_function',...
-                        'The input boundary function %s is invalid.', func{i});
+                    error('FEmesh:add_tag',...
+                        'The input function %s is invalid.', func{i});
                 end
 
                 % Build the strings to evaluate
@@ -844,20 +895,32 @@ classdef FEmesh < mFEM.handle_hide
             % Combine the indices
             idx = all(idx,2);
            
-            % Meld boundary map columns together if id already exists
+            % Meld tag map columns together if id already exists
             c = find(obj.boundary_id == id);
             if ~isempty(c);
-                idx_old = obj.map.boundary(:,c);
-                obj.map.boundary(:,c) = any([idx_old,idx],2);
+                if is_boundary;
+                    idx_old = obj.map.boundary(:,c);
+                    obj.map.boundary(:,c) = any([idx_old,idx],2);
+                else
+                    idx_old = obj.map.subdomain(:,c);
+                    obj.map.subdomain(:,c) = any([idx_old,idx],2);
+                end
 
             % Create a new column in the boundary map if id is new    
             else
-                obj.map.boundary(:, end+1) = idx;
-                obj.boundary_id(end+1) = id;
+                if is_boundary;
+                    obj.map.boundary(:, end+1) = idx;
+                    obj.boundary_id(end+1) = id;
+                else
+                    obj.map.subdomain(:, end+1) = idx;
+                    obj.subdomain(end+1) = id;
+                end
             end
            
-            % Remove the new boundary from 0 id
-            obj.map.boundary(idx,1) = false;
+            % Remove the new boundary from 0 id, not relevant to subdomain
+            if is_boundary;
+                obj.map.boundary(idx,1) = false;
+            end
             
             % Locate the elements on the boundary
             E = unique(obj.map.elem(idx),'R2012a');
@@ -867,8 +930,13 @@ classdef FEmesh < mFEM.handle_hide
 
                % Add id to the element
                elem = obj.element(E(e));
-               elem.on_boundary = true;
-               elem.boundary_id(end+1) = id;
+               if is_boundary;
+                    elem.on_boundary = true;
+                    elem.boundary_id(end+1) = id;
+               else
+                   elem.subdomain(end+1) = id;
+                   continue; % subdomain do not label sides, only elements
+               end
 
                % Locate dofs that meet critiera
                e_idx = eval(str_elem);

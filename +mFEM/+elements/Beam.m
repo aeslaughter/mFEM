@@ -28,14 +28,20 @@ classdef Beam < mFEM.Element
            
            % Call the base class constructor
            obj = obj@mFEM.Element(id, nodes, 'Space', 2); 
-           
-           % Set the degrees of freedom per node
-           obj
         end
         
         % Define the size function
         function L = size(obj)
         	L = norm(diff(obj.nodes,1));
+        end
+        
+        function D = dNdx3(obj)
+           % Third derivative of shape functoins 
+           L = obj.size();
+           D(1) = 12/L^3;
+           D(2) = 6/L^2;
+           D(3) = -12/L^3;
+           D(4) = 6/L^2;
         end
     end
     
@@ -50,7 +56,7 @@ classdef Beam < mFEM.Element
         end
 
         function B = grad_basis(obj, xi) 
-            % Gradient of shape functions
+            % Second derivative of shape functions
             L = obj.size();
             B(1) = 1/L^2*6*xi;
             B(2) = 1/L*(3*xi-1);
@@ -58,6 +64,8 @@ classdef Beam < mFEM.Element
             B(4) = 1/L*(3*xi+1);
         end
              
+
+        
         function J = jacobian(obj, varargin)
             % Returns the jacobian matrix (1/2 the length)
             J = 1/2 * obj.size();            
