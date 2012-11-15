@@ -40,7 +40,7 @@ classdef System < mFEM.handle_hide
             struct('name', char, 'eqn', char, 'func', char, ...
             'matrix', {}, 'functions', [], 'boundary_id', uint32([]));
         vec = ... % vector storage structure
-            struct('name', char, 'eqn' ,char, 'func', char, 'vector',[],...
+            struct('name', char, 'eqn' ,char, 'func', char, 'vector',{},...
             'functions', [], 'boundary_id', uint32([]));
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
@@ -262,7 +262,7 @@ classdef System < mFEM.handle_hide
             obj.vec(idx).eqn = eqn;
             obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).functions = obj.locate_functions(eqn);
-            obj.vec(idx).vector = zeros(obj.mesh.n_dof, 1);
+            obj.vec(idx).vector = mFEM.Vector.empty;
             obj.vec(idx).boundary_id = options.boundary;   
         end
         
@@ -748,7 +748,7 @@ classdef System < mFEM.handle_hide
             for i = 1:length(idx);
                 
                 % Clear existing vector
-                obj.vec(idx(i)).vector = zeros(obj.mesh.n_dof, 1);
+                obj.vec(idx(i)).vector = mFEM.Vector(obj.mesh);
 
                 % Case when the vector is only applied to a side
                 if ~isempty(obj.vec(idx(i)).boundary_id);
@@ -760,7 +760,7 @@ classdef System < mFEM.handle_hide
                 end
 
                 % Output the global vector
-                f = f + obj.vec(idx(i)).vector;
+                f = f + obj.vec(idx(i)).vector.init();
             end
         end  
         
@@ -844,7 +844,7 @@ classdef System < mFEM.handle_hide
                             
                             % Add the local force vector to the global vector
                             dof = elem.get_dof();    
-                            obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
+                            obj.vec(idx).vector.add_vector(fe,dof);
                         end
                     end   
                 end 
@@ -894,7 +894,7 @@ classdef System < mFEM.handle_hide
 
                 % Add the local force vector to the global vector
                 dof = elem.get_dof();    
-                obj.vec(idx).vector(dof) = obj.vec(idx).vector(dof) + fe;
+                obj.vec(idx).vector.add_vector(fe,dof);
             end
         end
     end
