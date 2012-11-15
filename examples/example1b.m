@@ -33,8 +33,8 @@ opt.element = 'Line2';
 opt = gather_user_options(opt,varargin{:});
     
 % Create Mesh
-mesh = FEmesh();
-mesh.grid(opt.element,0,4,opt.n);
+mesh = FEmesh('Element', opt.element);
+mesh.grid(0,4,opt.n);
 mesh.init();
 
 % Label the boundaries
@@ -45,12 +45,12 @@ mesh.add_boundary(2,'right');   % q = 20 boundary
 sys = System(mesh);
 sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5);
 sys.add_matrix('K', 'B''*k*A*B');
-sys.add_vector('f_s', 'N''*b');
-sys.add_vector('f_q', '-q_bar*A*N''', 'Boundary', 2);
+sys.add_vector('f', 'N''*b');
+sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
 
 % Assemble the stiffness matrix and force vector
 K = sys.assemble('K');
-f = sys.assemble('f_s') + sys.assemble('f_q');
+f = sys.assemble('f');
 
 % Solve for the Temp. on non-essential boundaries
 % Define dof indices for the essential dofs and non-essential dofs

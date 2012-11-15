@@ -5,8 +5,8 @@ function example5
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Space','vector');
-mesh.grid('Quad4',0,2,0,1,1,1);
+mesh = FEmesh('Space','vector','Element','Quad4');
+mesh.grid(0,2,0,1,1,1);
 mesh.init();
 
 % Label the boundaries
@@ -15,17 +15,17 @@ mesh.add_boundary(2, 'right','top');
 
 % Create system and add matrix components
 sys = System(mesh);
-sys.add_constant('E', 3e11, 'v', 0.3, 't', [1000;1000]);
+sys.add_constant('E', 3e11, 'v', 0.3, 'r', [1000;1000]);
 sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
 
 % Add force components
-sys.add_vector('f_1', 'N''*t', 'Boundary', 1);
-sys.add_vector('f_2', 'N''*-t', 'Boundary', 2);
+sys.add_vector('f', 'N''*r', 'Boundary', 1);
+sys.add_vector('f', 'N''*-r', 'Boundary', 2);
 
 % Assemble the matrix and vector
 K = sys.assemble('K'); 
-f = sys.assemble('f_1') + sys.assemble('f_2');
+f = sys.assemble('f') + sys.assemble('f');
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = [1,2,4];
@@ -41,7 +41,8 @@ r = K*u - f;
 
 % Display the displacement results
 u
-mesh.plot(u,'-Deform','-ShowNodes','Colorbar','Magnitude of Disp. (m)');
+mesh.plot(u,'-Deform','-ShowNodes','Colorbar','Magnitude of Disp. (m)',...
+    'Patch',{'EdgeColor','k'});
 xlabel('x'); ylabel('y');
 
 % Compute the stress and strain at the Gauss points

@@ -34,8 +34,8 @@ import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
 tic;
-mesh = FEmesh();
-mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
+mesh = FEmesh('Element',opt.element);
+mesh.grid(0,1,0,1,opt.n,opt.n);
 mesh.init();
 
 % Display time for mesh creation
@@ -46,7 +46,7 @@ mesh.add_boundary(1); % essential boundaries (all)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2,'quad');
+q_elem = Gauss('Order',2,'Type','quad');
 [qp, W] = q_elem.rules();
 
 % Problem specifics

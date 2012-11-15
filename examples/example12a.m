@@ -6,10 +6,10 @@ function example12a
 import mFEM.*
 
 % Create the truss structure
-mesh = FEmesh('Space','Truss');
-mesh.add_element('Truss',[-1,1; 0,0]);
-mesh.add_element('Truss',[0,1; 0,0]);
-mesh.add_element('Truss',[1,1; 0,0]);
+mesh = FEmesh('Element','Truss');
+mesh.add_element([-1,1; 0,0]);
+mesh.add_element([0,1; 0,0]);
+mesh.add_element([1,1; 0,0]);
 mesh.init();
 
 % Label the various boundaries

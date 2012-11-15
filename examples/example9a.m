@@ -1,14 +1,14 @@
 % A transient heat transfer example
 %
 % Syntax:
-%   example6a
-%   example6a('PropertyName', PropertyValue)
+%   example9a
+%   example9a('PropertyName', PropertyValue)
 %
 % Description:
-%   example6 solves a simple transient heat conduction problem, with the
+%   example9 solves a simple transient heat conduction problem, with the
 %   default settings.
 %
-%   example6a('PropertyName', PropertyValue) allows the user to customize
+%   example9a('PropertyName', PropertyValue) allows the user to customize
 %   the behavior of this example using the property pairs listed below.
 %
 % Example6a Property Descriptions
@@ -43,8 +43,8 @@ opt.method = 'normal';
 opt = gather_user_options(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
+mesh = FEmesh('Element',opt.element);
+mesh.grid(0,1,0,1,opt.n,opt.n);
 mesh.init();
 
 % Label the boundaries
@@ -52,7 +52,7 @@ mesh.add_boundary(1); % essential boundaries (all)
 
 % Create Gauss objects for performing integration on the element and
 % elements sides.
-q_elem = Gauss(2,'quad');
+q_elem = Gauss('Order',2,'Type','quad');
 [qp, W] = q_elem.rules();
 
 % Problem specifics

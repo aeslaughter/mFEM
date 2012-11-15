@@ -5,8 +5,8 @@ function example4a
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Space','vector');
-mesh.add_element('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
+mesh = FEmesh('Element','Quad4','Space','vector');
+mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
@@ -58,7 +58,7 @@ for e = 1:mesh.n_elements;
             dof = elem.get_dof('side',s,'-local'); % local dof for side
             side = elem.build_side(s);             % create side element
 
-            for i = 1:length(qp_side);      
+            for i = 1:length(qp_side);  
                 f(dof) = f(dof) + W_side(i)*side.shape(qp_side(i))'*t_top*side.detJ();
             end
             delete(side); % delete the side element

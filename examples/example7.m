@@ -5,10 +5,10 @@ function example7
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Space','vector');
+mesh = FEmesh('Element','Quad4','Space','vector');
 L = 10;
 c = 0.5;
-mesh.grid('Quad4',0,L,-c,c,30,20);
+mesh.grid(0,L,-c,c,30,20);
 mesh.init();
 
 % Label the boundaries
@@ -17,7 +17,7 @@ mesh.add_boundary(2, 'left');
 
 % Create system and add matrix components
 sys = System(mesh);
-sys.add_constant('c', c, 'L', L, 'E', 1e7, 'v', 0.3, 'P', [0;100]);
+sys.add_constant('c', c, 'l', L, 'E', 1e7, 'v', 0.3, 'P', [0;100]);
 sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
 sys.add_vector('f', 'N''*P', 'Boundary', 2);
@@ -38,7 +38,7 @@ u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
 
 % Display the displacement results
 subplot(2,1,1);
-mesh.plot(u,'Deform',true);
+mesh.plot(u,'-deform','Patch',{'EdgeColor','k'});
 title('FEM Solution');
 xlabel('x'); ylabel('y');
 xlim([-0.1,10]);
@@ -46,7 +46,7 @@ xlim([-0.1,10]);
 % Display the exact solution
 subplot(2,1,2);
 u_exact = exact_soln(sys);
-mesh.plot(u_exact,'Deform',true);
+mesh.plot(u_exact,'-deform');
 title('Exact Solution');
 xlabel('x'); ylabel('y');
 xlim([-0.1,10]);
@@ -59,7 +59,7 @@ c = sys.get('c');  % 0.5;
 E = sys.get('E');  % 1.0e7;
 nu = sys.get('v'); % 0.3;
 P = sys.get('P'); P = P(2); %100.0;
-l = sys.get('L'); %10;
+l = sys.get('l'); %10;
 
 % Compute intermediate terms
 I = 2.0/3*c^3;

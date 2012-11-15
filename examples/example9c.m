@@ -1,17 +1,17 @@
 % A transient heat transfer example, using System class
 %
 % Syntax:
-%   example6b
-%   example6b('PropertyName', PropertyValue)
+%   example9c
+%   example9c('PropertyName', PropertyValue)
 %
 % Description:
-%   example6 solves a simple transient heat conduction problem, with the
+%   example9c solves a simple transient heat conduction problem, with the
 %   default settings.
 %
-%   example6a('PropertyName', PropertyValue) allows the user to customize
+%   example9c('PropertyName', PropertyValue) allows the user to customize
 %   the behavior of this example using the property pairs listed below.
 %
-% Example6a Property Descriptions
+% Example9c Property Descriptions
 %
 % N
 %   scalar
@@ -33,8 +33,8 @@ opt.element = 'Quad4';
 opt = gather_user_options(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
+mesh = FEmesh('Element',opt.element);
+mesh.grid(0,1,0,1,opt.n,opt.n);
 mesh.init();
 
 % Label the boundaries

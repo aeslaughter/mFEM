@@ -56,7 +56,6 @@ for e = 1:mesh.n_elements;
     Ke = A*E/L*elem.stiffness();
 
     % Add to the global
-    elem.get_dof()
     K.add_matrix(Ke,elem.get_dof());
 end
 

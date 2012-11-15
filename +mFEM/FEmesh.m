@@ -10,10 +10,10 @@ classdef FEmesh < mFEM.handle_hide
     %----------------------------------------------------------------------
 
     properties (SetAccess = private, GetAccess = public)
-        n_elements = uint32([]);    % no. of elements in mesh
-        n_dim = uint32([]);         % no. of space dimensions
-        n_dof = uint32([]);         % total no. of global dofs
-        n_dof_node = uint32(1);     % no. of dofs per node      
+        n_elements = [];            % no. of elements in mesh
+        n_dim = [];                 % no. of space dimensions
+        n_dof = [];                 % total no. of global dofs
+        n_dof_node = 1;             %  no. of dofs per node      
         element;                    % empty array of elements
         initialized = false;        % initialization state
         boundary_id = uint32([]);   % list of boundary id tags
@@ -193,7 +193,7 @@ classdef FEmesh < mFEM.handle_hide
             obj.compute_dof_map();
             
             % Compute the total number of dofs
-            obj.n_dof = length(unique(obj.map.dof)) * obj.n_dof_node;
+            obj.n_dof = double(length(unique(obj.map.dof)) * obj.n_dof_node);
             
             % Tag all boundaries as 0
             obj.id_empty_boundary(0);          

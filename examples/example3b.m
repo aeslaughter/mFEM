@@ -11,8 +11,8 @@ function example3b
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.add_element('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
+mesh = FEmesh('Element','Quad4');
+mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
@@ -29,13 +29,9 @@ sys.add_matrix('K', 'B''*k*B');
 sys.add_vector('f', 'N''*b');
 sys.add_vector('f', 'N''*-q_top', 'Boundary', 1);
 
-% sys.add_vector('f_s', 'N''*b');
-% sys.add_vector('f_q', 'N''*-q_top', 'Boundary', 1);
-
 % Assemble
 K = sys.assemble('K');
 f = sys.assemble('f');
-%f = sys.assemble('f_s') + sys.assemble('f_q');
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.get_dof('Boundary',3); % 4

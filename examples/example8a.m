@@ -11,9 +11,9 @@ function example8a
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.add_element('Tri3', 1/100*[0,0; 2,0; 2,4]);
-mesh.add_element('Tri3', 1/100*[0,0; 2,4; 0,2]);
+mesh = FEmesh('Element','Tri3');
+mesh.add_element(1/100*[0,0; 2,0; 2,4]);
+mesh.add_element(1/100*[0,0; 2,4; 0,2]);
 mesh.init();
 
 % Label the boundaries

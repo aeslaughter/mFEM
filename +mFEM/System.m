@@ -638,8 +638,8 @@ classdef System < mFEM.handle_hide
                             % Side elements that are not points    
                             else
                                             
-                                % Get side quadrature rule (non mixed mesh)
-                                if obj.mesh.opt.mixed || ~exist('qp','var');
+                                % Get side quadrature rule, all sides
+                                if ~exist('qp', 'var')
                                     [qp,W] = side.quad.rules('-cell');
                                 end
 
@@ -701,8 +701,8 @@ classdef System < mFEM.handle_hide
                 % Initialize the local stiffness matrix
                 Ke = zeros(elem.n_dof);
 
-                % Get the quadrature rules for this element
-                if obj.mesh.opt.mixed || ~exist('qp','var');
+                % Get the quadrature rules for this and all elements
+                if ~exist('qp','var');
                     [qp,W] = elem.quad.rules('-cell');
                 end
 
@@ -818,7 +818,7 @@ classdef System < mFEM.handle_hide
                             % Side elements that are not points    
                             else
                                 % Get side quadrature rule (non mixed mesh)
-                                if obj.mesh.opt.mixed || ~exist('qp','var');
+                                if ~exist('qp','var');
                                     [qp,W] = side.quad.rules('-cell');
                                 end
 
@@ -875,7 +875,7 @@ classdef System < mFEM.handle_hide
                 fe = zeros(elem.n_dof,1);
 
                 % Get side quadrature rule (non mixed mesh)
-                if obj.mesh.opt.mixed || ~exist('qp','var');
+                if ~exist('qp','var');
                     [qp,W] = elem.quad.rules('-cell');
                 end
 

@@ -23,8 +23,8 @@ if nargin == 1 && isnumeric(varargin{1});
 end
     
 % Create a FEmesh object, 2 node linear mesh from 0 to 4
-mesh = FEmesh();
-mesh.grid('Line2',0,4,nel); 
+mesh = FEmesh('Element', 'Line2');
+mesh.grid(0,4,nel); 
 mesh.init();
 
 % Label the boundaries

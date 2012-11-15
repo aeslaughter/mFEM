@@ -284,12 +284,11 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
            
             % The number of spatial dimensions available
             n = obj.n_dim;
-            N = obj.shape(varargin{:});
+
             % Loop through the dimensions and return the desired position
             xyz = zeros(1,n);
             for i = 1:n;
-               %xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
-               xyz(1,i) = N([1,3])*obj.nodes(:,i); 
+               xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
             end
             
             % Reduce to single array if only a single output is given
@@ -357,7 +356,8 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             node = obj.nodes(dof,:);
 
             % Create the side element
-            side = feval(['mFEM.elements.',obj.side_type], NaN, node, obj.n_dof_node);
+            side = feval(['mFEM.elements.',obj.side_type], NaN, node, ...
+                'Space', obj.opt.space);
             
             % Set the global dofs
             side.global_dof = obj.global_dof(dof);
