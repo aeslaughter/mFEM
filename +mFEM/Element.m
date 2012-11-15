@@ -421,9 +421,9 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   side, the type of element is specified in the side_type
             %   property.
             
-            if obj.n_dim == 3;
-                warning('Element:build_side','Feature not tested in 3D');
-            end
+%             if obj.n_dim == 3;
+%                 warning('Element:build_side','Feature not tested in 3D');
+%             end
             
             % Extract the nodes for the side
             dof = obj.side_dof(id,:);

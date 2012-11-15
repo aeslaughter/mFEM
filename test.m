@@ -1,13 +1,17 @@
 function test
 
 clear;
-import mFEM.elements.*
+import mFEM.*
 
 % elem = Line2(1,[0,0;1,1],'space','vector');
 % 
 % x = elem.get_position(1)
 
-elem = Beam(1,[0;1],'space','vector');
+mesh = FEmesh('Element','Hex8');
+mesh.grid(0,1,0,1,0,1,1,1,1);
+mesh.init();
 
-x = elem.get_position(0,'index',[1,3])
-x = elem.get_position(0)
+mesh.plot();
+
+
+side = mesh.element(1).build_side(2)

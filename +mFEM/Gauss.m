@@ -270,9 +270,9 @@ classdef Gauss
 
                 % Build the 3D from the 2D
                 if strcmpi('hex',obj.opt.type);
-                   out{1} =  repmat(out{1}, n_dim, 1);
-                   out{3} =  sort(repmat(out{2}, n_dim, 1),1); 
-                   out{2} =  repmat(out{2}, n_dim, 1); 
+                   out{1} =  repmat(out{1}, 3, 1);
+                   out{3} =  sort(repmat(out{2}, 3, 1),1); 
+                   out{2} =  repmat(out{2}, 3, 1); 
                 end 
 
                 % Convert matrices to a cell array

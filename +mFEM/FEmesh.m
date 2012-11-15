@@ -111,7 +111,9 @@ classdef FEmesh < mFEM.handle_hide
                 case {'Line2', 'Line3', 'Truss', 'Beam'};
                     obj.gen1Dgrid(varargin{:});
                 case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid( varargin{:});
+                    obj.gen2Dgrid(varargin{:});
+                case {'Hex8'};
+                    obj.gen3Dgrid(varargin{:});
                 otherwise
                     error('FEmesh:grid','Grid generation is not supported for the %s elem', obj.opt.element);
             end
@@ -809,6 +811,68 @@ classdef FEmesh < mFEM.handle_hide
                 end
             end
         end
+
+        function gen3Dgrid(obj, x0, x1, y0, y1, z0, z1, xn, yn, zn, varargin)
+            %GEN2DGRID Generate the 2D mesh (see grid)
+            %
+            % Syntax
+            %   gen3Dgrid((x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %
+            % Description
+            %   gen3Dgrid((x0, x1, y0, y1, z0, z1, xn, yn, zn) creates a 3D 
+            %   grid ranging from x0 to x1 with xn number of elements in the
+            %   x-direction, similarily in the y- and x-direction.
+            %
+            % GEN3DGRID Property Descriptions
+            %   pol2cart
+            %       true | {false}
+            %       Converts the inputted polar cordinates to cartesian
+            %       coordinates when creating the elements. The flag style 
+            %       input may also be used (i.e., '-pol2car').
+            
+            % Collect user options
+            options.pol2cart = false;
+            options = gather_user_options(options,varargin{:});
+            
+            % Generate the generic grid points
+            x = x0 : (x1-x0)/xn : x1;
+            y = y0 : (y1-y0)/yn : y1;
+            z = z0 : (z1-z0)/zn : z1;
+
+            % Loop through the grid, creating elements for each cell
+            for i = 1:length(x)-1;           
+                for j = 1:length(y)-1;
+                    for k = 1:length(z)-1;
+                        % Define the nodes of the cell
+                        nodes(1,:) = [x(i), y(j), z(k)];
+                        nodes(2,:) = [x(i+1), y(j), z(k)];
+                        nodes(3,:) = [x(i+1), y(j+1), z(k)];
+                        nodes(4,:) = [x(i), y(j+1), z(k)];
+                        nodes(5,:) = [x(i), y(j), z(k+1)];
+                        nodes(6,:) = [x(i+1), y(j), z(k+1)];
+                        nodes(7,:) = [x(i+1), y(j+1), z(k+1)];
+                        nodes(8,:) = [x(i), y(j+1), z(k+1)];
+                        
+                        % Adust for polar input
+                        if options.pol2cart;
+                            idx = [1,4,3,2,5,6,7,8];
+                            [nodes(:,1),nodes(:,2),nodes(:,3)] = ...
+                                pol2cart(nodes(idx,1), nodes(idx,2), nodes(idx,3));
+                        end
+
+                        % Add the element(s)
+                        switch obj.opt.element;
+                            case {'Hex8'};
+                                obj.add_element(nodes);
+
+%                             case {'Tri3', 'Tri6'};
+%                                 obj.add_element(nodes(1:3,:));
+%                                 obj.add_element(nodes([1,3,4],:));
+                        end
+                    end
+                end
+            end
+        end        
         
         function add_boundary_location(obj, id, loc)
            %ADD_BOUNDARY_LOCATION Adds boundary id based on location flag

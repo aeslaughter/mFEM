@@ -117,6 +117,9 @@ function FEplot(obj, varargin)
         
     elseif obj.n_dim == 2 && obj.n_dof_node == 2;
         h = plot2D_vector(obj, opt);
+        
+    elseif obj.n_dim == 3 && obj.n_dof_node == 1;
+        h = plot3D_scalar(obj, opt);
     end
     
     apply_plot_options(h, obj, opt);
@@ -347,6 +350,57 @@ function h = plot2D_scalar(obj, opt)
         else
             h = patch(x, y, z);
         end
+    end
+end
+
+function h = plot3D_scalar(obj, opt)
+    %PLOT3D_scalar create a 3D plot with scalar values
+
+    % Initialize the x and y values
+    h = zeros(obj.n_elements,1);
+    
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
+        
+        for s = 1:elem.n_sides;
+        
+            dof = elem.get_dof('Side',s,'-local');
+            
+            % The node positions
+            x = elem.nodes(dof,1);
+            y = elem.nodes(dof,2);
+            z = elem.nodes(dof,3);
+
+            % Gather y-axis data
+            w = [];
+            if ~isempty(opt.data)
+                dof = elem.get_dof('Side',s);
+                w(:,1) = opt.data(dof);
+            end
+
+            % Apply the plotting order
+            order = elem.node_plot_order;
+            if ~isempty(order);
+                x = x(order);
+                y = y(order);
+                z = z(order);
+                if ~isempty(w);
+                    w = w(order);
+                end
+            end
+
+            % Create the graph
+            if isempty(w);
+                h = patch(x, y, z, 'w', 'FaceColor','none');
+            else
+                h = patch(x, y, z, w, 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'MarkerFaceColor','flat');
+            end
+        end
+            
+        view(3);
     end
 end
 
