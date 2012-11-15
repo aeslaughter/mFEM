@@ -133,23 +133,39 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   shape(xi)
             %   shape(xi,eta)
             %   shape(xi,eta,zeta)
+            %   shape(...,'PropertyName',PropertyValue)
             %
             % Description
             %   shape(...) returns the element shape functions evaluated at
             %   the locations specified in the inputs, the number of which
             %   varies with the number of space dimensions.
+            %
+            %   shape(...,'PropertyName',PropertyValue) allows user to
+            %   override the vectorized output using the scalar flag, this
+            %   is used by GET_POSITION
+            %
+            % SHAPE Property Descriptions
+            %   scalar
+            %       true | {false}
+            %       If this is set to true the vectorized output is
+            %       ignored. E.g.,
+            %           N = shape(0,'-scalar');
 
+            % Parse options (do not use gather_user_options for speed)
+            options.scalar = false;
+            if strcmpi(varargin{end},'-scalar');
+                varargin = varargin(1:end-1);
+                options.scalar = true;
+            elseif nargin > 2 && ischar(varargin{end-1});
+                options.scalar = varargin{end};
+                varargin = varargin(1:end-2);             
+            end                
+            
             % Scalar field basis functions
             N = obj.basis(varargin{:});
-            
-%             % Truss space    
-%             if strcmpi(obj.opt.space, 'truss');
-%                 n = N;
-%                 N = zeros(1,obj.n_nodes*obj.n_dim);
-%                 N(1:obj.n_dim:end) = n; 
-            
+
             % Non-scalar fields
-            if obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector');
+            if ~options.scalar && (obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector'));
                 n = N;                          % re-assign scalar basis
                 r = obj.n_dof_node;             % no. of rows
                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
@@ -271,6 +287,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   x = get_position(xi)
             %   [x,y] = get_position(xi,eta)
             %   [x,y,z] = get_position(xi,eta,zeta)
+            %   [...] = get_position(..., 'PropertyName', PropertyValue)
             %   xyz = get_position(...)
             %
             % Description
@@ -279,18 +296,75 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   of outputs varies according the number of spatial 
             %   dimensions.
             %
+            %   [...] = get_position(..., 'PropertyName', PropertyValue)
+            %   allow the limiting of which shape functions are used for
+            %   the mapping, see EXAMPLE14b for an example.
+            %
             %   xyz = get_position(...) same as above but it returns the
             %   positions as a single array.
-           
+            %
+            % GET_POSITION Property Descriptions
+            %   index
+            %       logical array | numeric array
+            %       An array that limits what shape functions are used for
+            %       the mapping, this is useful elements that have mutiple
+            %       dofs per node. The value of index should be defined
+            %       such that the following is valid
+            %           N = obj.shape(xi,...)
+            %           N = N(opt.index)
+            %       
+            %       Using this property overrides the default behavior,
+            %       which is to use opt.index = 1:n_dof_node:end when a the
+            %       no. of nodes is different from no. of shape functions,
+            %       as is the case for the Beam element. For the Beam
+            %       element there are 2 dofs per node and the 1 and 3 value
+            %       for the shape functions may be used for maping the
+            %       displacement, this behavior is the default. If you have
+            %       an element that behaves otherwise, use the index
+            %       property.
+            
+            if strcmpi(obj.opt.space,'vector');
+                warning('Element:get_position','This is not tested for vector space and likely does not work correctly');
+            end
+            
+            % Set the default options
+            options.index = [];
+            
+            % Parse inputs
+            for i = 1:length(varargin);
+                TF = ischar(varargin{i});
+                if TF;
+                    options = gather_user_options(options,varargin{i:end});
+                    varargin = varargin(1:i-1);
+                    break;  
+                end  
+            end
+
             % The number of spatial dimensions available
             n = obj.n_dim;
 
             % Loop through the dimensions and return the desired position
             xyz = zeros(1,n);
-            for i = 1:n;
-               xyz(1,i) = obj.shape(varargin{:})*obj.nodes(:,i); 
+            for i = 1:n
+                
+               % Evaluate shape functions
+               N = obj.shape(varargin{:},'-scalar');
+
+               % The index property was set, so limit the shape functions
+               if ~isempty(options.index);
+                   N = N(options.index);
+                   
+               % The no. of shape functions is not equal to no. of nodes,
+               % so assume that the 1:n_dof_node:end shape functions are used to
+               % map the position, this is the case for Beam elements.
+               elseif length(N) > length(varargin);
+                   N  = N(1:obj.n_dof_node:end);
+               end
+
+               % Map the position
+               xyz(i) = N*obj.nodes(:,i);
             end
-            
+   
             % Reduce to single array if only a single output is given
             if nargout > 1;
                 varargout = num2cell(xyz,1);
