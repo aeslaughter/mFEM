@@ -417,6 +417,79 @@ classdef FEmesh < mFEM.handle_hide
                 dof = obj.get_dof_private(varargin{:});
             end
         end
+        
+        function e = get_elements(obj, varargin)
+            %GET_ELEMENTS Returns the global degrees of freedom.
+            %
+            % Syntax
+            %   e = get_elements()
+            %   e = get_elements('PropertyName',PropertyValue,...);
+            %   e = get_elements(C1,C2,...);
+            %
+            % Description
+            %   e = get_elements() returns the complete vector of elements
+            % 
+            %   e = get_elements('PropertyName',PropertyValue) returns the
+            %   elements for portions of the mesh depending on the 
+            %   properties (see descriptions below).
+            %
+            %   dof = get_elements(C1,C2,...) operates in the same fashion as
+            %   above, but allows for multiple criteria to be specified.
+            %   C1,C2, etc. are each cell arrays of property pairings which
+            %   are looped over, the resulting dof that meet ANY of the
+            %   criteria are returned. The following two examples are
+            %   identical:
+            %       e(:,1) = get_elements('Boundary',1,'Component','x');
+            %       e(:,2) = get_elements('Boundary',2,'Component','y');   
+            %       e = any(ess,2);
+            %
+            %       e = get_elements({'Boundary',1,'Component','x'},...
+            %           {'Boundary',2,'Component','y'})
+            %
+            % GET_DOF Property Descriptions
+            %   Boundary
+            %       scalar
+            %       Extract the dofs for the boundary specified, where the
+            %       scalar value is the numeric id added using the
+            %       ADD_BOUNDARY method.
+            %
+            %   Subdomain
+            %       scalar
+            %       Extract the dofs for the subdomain specified, where the
+            %       scalar is the numeric tag added using ADD_SUBDOMAIN. 
+            
+            % Cell input case
+            if nargin > 0 && iscell(varargin{1});
+                
+                % Initilize the dof output
+                idx = false(obj.n_elements, length(varargin));
+                
+                % Loop through each input, they should all be cells
+                for i = 1:length(varargin);
+                    
+                    % Give an error if the input is not a cell
+                    if ~iscell(varargin{i});
+                        error('FEmesh:get_elements', 'Expected a cell, but recieved a %s', class(varargin{i}));
+                    end
+                    
+                    % Add to the dof
+                    idx(:,i) = obj.get_dof_private(varargin{i}{:});  
+                end
+                
+                % Reduce the matrix to a column array
+                idx = any(idx,2);
+               
+            % Traditional input case    
+            else
+                idx = obj.get_dof_private(varargin{:});
+            end
+            
+            % Convert dof to elmenets
+            e_idx = unique(obj.map.elem(idx));
+            
+            % Return the elements
+            e = obj.element(e_idx);
+        end
                 
         function varargout = get_nodes(obj,varargin)
             %GET_NODES Returns spatial position of the nodes for the mesh

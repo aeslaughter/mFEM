@@ -18,9 +18,14 @@ mesh = FEmesh('Element','Quad4');
 mesh.grid(0,1,0,1,10,10);
 mesh.init();
 
-% Initialize the temperatures
-T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
-nodes = mesh.get_nodes();
-T = T_exact(nodes(:,1),nodes(:,2),0);
+mesh.add_subdomain(1,'x<0.5');
 
-mesh.plot(T);
+e = mesh.get_elements('Subdomain',1);
+
+
+% Initialize the temperatures
+% T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
+% nodes = mesh.get_nodes();
+% T = T_exact(nodes(:,1),nodes(:,2),0);
+% 
+% mesh.plot(T);

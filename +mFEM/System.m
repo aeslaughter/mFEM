@@ -38,10 +38,11 @@ classdef System < mFEM.handle_hide
             {'N','B','L','x','t','xi','eta','zeta'};
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'func', char, ...
-            'matrix', {}, 'functions', [], 'boundary_id', uint32([]));
+            'matrix', {}, 'functions', [], 'boundary_id', uint32([]),...
+            'subdomain',uint32([]));
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'func', char, 'vector',{},...
-            'functions', [], 'boundary_id', uint32([]));
+            'functions', [], 'boundary_id', uint32([]),'subdomain',uint32([]));
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
         func = ... % vector storage structure
@@ -210,6 +211,7 @@ classdef System < mFEM.handle_hide
             obj.mat(idx).functions = obj.locate_functions(eqn);
             obj.mat(idx).matrix = mFEM.Matrix.empty;
             obj.mat(idx).boundary_id = options.boundary; 
+            obj.mat(idx).subdomain = options.subdomain;
         end
 
         function add_vector(obj, name, eqn, varargin)  
@@ -263,7 +265,8 @@ classdef System < mFEM.handle_hide
             obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).functions = obj.locate_functions(eqn);
             obj.vec(idx).vector = mFEM.Vector.empty;
-            obj.vec(idx).boundary_id = options.boundary;   
+            obj.vec(idx).boundary_id = options.boundary; 
+            obj.vec(idx).subdomain = options.subdomain;
         end
         
         function X = get(obj, name)
