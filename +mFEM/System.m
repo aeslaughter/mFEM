@@ -558,15 +558,23 @@ classdef System < mFEM.base.handle_hide
             %
             % Syntax
             %   func = parse_equation(eqn)
-            %   func = parse_equation(eqn,'-side')
+            %   func = parse_equation(eqn,'PropertyName',PropertyValue,...)
             %
             % Description
             %   func = parse_equation(eqn) given an equation string, as 
             %   detailed in ADD_MATRIX and ADD_VECTOR, create a working 
             %   equation for use in the assembly routines.
             %
-            %   func = parse_equation(eqn,'-side') same as above but builds 
-            %   equation for use as a side integral (lowers the dimension)
+            %   func = parse_equation(eqn,'PropertyName',PropertyValue,...)
+            %   same as above but builds the equation according to the
+            %   settings described by the properties.
+            %
+            % PARSE_EQUATION Property Description
+            %   side
+            %       true | {false}
+            %
+            %   direct
+            %       true | {false}
 
             % Get the dimensions of the FE space (use the local, it is what
             % determines the number of xi,eta,... inputs)
@@ -574,32 +582,44 @@ classdef System < mFEM.base.handle_hide
             
             % Adjust for special side case
             options.side = false;
+            options.direct
             options = gather_user_options(options, varargin{:});
-            
-            %  Adjust the dimension for side case
-            if options.side;
-                n_dim = n_dim - 1;
-            end
-
-            % Build variable strings based on the dimensions of FE space
-            if n_dim == 0; % (side of 1D elements)
-                var = '';
-            elseif n_dim == 1;
-                var = 'xi';
-            elseif n_dim == 2;
-                var = 'xi,eta'; 
-            elseif n_dim == 3;
-                var = 'xi,eta,zeta';
-            else
-                error('System:parse_equation', '%d-D finite element space not supported', n_dim);
-            end
             
             % Apply constants
             eqn = obj.apply_constants(eqn);
             
-            % Insert element shape function and shape function derivatives
-            eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
-            eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
+            % Build the traditional shape function equation
+            if ~options.direct
+            
+                %  Adjust the dimension for side case
+                if options.side;
+                    n_dim = n_dim - 1;
+                end
+
+                % Build variable strings based on the dimensions of FE space
+                if n_dim == 0; % (side of 1D elements)
+                    var = '';
+                elseif n_dim == 1;
+                    var = 'xi';
+                elseif n_dim == 2;
+                    var = 'xi,eta'; 
+                elseif n_dim == 3;
+                    var = 'xi,eta,zeta';
+                else
+                    error('System:parse_equation', '%d-D finite element space not supported', n_dim);
+                end
+
+                % Insert element shape function and shape function derivatives
+                eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
+                eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
+               
+            % Build the direct equations    
+            else
+                eqn = regexprep(eqn,'Ke','elem.stiffness()');
+                eqn = regexprep(eqn,'fe','elem.force()');
+                var = ''; % this causes the proper @ application below
+                
+            end
             
             % Insert the L variable (L = elem.size())
             eqn = regexprep(eqn,'L','elem.size()');
@@ -655,8 +675,12 @@ classdef System < mFEM.base.handle_hide
             %   K = assemble_matrix_side(idx) assembles the desired matrix 
             %   for a side where idx is the location in the mat structure.
            
+            % Deterimine what type of build direct or not
+            direct = obj.mat(idx).direct;
+            
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, '-side'));
+            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, ...
+                '-side', 'Direct', direct));
 
             % Extract the boundary ids
             id = obj.mat(idx).boundary_id;
@@ -685,6 +709,14 @@ classdef System < mFEM.base.handle_hide
                             % Create the side element
                             side = elem.build_side(s);
 
+                            % If direct build, perform the build and return
+                            % to the next loop iteration
+                            if direct;
+                                dof = elem.get_dof(s);
+                                Ke(dof,dof) = Ke(dof,dof) + fcn(side);
+                                continue;
+                            end
+                            
                             % If elem is 1D, then the side is a point that
                             % does not require intergration
                             if elem.local_n_dim == 1;
