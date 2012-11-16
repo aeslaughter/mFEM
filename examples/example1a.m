@@ -85,7 +85,7 @@ for e = 1:mesh.n_elements;
         if elem.side(s).boundary_id == 2;
             side = elem.build_side(s);
             dof = elem.get_dof('Side', s, '-local');
-            fe(dof) = fe(dof) + -q_bar*A*side.shape()';  
+          %  fe(dof) = fe(dof) + -q_bar*A*side.shape()';  
             delete(side);
         end
     end   
@@ -96,6 +96,8 @@ for e = 1:mesh.n_elements;
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
+f
+K
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.get_dof('Boundary', 1);  % 1

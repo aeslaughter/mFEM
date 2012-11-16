@@ -1,4 +1,4 @@
-classdef Line2 < mFEM.Element
+classdef Line2 < mFEM.base.Element
     %LINE2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)
@@ -32,7 +32,7 @@ classdef Line2 < mFEM.Element
             end
 
             % Call the base class constructor
-            obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+            obj = obj@mFEM.base.Element(id, nodes, varargin{:}); 
         end
         
         % Define the size function

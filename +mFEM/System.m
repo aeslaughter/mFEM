@@ -1,4 +1,4 @@
-classdef System < mFEM.handle_hide
+classdef System < mFEM.base.handle_hide
     %SYSTEM A class for automatic assembly of finite element equations.
     % This class allows the specification of the finite element equations
     % for matrices and vectors as strings, the assembly is handled
@@ -35,14 +35,14 @@ classdef System < mFEM.handle_hide
     
     properties(Access = private)
         reserved = ... % reserved variables
-            {'N','B','L','x','t','xi','eta','zeta'};
+            {'N','B','L','x','t','xi','eta','zeta','elem'};
         mat = ... % matrix storage structure
-            struct('name', char, 'eqn', char, 'func', char, ...
-            'matrix', {}, 'functions', [], 'boundary_id', [],...
-            'subdomain', []);
+            struct('name', char, 'eqn', char, 'matrix', {},  ...
+            'functions', [], 'boundary_id', [], 'subdomain', [],...
+            'direct', {});
         vec = ... % vector storage structure
-            struct('name', char, 'eqn' ,char, 'func', char, 'vector',{},...
-            'functions', [], 'boundary_id', [],'subdomain', []);
+            struct('name', char, 'eqn' ,char, 'vector',{},...
+            'functions', [], 'boundary_id', [],'subdomain', [], 'direct', {});
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
         func = ... % vector storage structure
@@ -69,19 +69,6 @@ classdef System < mFEM.handle_hide
             %       true | {false}
             %       A toggle for displaying the matrix and vector 
             %       assembly time.
-            %
-            %   Direct
-            %       true | {false}
-            %       A toggle for implementing the direct assembly, this
-            %       option uses the 'Ke' and 'fe' variables (see 
-            %       ADD_MATRIX and ADD_VECTOR) and calls the STIFFNESS and
-            %       FORCE functions directly from the element, which should
-            %       return the full assembled element stiffness matrix and
-            %       force vector. This must be used for Truss elements when
-            %       using the System class, thus it is automatically set if
-            %       a FEmesh with element type Truss is called. It may also
-            %       be used with Beam elements, but in this case it is
-            %       optional as N and B are prescribed for Beam elements.
             %   
             % See Also FEMESH
             
@@ -90,6 +77,12 @@ classdef System < mFEM.handle_hide
             
             % Store the mesh object
             obj.mesh = mesh;
+            
+            % Check for direct build element type
+            types = {'Truss'};
+            if any(strcmpi(obj.mesh.opt.element, types));
+                obj.opt.direct = true;
+            end
         end
         
         function add_constant(obj, varargin)
@@ -128,15 +121,24 @@ classdef System < mFEM.handle_hide
             %   add_function('FunctionName', FunctionHandle) adds
             %   a single function to the System, the 'FunctionName' may be 
             %   any string identifier and the FunctionHandle may be any
-            %   valid MATLAB function handle (e.g., f = @(x) x^2). The
-            %   function MUST be a function of x and t, where x is a vector
-            %   of the coordinates in the mesh (computed at the Gauss
+            %   valid MATLAB function handle. 
+            %
+            %   There are two forms that are acceptable:
+            %       FunctionHandle = @(x,t) ...
+            %       FunctionHandle = @(elem, t) ...
+            %   
+            %   In the first case, x is a vector which represents the real
+            %   coordinates in the mesh (computed at the Gauss
             %   points with GET_POSITION), where x(1) is the x-direction, 
             %   x(2) is the y-direction, and x(3) is the z-direction.
             %   t is the time which is stored in the time property of the 
             %   system itself. If the function is not a function of x or t
             %   then just do not use the variable in the equation, but it 
-            %   must be present in the @ list of variables
+            %   must be present in the @ list of variables.
+            %
+            %   In the second case, elem is an Element class and t is again
+            %   time, this allows for the specification of function that is
+            %   given the element object.
             %
             % Examples
             %   sys.add_function('k',@(x,t) x(1)^2 + x(2)^2);
@@ -144,9 +146,26 @@ classdef System < mFEM.handle_hide
             % Limit the use of name
             [~,idx] = obj.locate(name); 
             if ~isempty(idx);
-                error('ERROR:ADD_FUNCTION', 'The name, %s, was previously used, function names must be unique.', name);
+                error('System:add_function', 'The name, %s, was previously used, function names must be unique.', name);
             end
             
+            % Extract input variables, for tiesting the input
+            str = func2str(fhandle);
+            i1 = strfind(str,'(');
+            i2 = strfind(str,',');
+            i3 = strfind(str,')');
+            var1 = str(i1+1:i2-1);
+            var2 = str(i2+1:i3-1);
+            
+            % Perform test
+            if strcmp(var1,'x') && strcmp(var2,'t');
+                type = 'x';
+            elseif strcmp(var1,'elem') && strcmp(var2,'t');
+                type = 'elem';
+            else
+                error('System:add_function', 'Function handle is invalid.');
+            end
+              
             % Storate location in function array
             idx = length(obj.func) + 1;
             
@@ -156,6 +175,7 @@ classdef System < mFEM.handle_hide
             % using str2func.
             obj.func(idx).name = name;
             obj.func(idx).handle = fhandle;
+            obj.func(idx).type = type;
         end
 
         function add_matrix(obj, name, eqn, varargin)  
@@ -163,7 +183,7 @@ classdef System < mFEM.handle_hide
             %
             % Syntax
             %   add_matrix('MatrixName', MatrixEqn)
-            %   add_matrix('MatrixName', MatrixEqn, 'PropertyName', PropertyValue)
+            %   add_matrix('MatrixName', MatrixEqn, 'PropertyName', PropertyValue, ...)
             %
             % Description
             %   add_matrix('MatrixName', MatrixEqn) adds
@@ -192,6 +212,13 @@ classdef System < mFEM.handle_hide
             %       Limits the application of the supplied equation to the 
             %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
             %
+            %   Direct
+            %       true | {false}
+            %       A toggle for implementing the direct assembly, this
+            %       option enables the use of the 'Ke' and 'fe' variables,
+            %       which are replaced by elem.stiffness() and
+            %       elem.force().
+            %
             % Examples
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
@@ -199,6 +226,7 @@ classdef System < mFEM.handle_hide
             % Gather the user options
             options.subdomain = [];
             options.boundary = [];
+            options.direct = false;
             options = gather_user_options(options, varargin{:});
     
             % Limit the use of name
@@ -213,11 +241,11 @@ classdef System < mFEM.handle_hide
             % Add to the matrix structure
             obj.mat(idx).name = name;
             obj.mat(idx).eqn = eqn;
-            obj.mat(idx).func = obj.parse_equation(eqn);
             obj.mat(idx).functions = obj.locate_functions(eqn);
             obj.mat(idx).matrix = mFEM.Matrix.empty;
             obj.mat(idx).boundary_id = options.boundary; 
             obj.mat(idx).subdomain = options.subdomain;
+            obj.mat(idx).direct = options.direct;
         end
 
         function add_vector(obj, name, eqn, varargin)  
@@ -254,12 +282,21 @@ classdef System < mFEM.handle_hide
             %       Limits the application of the supplied equation to the 
             %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
             %
+            %   Direct
+            %       true | {false}
+            %       A toggle for implementing the direct assembly, this
+            %       option enables the use of the 'Ke' and 'fe' variables.
+            %       This may also be set globally for the System, see the
+            %       constructor. Setting this locally will override the
+            %       global setting.
+            %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
             % Gather the user options
             options.subdomain = [];
             options.boundary = [];
+            options.direct = false;
             options = gather_user_options(options, varargin{:});
             
             % Limit the use of name
@@ -274,11 +311,11 @@ classdef System < mFEM.handle_hide
             % Append the vector to the structure
             obj.vec(idx).name = name;
             obj.vec(idx).eqn = eqn;
-            obj.vec(idx).func = obj.parse_equation(eqn);
             obj.vec(idx).functions = obj.locate_functions(eqn);
             obj.vec(idx).vector = mFEM.Vector.empty;
             obj.vec(idx).boundary_id = options.boundary; 
             obj.vec(idx).subdomain = options.subdomain;
+            obj.vec(idx).direct = options.direct;
         end
         
         function X = get(obj, name)
@@ -487,7 +524,7 @@ classdef System < mFEM.handle_hide
             end
         end
              
-        function fcn = apply_func(obj, eqn, fidx, x)
+        function fcn = apply_func(obj, eqn, fidx, elem, x)
             %APPLY_FUNC Inserts the function handle into the equation
             %
             % Syntax
@@ -501,9 +538,13 @@ classdef System < mFEM.handle_hide
             % Loop through all the functions
             for i = 1:length(fidx);
                 % Value to insert
-                value = feval(obj.func(i).handle, x, obj.time);
+                if strcmp(obj.func(i).type,'x');
+                    value = feval(obj.func(i).handle, x, obj.time);
+                else
+                    value = feval(obj.func(i).handle, elem, obj.time);
+                end
                 
-               % Insert the value for the current location
+                % Insert the value for the current location
                 eqn = obj.insert_string(eqn, ...
                     obj.func(i).name, mat2str(value));             
             end
@@ -667,7 +708,7 @@ classdef System < mFEM.handle_hide
                                     % Apply spatial/temporal functions
                                     if ~isempty(obj.mat(idx).functions);
                                         x = elem.get_position(qp{i,:});
-                                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, x);
+                                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, side, x);
                                     end
 
                                     % Build local matrix
@@ -700,9 +741,9 @@ classdef System < mFEM.handle_hide
             %   K = assemble_matrix_elem(idx) assembles the desired matrix 
             %   over the entire domain where idx is the location in the 
             %   mat structure.
-
-            % Create function from the function string
-            fcn = str2func(obj.mat(idx).func);
+            
+            % Build the function for the side
+            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn));
 
             % Get a reference to current Matrix object
             matrix = obj.mat(idx).matrix;
@@ -714,7 +755,7 @@ classdef System < mFEM.handle_hide
             else
                 active_elem = obj.mesh.get_elements('Subdomain', obj.mat(idx).subdomain);
             end
-
+            
             % Loop through all of the elements
             for e = 1:length(active_elem);
 
@@ -736,7 +777,7 @@ classdef System < mFEM.handle_hide
                     % Apply spatial/temporal functions
                     if ~isempty(obj.mat(idx).functions);
                         x = elem.get_position(qp{i,:});
-                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, x);
+                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, elem, x);
                     end
                         
                     % Case without spatial/temporal functions
@@ -831,7 +872,7 @@ classdef System < mFEM.handle_hide
                                 % Apply spatial/temporal functions
                                 if ~isempty(obj.vec(idx).functions);
                                     x = side.nodes;
-                                    fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                                    fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
                                 end
                                 
                                 % Build local vector
@@ -854,7 +895,7 @@ classdef System < mFEM.handle_hide
                                     % Apply spatial/temporal functions
                                     if ~isempty(obj.vec(idx).functions);
                                         x = elem.get_position(qp{i,:});
-                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, side, x);
                                     end
                                     
                                     % Build local vector
@@ -885,10 +926,10 @@ classdef System < mFEM.handle_hide
             %   over the entire domain where idx is the location in the 
             %   vec structure.     
             
-            % Create the function for element calculations
-            fcn = str2func(obj.vec(idx).func);
+            % Build the function for the side
+            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn));
 
-            % Get the elements to loop over, if the subdomain it empty it
+            % Get the elements to loop over, if the subdomain is empty it
             % returns all of the elements.
             active_elem = obj.mesh.get_elements('Subdomain', obj.vec(idx).subdomain);
 
@@ -912,7 +953,7 @@ classdef System < mFEM.handle_hide
                     % Apply spatial/temporal functions
                     if ~isempty(obj.vec(idx).functions);
                         x = elem.get_position(qp{j,:});
-                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, x);
+                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
                     end
                     
                     % Build the local vector

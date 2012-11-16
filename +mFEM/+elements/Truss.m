@@ -1,4 +1,4 @@
-classdef Truss < mFEM.Element
+classdef Truss < mFEM.base.ElementDirect
     % A 2-node Truss element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -26,15 +26,8 @@ classdef Truss < mFEM.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.Element(id, nodes, 'Space', 2); 
+           obj = obj@mFEM.base.ElementDirect(id, nodes, 'Space', 2); 
            
-           % Set the local dimensionality, only needed if the number of 
-           % element local coordinates (xi,eta,...) are different from the 
-           % number of spatial coordinates (x,y,...).
-           %obj.local_n_dim = 1;
-           
-           % Set the number of dofs per node on the element
-           %obj.n_dof_node = obj.n_dim; 
         end
         
         % Define the size function
@@ -42,7 +35,7 @@ classdef Truss < mFEM.Element
         	L = norm(diff(obj.nodes,1));
         end
         
-        function K = stiffness(obj, varargin)
+        function Ke = stiffness(obj, varargin)
            
             N = [1,0,-1,0];
                        
@@ -54,38 +47,14 @@ classdef Truss < mFEM.Element
             T(3:4,3:4) = [c,s;-s,c];
             
             
-            K = T'*(N'*N)*T;
+            Ke = T'*(N'*N)*T;
         end
         
-%         function T = transformation(obj, varargin)
-%            %TRANSFORMATION Outputs the transformation matrix, T
-% 
-%         end
-%         function N = shape(obj, varargin)
-%            N = zeros(1,obj.n_nodes*obj.n_dim);
-%            N(1:obj.n_dim:end) = [1,-1];     
-%         end
-    end
-    
-    methods (Access = protected)  
-        function basis(obj, varargin)
-            % Returns a row vector of local shape functions
-            error('Truss:basis','The gradient of the basis functions is not defined for the Truss element.');   
+        function fe = force(obj, varargin)
+            
         end
 
-        function grad_basis(~, varargin) 
-            % Gradient of shape functions
-            error('Truss:grad_basis','The gradient of the basis functions is not defined for the Truss element.');   
-        end
-             
-        function jacobian(~, varargin)
-            % Returns the jacobian matrix (1/2 the length)
-            error('Truss:jacobian','The jacabian matrix is not defined for the Truss element.');   
-        end
-        
-        function local_grad_basis(~, varargin)
-            % Does nothing for the Truss dlement
-            error('Truss:local_grad_basis','The gradient in local coordinte system is not defined for the Truss element.');   
-        end
     end
+    
+  
 end

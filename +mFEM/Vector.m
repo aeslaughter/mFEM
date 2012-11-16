@@ -1,4 +1,4 @@
-classdef Vector < mFEM.handle_hide
+classdef Vector < mFEM.base.handle_hide
     %VECTOR A wrapper class for creating a column vector, this is simple 
     % wrapper that provides the same features as the Matrix class so that 
     % syntax may remain consistent. This creates a column vector. And will

@@ -1,4 +1,4 @@
-classdef FEmesh < mFEM.handle_hide
+classdef FEmesh < mFEM.base.handle_hide
     %FEMESH Class for managing and generating FEM spaces.
     % This class handles all mesh and degree-of-freedom operations for
     % implementing the finite element method.
@@ -475,17 +475,16 @@ classdef FEmesh < mFEM.handle_hide
                     % Add to the dof
                     idx(:,i) = obj.get_element_idx(varargin{i}{:});  
                 end
-                
+
                 % Reduce the matrix to a column array
                 idx = any(idx,2);
-               
+                e = obj.element(any(idx,2));
+                
             % Traditional input case    
             else
                 idx = obj.get_element_idx(varargin{:});
+                e = obj.element(idx);
             end
-
-            % Return the elements
-            e = obj.element(any(idx,2));
         end
                 
         function varargout = get_nodes(obj,varargin)

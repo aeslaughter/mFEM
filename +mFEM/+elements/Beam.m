@@ -1,4 +1,4 @@
-classdef Beam < mFEM.Element
+classdef Beam < mFEM.base.Element & mFEM.base.ElementDirect
     % A 2-node Beam element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -27,7 +27,7 @@ classdef Beam < mFEM.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.Element(id, nodes, 'Space', 2); 
+           obj = obj@mFEM.base.Element(id, nodes, 'Space', 2); 
         end
         
         % Define the size function
@@ -64,8 +64,6 @@ classdef Beam < mFEM.Element
             B(4) = 1/L*(3*xi+1);
         end
              
-
-        
         function J = jacobian(obj, varargin)
             % Returns the jacobian matrix (1/2 the length)
             J = 1/2 * obj.size();            
