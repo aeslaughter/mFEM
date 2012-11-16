@@ -3,15 +3,24 @@ function test
 clear;
 import mFEM.*
 
-% elem = Line2(1,[0,0;1,1],'space','vector');
+% mesh = FEmesh('Element','Hex8');
+% mesh.grid(0,1,0,1,0,1,10,10,10);
+% mesh.init();
 % 
-% x = elem.get_position(1)
+% % Initialize the temperatures
+% T_exact = @(x,y,z,t) exp(-t)*sin(pi*x).*sin(pi*y).*sin(pi*z);
+% nodes = mesh.get_nodes();
+% T = T_exact(nodes(:,1),nodes(:,2),nodes(:,3),0);
+% 
+% mesh.plot(T);
 
-mesh = FEmesh('Element','Hex8');
-mesh.grid(0,1,0,1,0,1,1,1,1);
+mesh = FEmesh('Element','Quad4');
+mesh.grid(0,1,0,1,10,10);
 mesh.init();
 
-mesh.plot();
+% Initialize the temperatures
+T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
+nodes = mesh.get_nodes();
+T = T_exact(nodes(:,1),nodes(:,2),0);
 
-
-side = mesh.element(1).build_side(2)
+mesh.plot(T);

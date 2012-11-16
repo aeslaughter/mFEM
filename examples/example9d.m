@@ -21,7 +21,6 @@
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
 
-
 function example9d(varargin)
 
 % Import the mFEM library
@@ -73,7 +72,7 @@ ylabel('y');
 zlabel('z');
 cbar = colorbar;
 set(get(cbar,'YLabel'),'String','Temperature');
-
+return;
 % Numerical constants
 theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
@@ -81,7 +80,7 @@ dt = 0.1;                   % time-step
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries. This
 % problem also does not have a force term.
-R(:,1) = - K(non,ess)*T(ess);
+R(:,1) = -K(non,ess)*T(ess);
 
 % Use a general time integration scheme
 K_hat = M(non,non) + theta*dt*K(non,non);

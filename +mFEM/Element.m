@@ -420,11 +420,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %   side = build_side(id) creates an element for the specified
             %   side, the type of element is specified in the side_type
             %   property.
-            
-%             if obj.n_dim == 3;
-%                 warning('Element:build_side','Feature not tested in 3D');
-%             end
-            
+
             % Extract the nodes for the side
             dof = obj.side_dof(id,:);
             node = obj.nodes(dof,:);
@@ -449,7 +445,7 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %
             %   dof = get_dof('PropertyName', PropertyValue) returns the
             %   dofs for the element subject to the restrictions specified
-            %   by the properties, see the descriptions below for details.           
+            %   by the properties, see the descriptions below for details.  
             %
             % GET_DOF Property Descriptions
             %   Side
@@ -465,10 +461,16 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             %       number 1 of an element.
             %           dof = get_dof('Side',1,'local',true) or
             %           dof = get_dof('Side',1,'-local')
+            %
+            %   Component
+            %       scalar | 'x' | 'y' | 'z'
+            %       Returns the dof associated with the vector space or
+            %       multipe dof per node elements like the Beam element.
             
             % Set default options and gather the options
             options.side = [];
             options.local = false;
+            options.component = [];
             options = gather_user_options(options, varargin{:});
             
             % Extract ALL of the degrees of freedom
@@ -491,7 +493,31 @@ classdef Element < mFEM.handle_hide & matlab.mixin.Heterogeneous
             else
                 error('Element:get_dof','Input error.');
             end
+            
+            % Extract boundaries for certain component of vector space
+            if ~isempty(options.component);
+                
+                % Convert string to numeric
+                if ischar(options.component);
+                    switch options.component;
+                        case 'x'; ix = 1;
+                        case 'y'; ix = 2;
+                        case 'z'; ix = 3;
+                    end  
+                else
+                    ix = options.component;
+                end
 
+                % Test the dimensionality
+                if ix > obj.n_dof_node;
+                    error('Element:get_dof','Desired vector component does not exist.');
+                end
+                
+                % Extract the dofs
+                ix = ix:obj.n_dof_node:length(dof);
+                dof = dof(ix);
+            end   
+            
             % Non-scalar FE space
             if obj.n_dof_node > 1;
                 dof = obj.transform_dof(dof);

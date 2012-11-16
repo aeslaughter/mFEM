@@ -312,7 +312,7 @@ function h = plot1D_vector(obj, opt)
 end
 
 function h = plot2D_scalar(obj, opt)
-    %PLOT1D create a 2D plot
+    %PLOT2D_SCALAR create a 2D plot with scalar values
 
     % Initialize the x and y values
     h = zeros(obj.n_elements,1);
@@ -323,90 +323,27 @@ function h = plot2D_scalar(obj, opt)
         % The current element
         elem = obj.element(e);
         
-        % The node positions
-        x = elem.nodes(:,1);
-        y = elem.nodes(:,2);
-        
-        % Gather y-axis data
-        z = [];
-        if ~isempty(opt.data)
-            dof = elem.get_dof();
-            z(:,1) = opt.data(dof);
-        end
-        
         % Apply the plotting order
-        order = elem.node_plot_order;
-        if ~isempty(order);
-            x = x(order);
-            y = y(order);
-            if ~isempty(z);
-                z = z(order);
-            end
+        if ~isempty(elem.node_plot_order);
+            idx = elem.node_plot_order;
+        else
+            idx = 1:elem.n_dof;
         end
 
         % Create the graph
-        if isempty(z);
-            h = patch(x, y, 'w');
+        if isempty(opt.data);
+            h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2), 'w');
         else
-            h = patch(x, y, z);
+            dof = elem.get_dof();
+            h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2),...
+                opt.data(dof(idx)), 'EdgeColor','k');
         end
-    end
-end
-
-function h = plot3D_scalar(obj, opt)
-    %PLOT3D_scalar create a 3D plot with scalar values
-
-    % Initialize the x and y values
-    h = zeros(obj.n_elements,1);
-    
-    % Generate the graph
-    for e = 1:obj.n_elements;
-
-        % The current element
-        elem = obj.element(e);
-        
-        for s = 1:elem.n_sides;
-        
-            dof = elem.get_dof('Side',s,'-local');
-            
-            % The node positions
-            x = elem.nodes(dof,1);
-            y = elem.nodes(dof,2);
-            z = elem.nodes(dof,3);
-
-            % Gather y-axis data
-            w = [];
-            if ~isempty(opt.data)
-                dof = elem.get_dof('Side',s);
-                w(:,1) = opt.data(dof);
-            end
-
-            % Apply the plotting order
-            order = elem.node_plot_order;
-            if ~isempty(order);
-                x = x(order);
-                y = y(order);
-                z = z(order);
-                if ~isempty(w);
-                    w = w(order);
-                end
-            end
-
-            % Create the graph
-            if isempty(w);
-                h = patch(x, y, z, 'w', 'FaceColor','none');
-            else
-                h = patch(x, y, z, w, 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'MarkerFaceColor','flat');
-            end
-        end
-            
-        view(3);
     end
 end
 
 function h = plot2D_vector(obj, opt)
     %PLOT2D_vector create a 2D plot for vector spaces
-
+  
     % Initialize the x and y values
     h = zeros(obj.n_elements,1);
     
@@ -440,9 +377,14 @@ function h = plot2D_vector(obj, opt)
             
              % Adjust nodal position if deformed shape is desired
             if opt.deform
-                % Adjust the nodal values
-                x = x + opt.scale*zz(:,1);
-                y = y + opt.scale*zz(:,2);
+                if opt.component == 1 || strcmpi(opt.component, 'x');
+                    x = x + opt.scale*zz(:,1);
+                elseif opt.component == 2 || strcmpi(opt.component, 'y');
+                    y = y + opt.scale*zz(:,2);
+                else
+                    x = x + opt.scale*zz(:,1);
+                    y = y + opt.scale*zz(:,2);
+                end
             end
         end
 
@@ -463,12 +405,36 @@ function h = plot2D_vector(obj, opt)
             h(e) = patch(x, y, z,'EdgeColor','interp');
         end
     end
+end
+
+function h = plot3D_scalar(obj, opt)
+    %PLOT_SCALAR create a plot of scalar data
+
+    % Initialize the x and y values
+    h = zeros(obj.n_elements,1);
     
-    % Create the colorbar        
-    if ~isempty(opt.colorbar) && ischar(opt.colorbar);
-        cbar = colorbar;
-        set(get(cbar,'YLabel'),'String',opt.colorbar);
+    % Generate the graph
+    for e = 1:obj.n_elements;
+
+        % The current element
+        elem = obj.element(e);
+
+        % Plot with data
+        if ~isempty(opt.data)
+            dof = elem.get_dof();
+            h(e) = patch('Vertices',elem.nodes,'Faces',elem.side_dof,...
+                'FaceVertexCData',opt.data(dof));
+            
+        % Plot without data    
+        else
+            h(e) = patch('Vertices',elem.nodes,'Faces',elem.side_dof);
+        end
     end
+    
+    % Apply settings
+    set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
+        'MarkerFaceColor','flat');
+    view(3);
 end
 
 function apply_plot_options(h, obj, opt)
@@ -495,6 +461,12 @@ function apply_plot_options(h, obj, opt)
     % Add the custom patch options
     if ~isempty(opt.patch);
         set(h, opt.patch{:}); 
+    end
+    
+    % Create the colorbar        
+    if ~isempty(opt.colorbar) && ischar(opt.colorbar);
+        cbar = colorbar;
+        set(get(cbar,'YLabel'),'String',opt.colorbar);
     end
 end
 
