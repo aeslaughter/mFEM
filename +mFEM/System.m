@@ -38,11 +38,11 @@ classdef System < mFEM.handle_hide
             {'N','B','L','x','t','xi','eta','zeta'};
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'func', char, ...
-            'matrix', {}, 'functions', [], 'boundary_id', uint32([]),...
-            'subdomain',uint32([]));
+            'matrix', {}, 'functions', [], 'boundary_id', [],...
+            'subdomain', []);
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'func', char, 'vector',{},...
-            'functions', [], 'boundary_id', uint32([]),'subdomain',uint32([]));
+            'functions', [], 'boundary_id', [],'subdomain', []);
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
         func = ... % vector storage structure
@@ -187,11 +187,17 @@ classdef System < mFEM.handle_hide
             %       Limits the application of the supplied equation to the 
             %       boundaries with the id, see FEMESH.ADD_BOUNDARY
             %
+            %   Subdomain
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
+            %
             % Examples
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
             
             % Gather the user options
+            options.subdomain = [];
             options.boundary = [];
             options = gather_user_options(options, varargin{:});
     
@@ -243,10 +249,16 @@ classdef System < mFEM.handle_hide
             %       Limits the application of the supplied equation to the 
             %       boundaries with the id, see FEMESH.ADD_BOUNDARY
             %
+            %   Subdomain
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
+            %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
             % Gather the user options
+            options.subdomain = [];
             options.boundary = [];
             options = gather_user_options(options, varargin{:});
             
@@ -695,11 +707,19 @@ classdef System < mFEM.handle_hide
             % Get a reference to current Matrix object
             matrix = obj.mat(idx).matrix;
 
+            % Get the elements to loop over, if the subdomain it empty it
+            % returns all of the elements.
+            if isempty(obj.mat(idx).subdomain);
+                active_elem = obj.mesh.element;
+            else
+                active_elem = obj.mesh.get_elements('Subdomain', obj.mat(idx).subdomain);
+            end
+
             % Loop through all of the elements
-            for e = 1:obj.mesh.n_elements;
+            for e = 1:length(active_elem);
 
                 % Extract current element
-                elem = obj.mesh.element(e);
+                elem = active_elem(e);
 
                 % Initialize the local stiffness matrix
                 Ke = zeros(elem.n_dof);
@@ -868,11 +888,15 @@ classdef System < mFEM.handle_hide
             % Create the function for element calculations
             fcn = str2func(obj.vec(idx).func);
 
-            % Loop through each element
-            for e = 1:obj.mesh.n_elements;
+            % Get the elements to loop over, if the subdomain it empty it
+            % returns all of the elements.
+            active_elem = obj.mesh.get_elements('Subdomain', obj.vec(idx).subdomain);
 
-                % The current element
-                elem = obj.mesh.element(e);
+            % Loop through all of the elements
+            for e = 1:length(active_elem);
+
+                % Extract current element
+                elem = active_elem(e);
 
                 % Intialize the force fector
                 fe = zeros(elem.n_dof,1);

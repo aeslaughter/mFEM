@@ -473,7 +473,7 @@ classdef FEmesh < mFEM.handle_hide
                     end
                     
                     % Add to the dof
-                    idx(:,i) = obj.get_dof_private(varargin{i}{:});  
+                    idx(:,i) = obj.get_element_idx(varargin{i}{:});  
                 end
                 
                 % Reduce the matrix to a column array
@@ -481,14 +481,11 @@ classdef FEmesh < mFEM.handle_hide
                
             % Traditional input case    
             else
-                idx = obj.get_dof_private(varargin{:});
+                idx = obj.get_element_idx(varargin{:});
             end
-            
-            % Convert dof to elmenets
-            e_idx = unique(obj.map.elem(idx));
-            
+
             % Return the elements
-            e = obj.element(e_idx);
+            e = obj.element(any(idx,2));
         end
                 
         function varargout = get_nodes(obj,varargin)
@@ -717,19 +714,71 @@ classdef FEmesh < mFEM.handle_hide
             end;
         end 
          
+        function e = get_element_idx(obj, varargin)
+            %GET_ELEMENT_IDX returns a set of elements
+            %
+            % Syntax
+            %   e = get_element_idx()
+            %   e = get_element_idx('PropertyName',PropertyValue);
+            %
+            % Description
+            %   e = get_element_idx() returns all the elements
+            %
+            %   e = get_element_idx('PropertyName',PropertyValue) returns 
+            %   the element for portions of the mesh
+            %   depending on the properties (see descriptions below).
+            %
+            % GET_ELEMENT_IDX Property Descriptions
+            %   see GET_ELEMENTS
+            %
+            % See Also
+            %   GET_ELEMENTS GET_DOF
+            
+            % Set the default values for the varius inputs
+            options.subdomain = [];
+            options.boundary = [];
+            options = gather_user_options(options, varargin{:});
+
+            % Return dofs for the specified boundary id
+            if ~isempty(options.boundary);
+                
+                % Extract the column of boundary_id map
+                col = obj.boundary_id == options.boundary;
+                idx = obj.map.boundary(:,col);
+
+                % Collect the dofs
+                e(:,1) = unique(obj.map.elem(logical(idx)));
+                
+            % Return dofs for the specfied subdomain tag
+            elseif ~isempty(options.subdomain);
+                
+                % Extract the column of boundary_id map
+                col = obj.subdomain == options.subdomain;
+                idx = obj.map.subdomain(:,col);
+
+                % Collect the dofs
+                e(:,1) = unique(obj.map.elem(logical(idx)));
+                
+            % Return all the dofs    
+            else 
+                e = 1:obj.n_elements;
+            end
+            
+        end
+        
         function dof = get_dof_private(obj, varargin)
             %GET_DOF_PRIVATE Returns the global degrees of freedom.
             %
             % Syntax
-            %   dof = get_dof()
-            %   dof = get_dof('PropertyName',PropertyValue);
+            %   dof = get_dof_private()
+            %   dof = get_dof_private('PropertyName',PropertyValue);
             %
             % Description
-            %   dof = get_dof() returns the global degrees of freedom for
-            %   the entire finite element mesh.
+            %   dof = get_dof_private() returns the global degrees of 
+            %   freedom for the entire finite element mesh.
             %
-            %   dof = get_dof('PropertyName',PropertyValue) returns the
-            %   global degrees of freedom for portions of the mesh
+            %   dof = get_dof_private('PropertyName',PropertyValue) returns 
+            %   the global degrees of freedom for portions of the mesh
             %   depending on the properties (see descriptions below).
             %
             % GET_DOF_PRIVATE Property Descriptions
@@ -744,7 +793,7 @@ classdef FEmesh < mFEM.handle_hide
             options.boundary = [];
             options.index = false;
             options = gather_user_options(options, varargin{:});
-            
+
             % Return dofs for the specified boundary id
             if ~isempty(options.boundary);
                 
@@ -1033,7 +1082,12 @@ classdef FEmesh < mFEM.handle_hide
             idx = all(idx,2);
            
             % Meld tag map columns together if id already exists
-            c = find(obj.boundary_id == id);
+            if is_boundary;
+                c = find(obj.boundary_id == id);
+            else
+                c = find(obj.subdomain == id);
+            end
+            
             if ~isempty(c);
                 if is_boundary;
                     idx_old = obj.map.boundary(:,c);

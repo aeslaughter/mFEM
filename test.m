@@ -20,7 +20,7 @@ mesh.init();
 
 mesh.add_subdomain(1,'x<0.5');
 
-e = mesh.get_elements('Subdomain',1);
+e = mesh.get_elements('Subdomain',1)
 
 
 % Initialize the temperatures

@@ -377,9 +377,9 @@ function h = plot2D_vector(obj, opt)
             
              % Adjust nodal position if deformed shape is desired
             if opt.deform
-                if opt.component == 1 || strcmpi(opt.component, 'x');
+                if ~isempty(opt.component) && opt.component == 1 || strcmpi(opt.component, 'x');
                     x = x + opt.scale*zz(:,1);
-                elseif opt.component == 2 || strcmpi(opt.component, 'y');
+                elseif ~isempty(opt.component) && opt.component == 2 || strcmpi(opt.component, 'y');
                     y = y + opt.scale*zz(:,2);
                 else
                     x = x + opt.scale*zz(:,1);
