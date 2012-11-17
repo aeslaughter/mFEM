@@ -1,11 +1,11 @@
 % A transient heat transfer example
 %
 % Syntax:
-%   example9a
-%   example9a('PropertyName', PropertyValue)
+%   example6a
+%   example6a('PropertyName', PropertyValue)
 %
 % Description:
-%   example9 solves a simple transient heat conduction problem, with the
+%   example6a solves a simple transient heat conduction problem, with the
 %   default settings.
 %
 %   example9a('PropertyName', PropertyValue) allows the user to customize
@@ -31,7 +31,7 @@
 %   example, for a 100 x 100 grid the normal assembly took 25.6 sec. and the
 %   alternative method 23.8 sec.
 
-function example9a(varargin)
+function example6a(varargin)
 
 % Import the mFEM library
 import mFEM.*;

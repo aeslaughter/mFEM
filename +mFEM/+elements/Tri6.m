@@ -1,4 +1,4 @@
-classdef Tri6 < mFEM.Element
+classdef Tri6 < mFEM.base.Element
     %Tri6 6-node triangle element
     % 
     %        xi2  
@@ -44,7 +44,7 @@ classdef Tri6 < mFEM.Element
            end
 
            % Call the base class constructor
-           obj = obj@mFEM.Element(id, nodes, varargin{:});
+           obj = obj@mFEM.base.Element(id, nodes, varargin{:});
            
            % Set the node plotting order (this is only needed because the
            % nodes are not in order)

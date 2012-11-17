@@ -1,17 +1,17 @@
 % A transient heat transfer example, using System class
 %
 % Syntax:
-%   example9c
-%   example9c('PropertyName', PropertyValue)
+%   example6b
+%   example6b('PropertyName', PropertyValue)
 %
 % Description:
-%   example9c solves a simple transient heat conduction problem, with the
+%   example6b solves a simple transient heat conduction problem, with the
 %   default settings.
 %
-%   example9c('PropertyName', PropertyValue) allows the user to customize
+%   example6b('PropertyName', PropertyValue) allows the user to customize
 %   the behavior of this example using the property pairs listed below.
 %
-% Example9c Property Descriptions
+% Example6b Property Descriptions
 %
 % N
 %   scalar
@@ -21,7 +21,7 @@
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
 
-function example9c(varargin)
+function example6b(varargin)
 
 % Import the mFEM library
 import mFEM.*;

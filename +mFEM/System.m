@@ -582,7 +582,7 @@ classdef System < mFEM.base.handle_hide
             
             % Adjust for special side case
             options.side = false;
-            options.direct
+            options.direct = false;
             options = gather_user_options(options, varargin{:});
             
             % Apply constants

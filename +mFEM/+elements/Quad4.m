@@ -1,4 +1,4 @@
-classdef Quad4 < mFEM.Element
+classdef Quad4 < mFEM.base.Element
     %Quad4 4-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)
@@ -30,7 +30,7 @@ classdef Quad4 < mFEM.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.base.Element(id, nodes, varargin{:}); 
         end
     end
     

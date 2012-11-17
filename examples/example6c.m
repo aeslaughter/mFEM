@@ -1,17 +1,17 @@
 % A transient heat transfer example, using Matrix class
 %
 % Syntax:
-%   example6b
-%   example6b('PropertyName', PropertyValue)
+%   example6c
+%   example6c('PropertyName', PropertyValue)
 %
 % Description:
-%   example6 solves a simple transient heat conduction problem, with the
+%   example6c solves a simple transient heat conduction problem, with the
 %   default settings.
 %
-%   example6a('PropertyName', PropertyValue) allows the user to customize
+%   example6c('PropertyName', PropertyValue) allows the user to customize
 %   the behavior of this example using the property pairs listed below.
 %
-% Example6a Property Descriptions
+% Example6c Property Descriptions
 %
 % N
 %   scalar
@@ -22,7 +22,7 @@
 %   Specifies the type of element for the mesh
 %
 
-function example9b(varargin)
+function example6c(varargin)
 
 % Set the default options and apply the user defined options
 opt.n = 32;
