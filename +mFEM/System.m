@@ -714,44 +714,45 @@ classdef System < mFEM.base.handle_hide
                             if direct;
                                 dof = elem.get_dof('Side',s,'-local');
                                 Ke(dof,dof) = Ke(dof,dof) + fcn(side);
-                                continue;
-                            end
                             
-                            % If elem is 1D, then the side is a point that
-                            % does not require intergration
-                            if elem.local_n_dim == 1;
-                                dof = elem.get_dof(s);
-                                Ke(dof,dof) = Ke(dof,dof) + fcn(side);
-
-                            % Side elements that are not points    
+                            % Perform quadrature
                             else
-                                            
-                                % Get side quadrature rule, all sides
-                                if ~exist('qp', 'var')
-                                    [qp,W] = side.quad.rules('-cell');
-                                end
+                                % If elem is 1D, then the side is a point that
+                                % does not require intergration
+                                if elem.local_n_dim == 1;
+                                    dof = elem.get_dof(s);
+                                    Ke(dof,dof) = Ke(dof,dof) + fcn(side);
 
-                                % Local dofs for the current side
-                                dof = elem.get_dof('Side',s,'-local');
+                                % Side elements that are not points    
+                                else
 
-                                % Perform quadrature
-                                for j = 1:size(qp,1);
-                                    
-                                    % Apply spatial/temporal functions
-                                    if ~isempty(obj.mat(idx).functions);
-                                        x = elem.get_position(qp{i,:});
-                                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, side, x);
+                                    % Get side quadrature rule, all sides
+                                    if ~exist('qp', 'var')
+                                        [qp,W] = side.quad.rules('-cell');
                                     end
 
-                                    % Build local matrix
-                                    Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
+                                    % Local dofs for the current side
+                                    dof = elem.get_dof('Side',s,'-local');
+
+                                    % Perform quadrature
+                                    for j = 1:size(qp,1);
+
+                                        % Apply spatial/temporal functions
+                                        if ~isempty(obj.mat(idx).functions);
+                                            x = elem.get_position(qp{i,:});
+                                            fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, side, x);
+                                        end
+
+                                        % Build local matrix
+                                        Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
+                                    end
                                 end
                             end
-
+                            
                             % Delete the side element
                             delete(side);
                         end
-                    end   
+                    end                               
                 end 
                      
                 % Add the local force vector to the global vector
@@ -802,31 +803,31 @@ classdef System < mFEM.base.handle_hide
                 % to the next loop iteration
                 if direct;
                     Ke = fcn(elem);
-                    continue;
-                end
-                
-                % Initialize the local stiffness matrix
-                Ke = zeros(elem.n_dof);
-
-                % Get the quadrature rules for this and all elements
-                if ~exist('qp','var');
-                    [qp,W] = elem.quad.rules('-cell');
-                end
-
-                % Loop through all of the quadrature points and add the
-                % result to the local matrix
-                for i = 1:size(qp,1);       
                     
-                    % Apply spatial/temporal functions
-                    if ~isempty(obj.mat(idx).functions);
-                        x = elem.get_position(qp{i,:});
-                        fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, elem, x);
-                    end
-                        
-                    % Case without spatial/temporal functions
-                    Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
-                end
+                % Otherwise, perform quadrature    
+                else
+                    % Initialize the local stiffness matrix
+                    Ke = zeros(elem.n_dof);
 
+                    % Get the quadrature rules for this and all elements
+                    if ~exist('qp','var');
+                        [qp,W] = elem.quad.rules('-cell');
+                    end
+
+                    % Loop through all of the quadrature points and add the
+                    % result to the local matrix
+                    for i = 1:size(qp,1);       
+
+                        % Apply spatial/temporal functions
+                        if ~isempty(obj.mat(idx).functions);
+                            x = elem.get_position(qp{i,:});
+                            fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, elem, x);
+                        end
+
+                        % Case without spatial/temporal functions
+                        Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
+                    end
+                end
                 % Extract the global dof for this element
                 dof = elem.get_dof();   
 
@@ -917,47 +918,48 @@ classdef System < mFEM.base.handle_hide
                             if direct;
                                 dof = elem.get_dof('Side',s, '-local');
                                 fe(dof) = fe(dof) + fcn(side);
-                                continue;
-                            end
-                            
-                            % If elem is 1D, then the side is a point that
-                            % does not require intergration
-                            if elem.local_n_dim == 1;
                                 
-                                % Apply spatial/temporal functions
-                                if ~isempty(obj.vec(idx).functions);
-                                    x = side.nodes;
-                                    fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
-                                end
-                                
-                                % Build local vector
-                                dof = elem.get_dof('Side', s, '-local');
-                                fe(dof) = fe(dof) + fcn(side);
+                            % Perform quadrature    
+                            else                            
+                                % If elem is 1D, then the side is a point that
+                                % does not require intergration
+                                if elem.local_n_dim == 1;
 
-                            % Side elements that are not points    
-                            else
-                                % Get side quadrature rule (non mixed mesh)
-                                if ~exist('qp','var');
-                                    [qp,W] = side.quad.rules('-cell');
-                                end
-
-                                % Local dofs for the current side
-                                dof = elem.get_dof('Side',s,'-local');
-
-                                % Perform quadrature
-                                for j = 1:size(qp,1);
-                                    
                                     % Apply spatial/temporal functions
                                     if ~isempty(obj.vec(idx).functions);
-                                        x = elem.get_position(qp{i,:});
-                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, side, x);
+                                        x = side.nodes;
+                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
                                     end
-                                    
+
                                     % Build local vector
-                                    fe(dof) = fe(dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
+                                    dof = elem.get_dof('Side', s, '-local');
+                                    fe(dof) = fe(dof) + fcn(side);
+
+                                % Side elements that are not points    
+                                else
+                                    % Get side quadrature rule (non mixed mesh)
+                                    if ~exist('qp','var');
+                                        [qp,W] = side.quad.rules('-cell');
+                                    end
+
+                                    % Local dofs for the current side
+                                    dof = elem.get_dof('Side',s,'-local');
+
+                                    % Perform quadrature
+                                    for j = 1:size(qp,1);
+
+                                        % Apply spatial/temporal functions
+                                        if ~isempty(obj.vec(idx).functions);
+                                            x = elem.get_position(qp{i,:});
+                                            fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, side, x);
+                                        end
+
+                                        % Build local vector
+                                        fe(dof) = fe(dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
+                                    end
                                 end
                             end
-
+                        
                             % Delete the side element
                             delete(side);
                             
@@ -982,11 +984,11 @@ classdef System < mFEM.base.handle_hide
             %   vec structure.     
             
             % Deterimine what type of build direct or not
-            direct = obj.mat(idx).direct;
+            direct = obj.vec(idx).direct;
             
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn),...
-                'Direct', direct);
+            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn,...
+                'Direct', direct));
 
             % Get the elements to loop over, if the subdomain is empty it
             % returns all of the elements.
@@ -1002,30 +1004,31 @@ classdef System < mFEM.base.handle_hide
                 % to the next loop iteration
                 if direct;
                     fe = fcn(side);
-                    continue;
-                end
-                            
-                % Intialize the force fector
-                fe = zeros(elem.n_dof,1);
+                
+                % Otherwise perform quadrature    
+                else     
+                    % Intialize the force fector
+                    fe = zeros(elem.n_dof,1);
 
-                % Get side quadrature rule (non mixed mesh)
-                if ~exist('qp','var');
-                    [qp,W] = elem.quad.rules('-cell');
-                end
-
-                % Loop through all of the quadrature points
-                for j = 1:size(qp,1);
-                    
-                    % Apply spatial/temporal functions
-                    if ~isempty(obj.vec(idx).functions);
-                        x = elem.get_position(qp{j,:});
-                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
+                    % Get side quadrature rule (non mixed mesh)
+                    if ~exist('qp','var');
+                        [qp,W] = elem.quad.rules('-cell');
                     end
-                    
-                    % Build the local vector
-                    fe = fe + W(j)*fcn(elem,qp{j,:})*elem.detJ(qp{j,:});
-                end
 
+                    % Loop through all of the quadrature points
+                    for j = 1:size(qp,1);
+
+                        % Apply spatial/temporal functions
+                        if ~isempty(obj.vec(idx).functions);
+                            x = elem.get_position(qp{j,:});
+                            fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
+                        end
+
+                        % Build the local vector
+                        fe = fe + W(j)*fcn(elem,qp{j,:})*elem.detJ(qp{j,:});
+                    end
+                end
+                
                 % Add the local force vector to the global vector
                 dof = elem.get_dof();    
                 obj.vec(idx).vector.add_vector(fe,dof);

@@ -3,7 +3,13 @@
 %
 % See Also EXAMPLE14a
 
-function example14b
+function example14b(varargin)
+
+% User options
+opt.n = 1;
+opt.direct = false;
+opt = gather_user_options(opt,varargin{:});
+
 
 % Load the mFEM library
 import mFEM.*
@@ -23,6 +29,17 @@ mesh.add_subdomain(10, 'x<8');    % distributed load, b
 mesh.add_subdomain(11, 'x==4');   % point load, P1
 mesh.add_subdomain(12, 'x==8');   % point load, P2
 
+% Define a system
+sys = System(mesh);
+sys.add_constant('b',-1,'EI',10^4);
+sys.add_vector('f','N''*b','Subdomain',10);
+
+if opt.direct;
+    sys.add_matrix('K','EI*Ke','-direct'); 
+else
+    sys.add_matrix('K','EI*B''*B');
+end
+
 % Difine the paramters for the problem
 b = -1;         % body force
 P1 = -10;       % load at x = 4
@@ -30,54 +47,13 @@ P2 = 5;         % load at x = 8
 EI = 10^4;      % modulus and moment of intertia
 c = [-20;20];   % presecribed force and moment on boundary
 
-% Initialize global stiffness matrix and force vector
-K = Matrix(mesh);
-f = zeros(mesh.n_dof,1);
-
-% Loop through the elements
-for e = 1:mesh.n_elements;
-    
-    % Current element
-    elem = mesh.element(e);
-    
-    % Initilize local K and f
-    Ke = zeros(elem.n_dof);    
-    fe = zeros(elem.n_dof,1);    
-    
-    % Create functions for N and B
-    B = @(xi) elem.shape_deriv(xi);
-    N = @(xi) elem.shape(xi);
-    
-    % Extract quadrature points
-    [qp,w] = elem.quad.rules();
-
-    % Perform quadrature for stiffness matrix
-    for i = 1:length(qp);
-        Ke = Ke + w(i)*EI*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
-    end
-
-    % Account for the body force, only on subdomain
-    if any(elem.subdomain == 10);
-        for i = 1:length(qp);  
-            fe = fe + w(i)*N(qp(i))'*b*elem.detJ(qp(i));
-        end
-    end
-    
-    % Add the local matrix and vector to the global
-    dof = elem.get_dof();
-    K.add_matrix(Ke, dof);
-    f(dof) = f(dof) + fe;
-end
-
 % Create the stiffness matrix
-K = K.init();
+K = sys.assemble('K');
+f = sys.assemble('f');
 
 % Apply point loads
-dof1 = mesh.get_dof('Subdomain', 11, 'Component', 1);
-f(dof1) = f(dof1) + P1;
-
-dof2 = mesh.get_dof('Subdomain', 12, 'Component', 1);
-f(dof2) = f(dof2) + P2;
+dof1 = mesh.get_dof({'Subdomain', 11, 'Component', 1},{'Subdomain', 12, 'Component', 1});
+f(dof1) = f(dof1) + [P1;P2];
 
 % Apply the natural boundary conditions
 dof3 = mesh.get_dof('Boundary', 2);
