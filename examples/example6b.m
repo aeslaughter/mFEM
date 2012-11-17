@@ -21,7 +21,6 @@
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
 
-
 function example9c(varargin)
 
 % Import the mFEM library

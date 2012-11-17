@@ -183,6 +183,3 @@ for t = dt:dt:1;
     mesh.plot(T);
     title(['t = ', num2str(t)]);
 end
-
-% Clean up
-delete(mesh);
