@@ -26,7 +26,7 @@ classdef Truss < mFEM.base.ElementCore
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.base.ElementDirect(id, nodes, 'Space', 2); 
+           obj = obj@mFEM.base.ElementCore(id, nodes, 'Space', 2); 
            
         end
         

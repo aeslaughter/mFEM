@@ -34,17 +34,21 @@ classdef System < mFEM.base.handle_hide
     end
     
     properties(Access = private)
-        reserved = ... % reserved variables
-            {'N','B','L','x','t','xi','eta','zeta','elem'};
+        reserved = ... % reserved variables, not available for constants
+            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','fe'};
+        
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
             'functions', [], 'boundary_id', [], 'subdomain', [],...
             'direct', {});
+        
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'vector',{},...
             'functions', [], 'boundary_id', [],'subdomain', [], 'direct', {});
+        
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
+        
         func = ... % vector storage structure
             struct('name', {}, 'handle', {});
     end
@@ -212,13 +216,6 @@ classdef System < mFEM.base.handle_hide
             %       Limits the application of the supplied equation to the 
             %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
             %
-            %   Direct
-            %       true | {false}
-            %       A toggle for implementing the direct assembly, this
-            %       option enables the use of the 'Ke' and 'fe' variables,
-            %       which are replaced by elem.stiffness() and
-            %       elem.force().
-            %
             % Examples
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
@@ -226,7 +223,7 @@ classdef System < mFEM.base.handle_hide
             % Gather the user options
             options.subdomain = [];
             options.boundary = [];
-            options.direct = false;
+            %options.direct = false;
             options = gather_user_options(options, varargin{:});
     
             % Limit the use of name
@@ -238,6 +235,9 @@ classdef System < mFEM.base.handle_hide
             % Storate location in matrix array
             idx = length(obj.mat) + 1;
             
+            % Test the input equation
+            direct = obj.test_input_eqn(eqn);
+            
             % Add to the matrix structure
             obj.mat(idx).name = name;
             obj.mat(idx).eqn = eqn;
@@ -245,7 +245,7 @@ classdef System < mFEM.base.handle_hide
             obj.mat(idx).matrix = mFEM.Matrix.empty;
             obj.mat(idx).boundary_id = options.boundary; 
             obj.mat(idx).subdomain = options.subdomain;
-            obj.mat(idx).direct = options.direct;
+            obj.mat(idx).direct = direct;
         end
 
         function add_vector(obj, name, eqn, varargin)  
@@ -282,14 +282,6 @@ classdef System < mFEM.base.handle_hide
             %       Limits the application of the supplied equation to the 
             %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
             %
-            %   Direct
-            %       true | {false}
-            %       A toggle for implementing the direct assembly, this
-            %       option enables the use of the 'Ke' and 'fe' variables.
-            %       This may also be set globally for the System, see the
-            %       constructor. Setting this locally will override the
-            %       global setting.
-            %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
@@ -308,6 +300,9 @@ classdef System < mFEM.base.handle_hide
             % Storage location for the vector
             idx = length(obj.vec) + 1;
             
+            % Test the input equation
+            direct = obj.test_input_eqn(eqn);
+            
             % Append the vector to the structure
             obj.vec(idx).name = name;
             obj.vec(idx).eqn = eqn;
@@ -315,7 +310,7 @@ classdef System < mFEM.base.handle_hide
             obj.vec(idx).vector = mFEM.Vector.empty;
             obj.vec(idx).boundary_id = options.boundary; 
             obj.vec(idx).subdomain = options.subdomain;
-            obj.vec(idx).direct = options.direct;
+            obj.vec(idx).direct = direct;
         end
         
         function X = get(obj, name)
@@ -440,6 +435,35 @@ classdef System < mFEM.base.handle_hide
                 case 'vec';   type = 'vector';
                 case 'const'; type = 'constant';
                 case 'func';  type = 'function';
+            end
+        end
+        
+        function direct = test_input_eqn(obj, eqn)
+            %TEST_INPUT_EQN
+            
+            % Search for standard assembly variables
+            cstr = {'N','B'};
+            for i = 1:length(cstr);
+                [~, S(i)] = obj.insert_string(eqn, cstr{i}, '');
+            end
+            
+            % Search for direct assembly variables
+            cstr = {'Ke','fe'};
+            for i = 1:length(cstr);
+                [~, D(i)] = obj.insert_string(eqn, cstr{i}, '');
+            end   
+            
+            % Test that both are not given
+            if any(S) && any(D);
+                error('System:test_input_eqn', 'In the equation, %s, both standard assembly (N,B) and direct assembly (Ke,fe) variables were given; it is not possible to mix the assembly types', eqn);
+           
+            % Indicate that direct assembly is being used
+            elseif any(D);
+                direct = true;
+                
+            % Indicate that standard assembly is being used
+            else
+                direct = false;
             end
         end
         
