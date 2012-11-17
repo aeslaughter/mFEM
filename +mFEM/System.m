@@ -778,7 +778,8 @@ classdef System < mFEM.base.handle_hide
             direct = obj.mat(idx).direct;
             
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn));
+            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn,...
+                'Direct', direct));
 
             % Get a reference to current Matrix object
             matrix = obj.mat(idx).matrix;
@@ -884,7 +885,8 @@ classdef System < mFEM.base.handle_hide
             direct = obj.vec(idx).direct;
             
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, '-side'));
+            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, '-side',...
+                'Direct', direct));
             
             % Extract the boundary ids
             id = obj.vec(idx).boundary_id;
@@ -983,7 +985,8 @@ classdef System < mFEM.base.handle_hide
             direct = obj.mat(idx).direct;
             
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn));
+            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn),...
+                'Direct', direct);
 
             % Get the elements to loop over, if the subdomain is empty it
             % returns all of the elements.

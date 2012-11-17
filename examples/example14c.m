@@ -3,7 +3,7 @@
 %
 % See Also EXAMPLE14a
 
-function example14b
+function example14c
 
 % Load the mFEM library
 import mFEM.*
@@ -26,7 +26,7 @@ mesh.add_subdomain(12, 'x==8');   % point load, P2
 % Define a system
 sys = System(mesh);
 sys.add_constant('b',-1,'EI',10^4);
-sys.add_matrix('K','EI*B''*B');
+sys.add_matrix('K','EI*Ke','-direct');
 sys.add_vector('f','N''*b','Subdomain',10);
 
 % Difine the paramters for the problem

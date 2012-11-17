@@ -142,12 +142,6 @@ classdef Element < mFEM.base.ElementCore
                     B(i,i:r:c)  = b(i,:);
                     B(r+1, i:r:c) = b((r+1)-i,:);
                 end
-           
-%             % Truss space    
-%             elseif strcmpi(obj.opt.space, 'truss');
-%                 b = B;
-%                 B = zeros(1,obj.n_nodes*obj.n_dim);
-%                 B(1:obj.n_dim:end) = b; 
             end
         end
             
@@ -165,6 +159,7 @@ classdef Element < mFEM.base.ElementCore
             %   number of which varies with the number of space dimensions.
             J = det(obj.jacobian(varargin{:}));
         end 
+
     end
 end
     

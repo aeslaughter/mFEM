@@ -107,7 +107,7 @@ classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
             % Initialize neighbor array
             obj.neighbors = feval([class(obj),'.empty']);
         end
-
+               
         function size(obj)
             %SIZE Returns the length, area, or volume of the element
             %
@@ -127,10 +127,30 @@ classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
             % should be available for all Elements, even if it is an error.
             %
             % See Also
-            %   Line2
+            %   LINE2
             
             % The default behavior is an error message
             error('Element:size','The size method is not defined for the %s element type',class(obj));
+        end
+        
+        function stiffness(obj)
+            %STIFFNESS Returns the complete stiffness matrix.
+            %
+            % Syntax
+            %   Ke = stiffness()
+            %
+            % Description
+            %   Ke = stiffness() retuns the complete stiffness matrix, this
+            %   is used for special elements such as the Truss and Beam
+            %   element that have a defined stiffness matrix that may be
+            %   assembled directly. Use the '-direct' flag when calling the
+            %   ADD_MATRIX command in the SYSTEM class.
+            %
+            % See Also
+            %   BEAM TRUSS
+            
+            % The default behavior is an error message
+            error('Element:stiffness','The stiffness method is not defined for the %s element type',class(obj));
         end
         
         function L = hmax(obj)

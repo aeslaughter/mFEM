@@ -1,4 +1,4 @@
-classdef Beam < mFEM.base.Element & mFEM.base.ElementDirect
+classdef Beam < mFEM.base.Element
     % A 2-node Beam element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -43,6 +43,18 @@ classdef Beam < mFEM.base.Element & mFEM.base.ElementDirect
            D(3) = -12/L^3;
            D(4) = 6/L^2;
         end
+        
+        function Ke = stiffness(obj)
+            L = obj.size();
+            
+            Ke = [12/L^3, 6/L^2, -12/L^3, 6/L^2;
+                  6/L^2, 4/L, -6/L^2, 2/L;
+                    -12/L^3, -6/L^2, 12/L^3, -6/L^2;
+                    6/L^2, 2/L, -6/L^2, 4/L];
+            
+        end
+        
+
     end
     
     methods (Access = protected)  

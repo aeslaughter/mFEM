@@ -1,4 +1,4 @@
-classdef Truss < mFEM.base.ElementDirect
+classdef Truss < mFEM.base.ElementCore
     % A 2-node Truss element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -50,9 +50,6 @@ classdef Truss < mFEM.base.ElementDirect
             Ke = T'*(N'*N)*T;
         end
         
-        function fe = force(obj, varargin)
-            
-        end
 
     end
     
