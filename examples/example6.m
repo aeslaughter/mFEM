@@ -1,53 +1,70 @@
-% MAE4700/5700 HW8, Prob. 3
-function example6
-
-% Set known values
-a = 5;
-b = 10;
-E = 10000;
-u0 = -0.01;
+% MAE4700/5700 HW8, Prob. 2
+function example5
 
 % Import the mFEM library
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Space','vector','Element','Tri6');
-mesh.grid(0, pi/2, a, b, 10, 5,'-pol2cart'); % x = theta; y = r
+mesh = FEmesh('Space','vector','Element','Quad4');
+mesh.grid(0,2,0,1,1,1);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'bottom');                     % y = 0 boundary (traction)
-mesh.add_boundary(2, 'x < 0.001');                  % x = 0 boundary (rollers)
-mesh.add_boundary(3,{'x < 0.001', ['y==',num2str(a)]});  % x = 0 and y = a (pin)
+mesh.add_boundary(1, 'bottom','left');
+mesh.add_boundary(2, 'right','top');
 
 % Create system and add matrix components
 sys = System(mesh);
-sys.add_constant('E', E, 'v', 0.25);
+sys.add_constant('E', 3e11, 'v', 0.3, 'r', [1000;1000]);
 sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
 
+% Add force components
+sys.add_vector('f', 'N''*r', 'Boundary', 1);
+sys.add_vector('f', 'N''*-r', 'Boundary', 2);
+
 % Assemble the matrix and vector
-K = sys.assemble('K');
+K = sys.assemble('K'); 
+f = sys.assemble('f') + sys.assemble('f');
 
-% Define dofs indices
-ess(:,1) = mesh.get_dof('Boundary', 1, 'Component', 'x'); % traction
-ess(:,2) = mesh.get_dof('Boundary', 2, 'Component', 'x'); % rollers
-ess(:,3) = mesh.get_dof('Boundary', 3);                   % pin
+% Define dof indices for the essential dofs and non-essential dofs
+ess = [1,2,4];
+non = [3,5,6,7,8];
 
-% Define known displacements
-u = zeros(mesh.n_dof,1);         % initialize the displacement vector
-u(ess(:,1)) = u0;                % traction displacements
-u(ess(:,2)) = 0;                 % zero displacements at rollers
-u(ess(:,3)) = 0;                 % zero displacement at pin
+% Solve for the temperatures
+u = zeros(size(f));         % initialize the displacement vector
+u(ess) = 0;                 % apply essential boundary condtions
+u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 
-% Combine essential boundaries for solution
-ess = any(ess,2);
+% Solve for the reaction fluxes
+r = K*u - f;
 
-% Solve for the unknown displacements
-ticID = tmessage('Solution step...');
-u(~ess) = K(~ess,~ess)\(-K(ess,~ess)'*u(ess));
-tmessage(ticID);
+% Display the displacement results
+u
+mesh.plot(u,'-Deform','-ShowNodes','Colorbar','Magnitude of Disp. (m)',...
+    'Patch',{'EdgeColor','k'});
+xlabel('x'); ylabel('y');
 
-% Display the result
-mesh.plot(u,'-new','component',1,'-deform','scale',100,'colorbar','u_x-displacement');
-mesh.plot(u,'-new','component',2,'-deform','scale',100,'colorbar','u_y-displacement');
+% Compute the stress and strain at the Gauss points
+for e = 1:mesh.n_elements; % (include for illustration, but not needed)
+    
+    % Extract the current element from the mesh object
+    elem = mesh.element(e);
+    
+    % Collect the local values of T
+    d(:,1) = u(elem.get_dof());
+    
+    % Compute the stress and strain at the Gauss points
+    k = 1;
+    qp = elem.quad.rules();
+    for i = 1:length(qp);
+        for j = 1:length(qp);
+            strain(:,k) = elem.shape_deriv(qp(i),qp(j))*d;
+            stress(:,k) = sys.get('D')*strain(:,k);
+            k = k + 1;
+        end
+    end
+end    
+
+% Display the stress and strain vectors
+strain, stress

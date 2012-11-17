@@ -712,7 +712,7 @@ classdef System < mFEM.base.handle_hide
                             % If direct build, perform the build and return
                             % to the next loop iteration
                             if direct;
-                                dof = elem.get_dof(s);
+                                dof = elem.get_dof('Side',s,'-local');
                                 Ke(dof,dof) = Ke(dof,dof) + fcn(side);
                                 continue;
                             end
@@ -774,6 +774,9 @@ classdef System < mFEM.base.handle_hide
             %   over the entire domain where idx is the location in the 
             %   mat structure.
             
+            % Deterimine what type of build direct or not
+            direct = obj.mat(idx).direct;
+            
             % Build the function for the side
             fcn = str2func(obj.parse_equation(obj.mat(idx).eqn));
 
@@ -793,7 +796,14 @@ classdef System < mFEM.base.handle_hide
 
                 % Extract current element
                 elem = active_elem(e);
-
+                
+                % If direct build, perform the build and return
+                % to the next loop iteration
+                if direct;
+                    Ke = fcn(elem);
+                    continue;
+                end
+                
                 % Initialize the local stiffness matrix
                 Ke = zeros(elem.n_dof);
 
@@ -868,7 +878,10 @@ classdef System < mFEM.base.handle_hide
             %
             % Description
             %   K = assemble_vector_side(idx) assembles the desired vector 
-            %   for a side where idx is the location in the vec structure.   
+            %   for a side where idx is the location in the vec structure.  
+            
+            % Deterimine what type of build direct or not
+            direct = obj.vec(idx).direct;
             
             % Build the function for the side
             fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, '-side'));
@@ -896,7 +909,15 @@ classdef System < mFEM.base.handle_hide
 
                             % Create the side element
                             side = elem.build_side(s);
-
+                            
+                            % If direct build, perform the build and return
+                            % to the next loop iteration
+                            if direct;
+                                dof = elem.get_dof('Side',s, '-local');
+                                fe(dof) = fe(dof) + fcn(side);
+                                continue;
+                            end
+                            
                             % If elem is 1D, then the side is a point that
                             % does not require intergration
                             if elem.local_n_dim == 1;
@@ -958,6 +979,9 @@ classdef System < mFEM.base.handle_hide
             %   over the entire domain where idx is the location in the 
             %   vec structure.     
             
+            % Deterimine what type of build direct or not
+            direct = obj.mat(idx).direct;
+            
             % Build the function for the side
             fcn = str2func(obj.parse_equation(obj.vec(idx).eqn));
 
@@ -970,7 +994,14 @@ classdef System < mFEM.base.handle_hide
 
                 % Extract current element
                 elem = active_elem(e);
-
+                
+                % If direct build, perform the build and return
+                % to the next loop iteration
+                if direct;
+                    fe = fcn(side);
+                    continue;
+                end
+                            
                 % Intialize the force fector
                 fe = zeros(elem.n_dof,1);
 
