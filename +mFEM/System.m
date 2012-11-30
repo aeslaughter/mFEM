@@ -18,9 +18,23 @@ classdef System < mFEM.base.handle_hide
     % See Also FEMESH
     %
     %----------------------------------------------------------------------
-    % Copyright 2012 Andrew E. Slaughter
-    % This software is for educational purposes only and may not be used
-    % without written permession.
+    %  mFEM: An Object-Oriented MATLAB Finite Element Library
+    %  Copyright (C) 2012 Andrew E Slaughter
+    % 
+    %  This program is free software: you can redistribute it and/or modify
+    %  it under the terms of the GNU General Public License as published by
+    %  the Free Software Foundation, either version 3 of the License, or
+    %  (at your option) any later version.
+    % 
+    %  This program is distributed in the hope that it will be useful,
+    %  but WITHOUT ANY WARRANTY; without even the implied warranty of
+    %  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    %  GNU General Public License for more details.
+    % 
+    %  You should have received a copy of the GNU General Public License
+    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %
+    %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
     properties(Access = public);
@@ -455,7 +469,7 @@ classdef System < mFEM.base.handle_hide
             
             % Test that both are not given
             if any(S) && any(D);
-                error('System:test_input_eqn', 'In the equation, %s, both standard assembly (N,B) and direct assembly (Ke,fe) variables were given; it is not possible to mix the assembly types', eqn);
+                error('System:test_input_eqn', 'In the equation, %s, both standard assembly (N,B) and direct assembly (Ke,fe) variables were given; it is not possible to mix the assembly types.', eqn);
            
             % Indicate that direct assembly is being used
             elseif any(D);

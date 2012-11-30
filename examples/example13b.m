@@ -19,7 +19,7 @@ P2 = 16e3;
 % Define the system
 sys = mFEM.System(mesh);
 sys.add_constant('A', 1, 'E', 10^7);
-sys.add_matrix('K', 'A*E/L*Ke');
+sys.add_matrix('K', 'A*E/L**Ke');
 
 % Initilize the force vector
 f = zeros(mesh.n_dof,1);
