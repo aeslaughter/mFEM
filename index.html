@@ -18,9 +18,7 @@
         <h1>mFEM</h1>
         <p>An object-orient MATLAB finite element library.</p>
 
-        <p class="view"><a href="https://github.com/aeslaughter/mFEM">View the Project on GitHub <small>aeslaughter/mFEM</small></a></p>
-
-
+        <p class="view"><a href="https://github.com/aeslaughter/mFEM">View the Project on GitHub <small>aeslaughter/mFEM</small></a></p
         <ul>
           <li><a href="https://github.com/aeslaughter/mFEM/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/aeslaughter/mFEM/tarball/master">Download <strong>TAR Ball</strong></a></li>
@@ -32,7 +30,23 @@
 
 <p>mFEM is an object-oriented, open-source finite element library that includes automatic assembly routines. The project was started to serve as a means for methods testing and comparison against advanced, massively parallel frameworks such as <a href="http://libmesh.sourceforge.net/">libMesh</a>. </p>
 
-<p>This project is currently under development, thus the code is not yet available. I am working on publishing an article about mFEM, one this article is submitted the source code will be made available. </p>
+<p><i>This project is currently under development, although most of the code and documentation are complete. I am currently working on publishing an article about mFEM, so the code will likely change as I write and test the various components. </i></p>
+
+<h3>Features</h3>
+
+
+
+<h3>Installation</h3>
+<p> Installation is trival, since mFEM relies soley on MATLAB's built in functionality. To install mFEM:
+<ul>
+<li> Download the zipped source code: <a href="https://github.com/aeslaughter/mFEM/zipball/master">mFEM zipped source </a>. </li>
+<li> Unzipped the source code in a directory of your choice (e.g., ../MATLAB/mFEM).</li>
+<li> Start MATLAB and naviate to the directory of the mFEM source code. </li>
+<li> Run the install function from the MATLAB command line.  <br/>
+	<pre><code  class="codeblock"> >> install; </code></pre></li>
+</ul>
+The install functions simply adds the necessary directories to the path and adds the documentation to the help browser. Once installed an mFEM section should be added to MATLAB's help, which may be found by opening the help browser and searching for mFEM.
+</p>
 
 <h3>Acknowledments</h3>
 
