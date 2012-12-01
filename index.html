@@ -25,14 +25,28 @@
           <li><a href="https://github.com/aeslaughter/mFEM">View On <strong>GitHub</strong></a></li>
         </ul>
       </header>
-      <section>
-        <h3>Welcome to mFEM.</h3>
+
+	  <section>
+ <h2>Welcome to mFEM.</h2>
 
 <p>mFEM is an object-oriented, open-source finite element library that includes automatic assembly routines. The project was started to serve as a means for methods testing and comparison against advanced, massively parallel frameworks such as <a href="http://libmesh.sourceforge.net/">libMesh</a>. </p>
 
 <p><i>This project is currently under development, although most of the code and documentation are complete. I am currently working on publishing an article about mFEM, so the code will likely change as I write and test the various components. </i></p>
 
-<h3>Features by Example</h3>
+<h2>Installation</h2>
+<p> Installation is trival, since mFEM relies soley on MATLAB's built in functionality. To install mFEM:
+<ul>
+<li> Download the zipped source code: <a href="https://github.com/aeslaughter/mFEM/zipball/master">mFEM zipped source </a>. </li>
+<li> Unzipped the source code in a directory of your choice (e.g., ../MATLAB/mFEM).</li>
+<li> Start MATLAB and naviate to the directory of the mFEM source code. </li>
+<li> Run the install function from the MATLAB command line.  <br/>
+	<pre><code  class="codeblock"> >> install; </code></pre></li>
+</ul>
+The install functions simply adds the necessary directories to the path and adds the documentation to the help browser. Once installed an mFEM section should be added to MATLAB's help, which may be found by opening the help browser and searching for mFEM.
+</p>
+
+<h2>Demo Problem</h2>
+<p> The following code solves a simple displacement problem using 17 lines of code, with a few extra for plotting the results. This is demo was extracted from Example 7 of the mFEM source code, which contains dozens of example problems, with and without the automatic assembly functionality.
 <p> Import the mFEM code. 
 <pre><code> import mFEM.*; </pre></code>
 </p>
@@ -78,23 +92,12 @@ u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
 xlabel('x'); ylabel('y');
 xlim([-0.1,10]);
 </pre></code>
-<img src="http://aeslaughter.github.com/mFEM/demo.png" alt="Example of Beam Displacement" align="center" width=450/>
+<img src="http://aeslaughter.github.com/mFEM/docs/demo.png" alt="Example of Beam Displacement" align="center" />
 </p>
 
 
-<h3>Installation</h3>
-<p> Installation is trival, since mFEM relies soley on MATLAB's built in functionality. To install mFEM:
-<ul>
-<li> Download the zipped source code: <a href="https://github.com/aeslaughter/mFEM/zipball/master">mFEM zipped source </a>. </li>
-<li> Unzipped the source code in a directory of your choice (e.g., ../MATLAB/mFEM).</li>
-<li> Start MATLAB and naviate to the directory of the mFEM source code. </li>
-<li> Run the install function from the MATLAB command line.  <br/>
-	<pre><code  class="codeblock"> >> install; </code></pre></li>
-</ul>
-The install functions simply adds the necessary directories to the path and adds the documentation to the help browser. Once installed an mFEM section should be added to MATLAB's help, which may be found by opening the help browser and searching for mFEM.
-</p>
 
-<h3>Acknowledments</h3>
+<h2>Acknowledments</h2>
 
 <p>Funding for this project was provided by the <a href="www.nsf.org">National Science Foundation</a> <a href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=503144">Earth Sciences Postdoctoral Fellowship Program</a>.</p>
       </section>
