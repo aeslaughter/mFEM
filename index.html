@@ -28,32 +28,79 @@
         </ul>
       </header>
       <section>
-        <h3>Welcome to GitHub Pages.</h3>
+       <h2>Welcome to mFEM.</h2>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>mFEM is an object-oriented, open-source finite element library that includes automatic assembly routines. The project was started to serve as a means for methods testing and comparison against advanced, massively parallel frameworks such as <a href="http://libmesh.sourceforge.net/">libMesh</a>. </p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<p><i>This project is currently under development, although most of the code and documentation are complete. I am currently working on publishing an article about mFEM, so the code will likely change as I write and test the various components. </i></p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<h2>Installation</h2>
+<p> Installation is trival, since mFEM relies soley on MATLAB's built in functionality. To install mFEM:
+<ul>
+<li> Download the zipped source code: <a href="https://github.com/aeslaughter/mFEM/zipball/master">mFEM zipped source </a>. </li>
+<li> Unzipped the source code in a directory of your choice (e.g., ../MATLAB/mFEM).</li>
+<li> Start MATLAB and naviate to the directory of the mFEM source code. </li>
+<li> Run the install function from the MATLAB command line.  <br/>
+	<pre><code  class="codeblock"> >> install; </code></pre></li>
+</ul>
+The install functions simply adds the necessary directories to the path and adds the documentation to the help browser. Once installed an mFEM section should be added to MATLAB's help, which may be found by opening the help browser and searching for mFEM.
+</p>
 
-<h3>Designer Templates</h3>
+<h2>Demo Problem</h2>
+<p> The following code solves a simple displacement problem using 17 lines of code, with a few extra for plotting the results. This is demo was extracted from Example 7 of the mFEM source code, which contains dozens of example problems, with and without the automatic assembly functionality.
+<p> Import the mFEM code. 
+<pre><code> import mFEM.*; </pre></code>
+</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p> Generate a rectangular, 2D grid. This grid rangs from 0 to 10 in the x-direction and -0.5 to 0.5 in the y-direction. It is discritized into 30 and 20 elements in the x- and y-direction, respectively.
+<pre><code>mesh = FEmesh('Element','Quad4','Space','vector');
+mesh.grid(0,10,-0.5,0.5,30,20);
+mesh.init();
+</pre></code>
+</p>
 
-<h3>Rather Drive Stick?</h3>
+<p>Add boundary tags to the left and right side.
+<pre><code>mesh.add_boundary(1, 'right'); 
+mesh.add_boundary(2, 'left');
+</pre></code>
+</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>Add the finite element equations.
+<pre><code>sys = System(mesh);
+sys.add_constant('E', 1e7, 'v', 0.3, 'P', [0;100]);
+sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
+sys.add_matrix('K', 'B''*D*B');
+sys.add_vector('f', 'N''*P', 'Boundary', 2);
+</pre></code>
+</p>
 
-<h3>Authors and Contributors</h3>
+<p>Assemble the stiffness matrix and force vector.
+<pre><code>K = sys.assemble('K');
+f = sys.assemble('f');
+</pre></code>
+</p>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>Extract and set the prescribed values for the essential boundary conditions and solve for the non-essential unknowns.
+<pre><code>ess = mesh.get_dof('Boundary', 1);
+u = zeros(mesh.n_dof,1);            
+u(ess) = 0;     
+u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
+</pre></code>
+</p>
 
-<h3>Support or Contact</h3>
+<p>Plot the results.
+<pre><code>mesh.plot(u,'-deform','Patch',{'EdgeColor','k'},'Colorbar','Displacement');
+xlabel('x'); ylabel('y');
+xlim([-0.1,10]);
+</pre></code>
+<img src="http://aeslaughter.github.com/mFEM/docs/demo.png" alt="Example of Beam Displacement" align="center" />
+</p>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+
+
+<h2>Acknowledments</h2>
+
+<p>Funding for this project was provided by the <a href="www.nsf.org">National Science Foundation</a> <a href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=503144">Earth Sciences Postdoctoral Fellowship Program</a>.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/aeslaughter">aeslaughter</a></p>
