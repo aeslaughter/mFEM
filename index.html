@@ -80,7 +80,7 @@ f = sys.assemble('f');
 </pre></code>
 </p>
 
-<p>Extract and set the prescribed values for the essential boundary conditions and solve for the non-essential unknowns.
+<p>Extract and set the prescribed values for the essential boundary conditions and solve for the non-essential unknowns. Currently the solution step is handled manually, as shown, but future development will include some basic built-in solving routines.
 <pre><code>ess = mesh.get_dof('Boundary', 1);
 u = zeros(mesh.n_dof,1);            
 u(ess) = 0;     
@@ -96,10 +96,7 @@ xlim([-0.1,10]);
 <img src="http://aeslaughter.github.com/mFEM/docs/demo.png" alt="Example of Beam Displacement" align="center" />
 </p>
 
-
-
 <h2>Acknowledments</h2>
-
 <p>Funding for this project was provided by the <a href="www.nsf.org">National Science Foundation</a> <a href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=503144">Earth Sciences Postdoctoral Fellowship Program</a>.</p>
       </section>
       <footer>
