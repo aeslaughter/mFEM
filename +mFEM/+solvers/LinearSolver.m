@@ -1,25 +1,32 @@
 classdef LinearSolver < mFEM.base.Solver
    properties 
-       matrix = 'K';
-       vector = 'f';
+       opt = ...        % Solver options
+           struct('stiffness', 'K', 'force', 'f');
+
        %solution;
 
    end
    
    methods
-       function obj = LinearSolver(sys)  
-           obj@mFEM.base.Solver(sys)
+       function obj = LinearSolver(input, varargin)  
+           
+           obj@mFEM.base.Solver(input)
+
+           obj.opt = gather_user_options(obj.opt, varargin{:});
+           
        end
 
        function u = solve(obj)
           
-           K = obj.system.assemble(obj.matrix);
-           f = obj.system.assemble(obj.vector);
+           % Stiffness matrix
+           K = obj.get_component('stiffness', 'matrix');
+           f = obj.get_component('force', 'vector');
+                
            u = zeros(size(f));
            
            dof = zeros(length(f), length(obj.essential),'uint32');
            for i = 1:length(obj.essential);
-               dof(:,i) = obj.system.mesh.get_dof('Boundary', obj.essential(i).id);
+               dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id);
                u(logical(dof(:,i))) = obj.essential(i).value;
            end
            
@@ -28,4 +35,7 @@ classdef LinearSolver < mFEM.base.Solver
 
        end
    end
+   
+
+   
 end

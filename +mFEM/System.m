@@ -103,12 +103,6 @@ classdef System < mFEM.base.handle_hide
             if any(strcmpi(obj.mesh.opt.element, types));
                 obj.opt.direct = true;
             end
-            
-%             % Build the solver, if desired
-%             if ~isempty(obj.opt.solver);
-%                obj.solver = feval(['mFEM.solvers.',obj.opt.solver], obj); 
-%             end
-            
         end
         
         function add_constant(obj, varargin)
@@ -363,6 +357,31 @@ classdef System < mFEM.base.handle_hide
             end
         end
         
+        function [TF, type] = exists(obj, name)
+           %EXISTS Returns true if name exists as a type in System
+           %
+           % Syntax
+           %    TF = exists(name)
+           %    [TF, type] = exists(name)
+           %
+           % Description
+           %    TF = exists(name) returns a true value if a constant,
+           %    matrix, vector, or function exists in the System with the
+           %    name given.
+           %    [TF, type] = exists(name) same as above but also returns
+           %    the type ('mat', 'vec', 'const', or 'func').
+            
+           % Search for the item
+           [type, idx] = obj.locate(name);
+           
+           % Set the value for TF
+           TF = false;
+           if ~isempty(idx);
+               TF = true;
+           end
+           
+        end
+        
         function X = assemble(obj, name)
             %ASSEMBLE Assembles matrix or vector given by name
             %
@@ -398,16 +417,6 @@ classdef System < mFEM.base.handle_hide
                 tmessage(ticID);
             end
         end
-        
-%         function u = solve(obj)
-%             % error if no solver
-%             u = obj.solver.solve();
-%         end
-%         
-%         function essential_boundary(obj, id, value)
-%             % error if no solver
-%            obj.solver.essential_boundary(id, value);
-%         end
     end
     
     methods (Hidden = true, Access = private)

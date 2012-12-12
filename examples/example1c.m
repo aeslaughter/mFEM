@@ -23,7 +23,7 @@
 %
 % See also EXAMPLE1B
 function example1c(varargin)
-+
+
 % Setup
 import mFEM.* mFEM.solvers.*
 
@@ -49,7 +49,7 @@ sys.add_vector('f', 'N''*b');
 sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
 
 solver = LinearSolver(sys);
-solver.essential_boundary(1,0);
+solver.add_essential_boundary('id',1,'value',0);
 T = solver.solve();
 
 % figure;
