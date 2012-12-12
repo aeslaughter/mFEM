@@ -23,9 +23,9 @@
 %
 % See also EXAMPLE1B
 function example1c(varargin)
-
++
 % Setup
-import mFEM.*
+import mFEM.* mFEM.solvers.*
 
 % Set the default options and apply the user defined options
 opt.n = 2;
@@ -42,15 +42,15 @@ mesh.add_boundary(1,'left');    % T = 0 boundary (essential)
 mesh.add_boundary(2,'right');   % q = 20 boundary 
 
 % Build Matrix and Vector Equations
-sys = System(mesh, 'Solver', 'LinearSolver');
+sys = System(mesh);
 sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5);
 sys.add_matrix('K', 'B''*k*A*B');
 sys.add_vector('f', 'N''*b');
 sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
 
-% solver = LinearSolver(sys);
-sys.essential_boundary(1,0);
-T = sys.solve();
+solver = LinearSolver(sys);
+solver.essential_boundary(1,0);
+T = solver.solve();
 
 % figure;
 % mesh.plot(T, '-ShowNodes');

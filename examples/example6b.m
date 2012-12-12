@@ -53,14 +53,14 @@ K = sys.assemble('K');
 ess = mesh.get_dof('Boundary', 1);  
 non = ~ess;
 
-% Initialize the temperatures
-T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
-nodes = mesh.get_nodes();
-T = T_exact(nodes(:,1),nodes(:,2),0);
-
 % Collect the node positions for applying the essential boundary conditions
+nodes = mesh.get_nodes();
 x = nodes(:,1);
 y = nodes(:,2);
+
+% Initialize the temperatures
+T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
+T = T_exact(x,y,0);
 
 % Plot the initial condition
 figure; hold on;
