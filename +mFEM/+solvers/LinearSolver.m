@@ -25,7 +25,7 @@ classdef LinearSolver < mFEM.base.Solver
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-   properties 
+   properties (Access = protected)
        opt = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
    end
@@ -44,34 +44,33 @@ classdef LinearSolver < mFEM.base.Solver
            %    System class, this will exploit the system for automatic
            %    assembly of the required stiffness matrix and force vector.
            %
-           %    LinearSolver(system, 'PropertyName', PropertyValue, ...)
-           %    same as above but allows the user to explicitly give the
-           %    assemble stiffness matrix and/or force vector. Also, allows
-           %    the name of the stiffness matrix and/or force vector within
-           %    the system to be changed from the default of 'K' and 'f'. 
-           %
-           %    LinearSolver(mesh,'stiffness',K, 'force', f) creates the 
+           %    LinearSolver(mesh) creates the 
            %    solver using an existing FEmesh class, this requires the 
-           %    assembled stiffness matrix and force vector to be inputed 
-           %    using the stiffness and force property pairing as shown
-           %    (see descriptions below).
+           %    assembled mass and stiffness matrices and force vector to 
+           %    be inputed. This may be done using the property pairing as 
+           %    shown described below or by using the SET method.
+           %
+           %    LinearSolver(..., 'PropertyName', PropertyValue, ...)
+           %    same as above but allows the user to alter the behavior
+           %    using the property pairs liste below. Any of the properties
+           %    may be changed after instantation using the SET method.
            %
            % LINEARSOLVER Property Descriptions
            %    stiffness
            %        char | matrix
            %        When a character it should be the name of the stiffness
            %        matrix that is desired to be used when solving the
-           %        linear system, Ku = f. When a matrix it should be the
-           %        actual, assembled matrix. The default is the character
-           %        'K'.
+           %        equation, Ku = f. Using a numeric array 
+           %        explicitly gives the assembled matrix. The default is 
+           %        the character 'K'.
            %
            %    force
            %        char | vector
            %        When a character it should be the name of the force
            %        vector that is desired to be used when solving the
-           %        linear system, Ku = f. When a vector it should be the
-           %        actual, assembled vector. The default is the character
-           %        'f'.          
+           %        equation, Ku = f. Using a numeric vector 
+           %        explicitly gives the assembled vector. The default is 
+           %        the character 'f'.      
            
            % Call the base class constructor
            obj@mFEM.base.Solver(input)

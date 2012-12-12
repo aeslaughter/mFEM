@@ -1,4 +1,4 @@
-classdef Solver < handle
+classdef Solver < mFEM.base.handle_hide
     %SOLVER A base class for defining solvers.
     % This class serves as the backbone of the various built-in solvers
     % located in the +solvers name space. This is an abstract class that
@@ -26,15 +26,15 @@ classdef Solver < handle
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-    properties (Abstract)
+    properties (Abstract, Access = protected)
         opt;        % abstract options property
     end
     
-    methods (Abstract, Access = public)
+    methods (Abstract)
         solve(obj); % abstract solver method
     end   
     
-    properties (GetAccess = private, SetAccess={?mFEM.System})
+    properties %(SetAccess = private, GetAccess={?mFEM.System})
        system;  % storage for the System class instance (optional)
        mesh;    % storage for the FEmesh class instance (required)
     end
@@ -143,17 +143,17 @@ classdef Solver < handle
             end
         end
         
-        function update(obj, name, value)
+        function set(obj, varargin)
            %SET Sets/updates the solver options
            %
            % Syntax
-           %    update(name, value)
+           %    set('PropertyName', PropertyValue, ...)
            %
            % Description
-           %    update(name, value) allows user to change the values of the
-           %    options for the solver class.
+           %    set('PropertyName', PropertyValue, ...) allows user to 
+           %    change the values of the options for the Solver class.
            
-           obj.opt.(name) = value;
+           obj.opt = gather_user_options(obj.opt, varargin{:});
         end
     end
     
@@ -174,7 +174,7 @@ classdef Solver < handle
            %    obj.opt.(name) structure is returned.
           
            % System case, call the assemble function        
-           if ~isempty(obj.system);
+           if ~isempty(obj.system) && ischar(obj.opt.(name));
                % Test if the component exists in the system and is the
                % correct type, if both tests pass call the assemble method
                [TF, sys_type] = obj.system.exists(obj.opt.(name));
