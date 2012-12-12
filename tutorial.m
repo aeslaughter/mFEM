@@ -60,8 +60,8 @@ import mFEM.*
 % Finally, after the mesh is created it must be initilized, this is done
 % using the |init| method. As shown, the |init| method will print
 % calculation times for creating the mesh and other required calculations.
-mesh = FEmesh();
-mesh.grid('Line2',0,4,2);
+mesh = FEmesh('Element', 'Line2');
+mesh.grid(0,4,2);
 mesh.init();
 
 %% Adding Boundary Identification
@@ -140,17 +140,18 @@ sys.add_matrix('K', 'B''*k*A*B');
 %
 % $$f_{q_e} = \int_{\Gamma_{q_e}} - N^T \bar{q} A d\Gamma.$
 %
-% Notice that an additional argument is given for the boundary term, this
-% is the boundary id defined previously that this equation should be
-% applied.
-sys.add_vector('f_s', 'N''*b');
-sys.add_vector('f_q', '-q_bar*A*N''', 2);
+% Notice that an additional argument pair is given, this indicates that the
+% supplied equation is only applied on the boundary identified by the
+% given id. Also, the name of the vector (f) is repreated, this will
+% automatically add the two components together when assembled.
+sys.add_vector('f', 'N''*b');
+sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
 
 %% Assembly The Stiffness Matrix and Force Vector
 % Assembly is handled autmatically by the System and it is performed using
 % the |assemble| method.
 K = sys.assemble('K');
-f = sys.assemble('f_s') + sys.assemble('f_q');
+f = sys.assemble('f');
 
 %% Solve for the Temperature
 % The solution is done manually, the first step is to extract the

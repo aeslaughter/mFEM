@@ -1,4 +1,9 @@
+function install(varargin)
 %INSTALL Sets up the documentation for the mFEM library.
+%
+% Syntax
+%   install
+%   install('main')
 %
 %----------------------------------------------------------------------
 %  mFEM: An Object-Oriented MATLAB Finite Element Library
@@ -20,9 +25,16 @@
 %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
 %----------------------------------------------------------------------
     
+% Define the type of install
+type = 'all';
+if nargin == 1 && ischar(varargin{1});
+    type = varargin{1};
+end
+
 % Add the necessary paths and save 
 addpath(cd);
 addpath('bin');
+addpath('examples');
 savepath; 
 
 % Set the pusblishing options
@@ -32,12 +44,25 @@ opt.evalCode = false;
 opt.outputDir = ['doc',filesep,'html'];
 
 % Publish main mFEM help page
-publish([cd,filesep,'doc',filesep,'main_page.m'], opt); % main mFEM page
+if any(strcmpi(type,{'all','main'}));
+    publish(fullfile(cd,'doc','main_page.m'), opt); % main mFEM page
+end
 
-% Publish the tutorial
-opt.showCode = true;
-opt.evalCode = true;
-publish('tutorial', opt);
+% Publish the tutorial and examples
+if any(strcmpi(type, {'all','examples'}));
+    % List of examples page
+    publish(fullfile(cd,'doc','list_of_examples.m'), opt); % main mFEM page
+
+    % The tutorial
+    opt.showCode = true;
+    opt.evalCode = true;
+    publish(fullfile(cd,'tutorial.m'),opt);
+
+    % Examples
+    opt.showCode = true;
+    opt.evalCode = true;
+    publish(fullfile(cd,'examples','example1a.m'), opt);
+end
 
 % Make the html folder available in the help browser
 builddocsearchdb([cd,filesep,'doc',filesep,'html']);

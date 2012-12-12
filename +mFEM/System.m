@@ -44,7 +44,7 @@ classdef System < mFEM.base.handle_hide
     properties (SetAccess = private, GetAccess = public)
         mesh = mFEM.FEmesh.empty;   % mesh object
         opt = ...                   % struct of default user options
-            struct('time', false, 'direct', false);
+            struct('time', false, 'direct', false, 'solver', '');
     end
     
     properties(Access = private)
@@ -65,6 +65,8 @@ classdef System < mFEM.base.handle_hide
         
         func = ... % vector storage structure
             struct('name', {}, 'handle', {});
+        
+        solver; 
     end
 
     methods (Access = public)
@@ -101,6 +103,12 @@ classdef System < mFEM.base.handle_hide
             if any(strcmpi(obj.mesh.opt.element, types));
                 obj.opt.direct = true;
             end
+            
+            % Build the solver, if desired
+            if ~isempty(obj.opt.solver);
+               obj.solver = feval(['mFEM.solvers.',obj.opt.solver], obj); 
+            end
+            
         end
         
         function add_constant(obj, varargin)
@@ -389,6 +397,18 @@ classdef System < mFEM.base.handle_hide
             if obj.opt.time;
                 tmessage(ticID);
             end
+        end
+        
+        function u = solve(obj)
+            
+            % error if no solver
+            u = obj.solver.solve();
+        end
+        
+        function essential_boundary(obj, id, value)
+            
+            % error if no solver
+           obj.solver.essential_boundary(id, value);
         end
     end
     

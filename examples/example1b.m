@@ -54,12 +54,17 @@ f = sys.assemble('f');
 
 % Solve for the Temp. on non-essential boundaries
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('boundary',1);
+ess = mesh.get_dof('boundary',1)
 
 % Solve for the temperatures
 T = zeros(size(f));             % initialize the temperature vector
 T(ess) = 0;                     % apply essential boundary condtions
 T(~ess) = K(~ess,~ess)\f(~ess); % solve for T on the non-essential boundaries
+
+mesh.plot(T, '-ShowNodes');
+xlabel('Position, x (m)');
+ylabel('Temperature, T (C)');
+return;
 
 % Compute the temperature gradients for the elements
 k = 1;

@@ -6,44 +6,17 @@
     
     <!-- Supply the following six elements in the order specified -->
     <!-- (Required) element; matlabrelease content is not currently used -->
-    <matlabrelease>2012a</matlabrelease>
+    <matlabrelease>2012b</matlabrelease>
     <!-- (Required) The name element appears in the Contents pane -->
-    <name>mFEM</name>
+    <name>mFEM Toolbox</name>
     <!-- (Required) The type elementidentifies your package; pick one: -->
     <!-- matlab, toolbox, simulink, blockset, links_targets  -->
     <type>toolbox</type>
     <!-- (Optional) icon file to display in the Start button -->
-    <icon>sampleicon.gif</icon>
+    <icon></icon>
     <!-- (Required if you supply help) relative path to help (HTML) folder -->
     <help_location>doc/html</help_location>
     <!-- (Required if you supply help) icon used in the Help browser TOC -->
     <help_contents_icon>$toolbox/matlab/icons/bookicon.gif</help_contents_icon>
     
-    <!-- - - - - - - - - - - - -  Start menu - - - - - - - - - - - - - - - -->
-    <!-- Optional list of entries to display on Start Menu -->
-    <!-- Callback items are function calls or commands for toolbox -->
-    <!-- Refresh the Start button to see your entries -->
-    <!-- Remove this list if you do not want a Start button entry -->
-    <list>
-        <listitem>
-            <!-- The label provides the text for this menu item --> 
-            <label>mFEM Documentation</label>
-            <!-- This callback is a command to open your documentation -->
-            <callback>
-                web doc/html/main_page.html -helpbrowser
-            </callback>
-            <!-- Menu item icon (a toolbox icon from the help browser ) -->
-            <icon>$toolbox/matlab/icons/bookicon.gif</icon>
-        </listitem>
-        <!-- Add listitems for other features of your toolbox... -->
-        <listitem>
-            <!-- A menu item label for a opening a demo -->
-            <label>mFEM Tutorial</label>
-            <!-- A command to open a demo if any -->
-            <callback>tutorial</callback>
-            <!-- The icon for this menu item -->
-            <icon>HelpIcon.DEMOS</icon>
-        </listitem> 
-    </list>
-    <!-- - - - - - - - - - - - -  Start menu - - - - - - - - - - - - - - - -->
 </productinfo>

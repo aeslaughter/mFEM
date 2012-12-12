@@ -7,8 +7,17 @@
 %
 %   tutorial;
 %
-% The source code for this example is documented in a step by step manner:
-% <tutorial.html *Click here for the mFEM Tutorial Documentation*>.
+% The source code for this example is documented in a step-by-step manner:
+% <tutorial.html *mFEM Tutorial Documentation*>.
+% 
+%% Examples
+% The example problems fall into one of two types: manual and automatic
+% assembly. The manual assembly examples demonstrate how to loop through
+% the elements and assemble the stiffness matrix and force vector directly.
+% The automatic assembly rely on the |System| class to perform the
+% assembly. The are listed in the contents menu on the left:
+%
+% <list_of_examples.html *List of Examples*>.
 % 
 %% Documentation
 % The documentation for all functions, classes, and members is accessible
