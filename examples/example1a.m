@@ -10,7 +10,7 @@
 %   example1a runs example exactly as done in textbook, with two elements
 %   example1a(n) runs the example with n number of elements
 %
-% See also EXAMPLE1B
+% See also EXAMPLE1B EXAMPLE1C
 %
 %----------------------------------------------------------------------
 %  mFEM: An Object-Oriented MATLAB Finite Element Library

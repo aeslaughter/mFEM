@@ -142,6 +142,19 @@ classdef Solver < handle
                 end
             end
         end
+        
+        function update(obj, name, value)
+           %SET Sets/updates the solver options
+           %
+           % Syntax
+           %    update(name, value)
+           %
+           % Description
+           %    update(name, value) allows user to change the values of the
+           %    options for the solver class.
+           
+           obj.opt.(name) = value;
+        end
     end
     
     methods (Access = protected)

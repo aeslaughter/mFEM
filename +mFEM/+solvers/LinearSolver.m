@@ -1,41 +1,114 @@
 classdef LinearSolver < mFEM.base.Solver
+    %LINEARSOLVER A basic linear solver.
+    % This solver solve the basic Ku = f matrix equation, where u is the
+    % unknown. See the class constructor for details regarding initlizeing
+    % the solver correctly.
+    %
+    % See Also SOLVER SYSTEM FEMESH EXAMPLE1C
+    %
+    %----------------------------------------------------------------------
+    %  mFEM: An Object-Oriented MATLAB Finite Element Library
+    %  Copyright (C) 2012 Andrew E Slaughter
+    % 
+    %  This program is free software: you can redistribute it and/or modify
+    %  it under the terms of the GNU General Public License as published by
+    %  the Free Software Foundation, either version 3 of the License, or
+    %  (at your option) any later version.
+    % 
+    %  This program is distributed in the hope that it will be useful,
+    %  but WITHOUT ANY WARRANTY; without even the implied warranty of
+    %  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    %  GNU General Public License for more details.
+    % 
+    %  You should have received a copy of the GNU General Public License
+    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %
+    %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
+    %----------------------------------------------------------------------
    properties 
        opt = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
-
-       %solution;
-
    end
    
    methods
        function obj = LinearSolver(input, varargin)  
+           %LINEARSOLVER An automatic linear solver for Ku = f
+           %
+           % Syntax
+           %    LinearSolver(system)
+           %    LinearSolver(mesh)
+           %    LinearSolver(..., 'PropertyName', PropertyValue, ...
+           %
+           % Description
+           %    LinearSolver(system) creates the solver using an existing
+           %    System class, this will exploit the system for automatic
+           %    assembly of the required stiffness matrix and force vector.
+           %
+           %    LinearSolver(system, 'PropertyName', PropertyValue, ...)
+           %    same as above but allows the user to explicitly give the
+           %    assemble stiffness matrix and/or force vector. Also, allows
+           %    the name of the stiffness matrix and/or force vector within
+           %    the system to be changed from the default of 'K' and 'f'. 
+           %
+           %    LinearSolver(mesh,'stiffness',K, 'force', f) creates the 
+           %    solver using an existing FEmesh class, this requires the 
+           %    assembled stiffness matrix and force vector to be inputed 
+           %    using the stiffness and force property pairing as shown
+           %    (see descriptions below).
+           %
+           % LINEARSOLVER Property Descriptions
+           %    stiffness
+           %        char | matrix
+           %        When a character it should be the name of the stiffness
+           %        matrix that is desired to be used when solving the
+           %        linear system, Ku = f. When a matrix it should be the
+           %        actual, assembled matrix. The default is the character
+           %        'K'.
+           %
+           %    force
+           %        char | vector
+           %        When a character it should be the name of the force
+           %        vector that is desired to be used when solving the
+           %        linear system, Ku = f. When a vector it should be the
+           %        actual, assembled vector. The default is the character
+           %        'f'.          
            
+           % Call the base class constructor
            obj@mFEM.base.Solver(input)
 
+           % Collect the inputs
            obj.opt = gather_user_options(obj.opt, varargin{:});
-           
        end
 
        function u = solve(obj)
-          
-           % Stiffness matrix
+           %SOLVE Solve the linear system, Ku = f.
+           %
+           % Syntax
+           %    u = solve()
+           %
+           % Description
+           %    u = solve() returns the solution to the linear system of
+           %    equations, Ku = f.
+
+           % Extract/assemble the stiffness matrix
            K = obj.get_component('stiffness', 'matrix');
+           
+           % Extract/assemble the force vector
            f = obj.get_component('force', 'vector');
                 
+           % Initlize the solution
            u = zeros(size(f));
            
+           % Apply the essential boundary condions
            dof = zeros(length(f), length(obj.essential),'uint32');
            for i = 1:length(obj.essential);
                dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id);
                u(logical(dof(:,i))) = obj.essential(i).value;
            end
            
+           % Solve the equations
            ess = any(dof,2);
            u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
-
        end
    end
-   
-
-   
 end
