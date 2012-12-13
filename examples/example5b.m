@@ -36,50 +36,44 @@ sys.add_constant('T_0', 50);            % initial temperature (C)
 % Add matrices
 sys.add_matrix('M', 'rho*c_p*N''*N');
 sys.add_matrix('K', 'B''*D*B');
-sys.add_matrix('K_h', 'h*N''*N', 'Boundary', 2);
+sys.add_matrix('K', 'h*N''*N', 'Boundary', 2);
 sys.add_vector('f','h*T_inf*N''', 'Boundary', 2);
 
-% Assemble the matrices
-M = sys.assemble('M');
-K = sys.assemble('K') + sys.assemble('K_h');
-f = sys.assemble('f');
+% Create solver
+solver = solvers.TransientLinearSolver(sys, 'dt', 30);
 
-% Print the full M,K, and f matrices (re-order to match book)
-ix = [1,4,2,3];
-% full(M(ix,ix))
-% full(K(ix,ix))
-% f(ix)
+% Add essential boundary
+solver.add_essential_boundary('id',3,'value','T_s');
 
-% Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',3); % 3,4
-non = ~ess;
+% Initialize the temperatures
+ T(:,1) = sys.get('T_0') * ones(mesh.n_dof,1); % initialize temperature vector
+% T(ess,1) = sys.get('T_s');               % apply essential boundaries
+solver.init(T(:,1));
 
-% Solve for the temperatures
-T(:,1) = sys.get('T_0') * ones(size(f)); % initialize temperature vector
-T(ess,1) = sys.get('T_s');               % apply essential boundaries
+% % Compute residual for non-essential boundaries, the mass matrix does not
+% % contribute because the dT/dt = 0 on the essential boundaries
+% R(:,1) = f(non) - K(non,ess)*T(ess,1);
+% 
+% % Use a general time integration scheme
+% dt = 30;
+% theta = 0.5;
 
-% Compute residual for non-essential boundaries, the mass matrix does not
-% contribute because the dT/dt = 0 on the essential boundaries
-R(:,1) = f(non) - K(non,ess)*T(ess,1);
-
-% Use a general time integration scheme
-dt = 30;
-theta = 0.5;
-K_hat = M(non,non) + theta*dt*K(non,non);
-f_K   = M(non,non) - (1-theta)*dt*K(non,non);
+% K_hat = M(non,non) + theta*dt*K(non,non);
+% f_K   = M(non,non) - (1-theta)*dt*K(non,non);
 
 % Perform 10 time-steps
 for t = 1:10;
 
     % Compute the force componenet using previous time step T
-    f_hat = dt*R + f_K*T(non,t);
-
-    % Solve for non-essential boundaries
-    T(non, t+1) = K_hat\f_hat;
+%     f_hat = dt*R + f_K*T(non,t);
+% 
+%     % Solve for non-essential boundaries
+%     T(non, t+1) = K_hat\f_hat;
     
     % Set values for the essential boundary conditions the next time step 
-    T(ess, t+1) = sys.get('T_s');
+    T(:, t+1) = solver.solve();
 end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
+ix = [1,4,2,3];
 T(ix,:)'

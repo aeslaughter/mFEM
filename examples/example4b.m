@@ -24,20 +24,10 @@ sys.add_vector('f', 'N''*t_top', 'Boundary', 2);
 K = sys.assemble('K'); 
 f = sys.assemble('f');
 
-% Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary', 1); % 5-8   
-non = ~ess; % 1-4       
-
-% Solve for the temperatures
-u = zeros(size(f));         % initialize the displacement vector
-u(ess) = 0;                 % apply essential boundary condtions
-u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
-
-% Solve for the reaction fluxes
-r = K*u - f;
-
-% Display the results
-u, r
+% Assemble and solve
+solver = solvers.LinearSolver(sys);
+solver.add_essential_boundary('id',1,'value',0);
+u = solver.solve()
 
 % Compute the stress and strain at the Gauss points
 % Loop through the elements

@@ -41,7 +41,7 @@ classdef Solver < mFEM.base.handle_hide
     
     properties (Access = protected)
         essential = ... % Data structure containing essential boundary info
-            struct('id',{},'value',{});
+            struct('id',{},'value',{},'component',{});
     end
 
     methods (Access = public)
@@ -92,21 +92,30 @@ classdef Solver < mFEM.base.handle_hide
             %
             % ADD_ESSENTIAL_BOUNDARY Property Descriptions
             %   id
-            %   scalar | row vector
-            %   A scalar or row vector of boundary ids (see FEMESH) that are
-            %   identify the essential boundary conditions.
+            %       scalar | row vector
+            %       A scalar or row vector of boundary ids (see FEMESH) that are
+            %       identify the essential boundary conditions.
             %
             %   value
-            %   scalar | array
-            %   A scalar or vector of values that are assigned to the
-            %   supplid boundary ids. If a scalar all of the dofs for the
-            %   given boundary ids are assigned the value, if an array it
-            %   must be have the same number of columns as the ids.
+            %       scalar | array | char
+            %       A scalar or vector of values that are assigned to the
+            %       supplid boundary ids. If a scalar all of the dofs for the
+            %       given boundary ids are assigned the value, if an array it
+            %       must be have the same number of columns as the ids. It is
+            %       also possible to use a char, where the value is extracted
+            %       from the System class using the get method.
             %
             %   Component
             %       scalar | 'x' | 'y' | 'z'
             %       Returns the dof associated with the vector space or
             %       multipe dof per node elements like the Beam element.
+            %
+            %   Clear
+            %       true | {false}
+            %       Removes any existing essential boundaries, useful for
+            %       changing the conditions with time. If clear is used in
+            %       the C1, C2 style of input it will clear all boundaries
+            %       including those defined previously in the same call.
             %
             
             % Cell input case
@@ -145,7 +154,7 @@ classdef Solver < mFEM.base.handle_hide
     end
     
     methods (Hidden = true, Access = protected)
-       function x = get_component(obj, name, type)
+        function x = get_component(obj, name, type)
            %GET_COMPONENT returns the matrix of vector ready for solving
            %
            % Syntax
@@ -160,57 +169,109 @@ classdef Solver < mFEM.base.handle_hide
            %    build the component. Otherwise whatever is stored in the
            %    obj.opt.(name) structure is returned.
           
-           % System case, call the assemble function        
-           if ~isempty(obj.system) && ischar(obj.opt.(name));
-               % Test if the component exists in the system and is the
-               % correct type, if both tests pass call the assemble method
-               [TF, sys_type] = obj.system.exists(obj.opt.(name));
-               if TF && strcmp(sys_type, type);
-                    x = obj.system.assemble(obj.opt.(name)); 
-               else
-                    error('Solver:get_component', 'An error occured when attempting to assemble %s, either this variable does not exist in the system or it is the wrong type.', obj.opt.(name));
-               end
-               
-           % Generic case, the user supplied the actual matrix or vector    
-           else
-                x = obj.opt.(name);
-           end   
-       end
-         
-       function add_essential_boundary_private(obj, varargin)
+            % Initilize the output
+            if strcmp(type,'matrix');
+                x = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+            elseif strcmp(type,'vector');
+                x = zeros(obj.mesh.n_dof,1);
+            end
            
+            % System case, call the assemble function        
+            if ~isempty(obj.system) && ischar(obj.opt.(name));
+                % Test if the component exists in the system and is the
+                % correct type, if both tests pass call the assemble method
+                [TF, sys_type] = obj.system.exists(obj.opt.(name));
+                if TF && strcmp(sys_type, type);
+                    x = obj.system.assemble(obj.opt.(name)); 
+                else
+                   warning('Solver:get_component', 'The %s %s was not found in the system when attempting to assemble, a zero %s was used.', obj.opt.(name), type, type);
+                end
+
+            % Generic case, the user supplied the actual matrix or vector    
+            else
+                x = obj.opt.(name);
+            end   
+        end
+         
+        function add_essential_boundary_private(obj, varargin)
+            %ADD_ESSENTIAL_BOUNDARY_PRIVATE label a boundary as essential
+            %
+            % Syntax
+            %   add_essential_boundary('PropertyName', PropertyValue,...);
+            %
+            % Description
+            %   add_essential_boundary('PropertyName', PropertyValue,...)
+            %   adds based on the properties an essential boundary
+            %   condition that will be applied to the solution
+            %
+            % ADD_ESSENTIAL_BOUNDARY_PRIVATE Property Descriptions
+            %   see ADD_ESSENTIAL_BOUNDARY
+
             % Gather the input
             options.id = [];
             options.value = [];
             options.component = [];
+            options.clear = false;
             options = gather_user_options(options, varargin{:});
-            
+
+            if options.clear
+                obj.essential = struct('id',{},'value',{},'component',{});
+            end
+
             % Test that id and value are given
             if isempty(options.id) || isempty(options.value);
                 error('Solver:add_essential_boundary_private','Both the id and value properties must be set.');
             end
-            
+
             % Append storage data structure
             idx = length(obj.essential);
             obj.essential(idx+1).id = options.id;
-            obj.essential(idx+1).value = options.value;  
-            obj.essential(idx+1).component = options.component;                 
-       end
-       
-       function [u,ess] = solution_init(obj)
-           
-           % Initlize the solution
-           u = zeros(obj.mesh.n_dof,1);
-           
-           % Apply the essential boundary condions
-           dof = zeros(obj.mesh.n_dof, length(obj.essential),'uint32');
-           for i = 1:length(obj.essential);
+            obj.essential(idx+1).component = options.component;   
+
+            % Apply the value
+            if ischar(options.value) && ~isempty(obj.system);
+                obj.essential(idx+1).value = obj.system.get(options.value);
+
+            elseif isnumeric(options.value);
+                obj.essential(idx+1).value = options.value;
+
+            else
+                error('Solver:add_essential_boundary_private', 'Error extacting value from the System');
+            end
+
+        end
+
+        function [u,ess] = apply_constraints(obj, varargin)
+            %APPLY_CONSTRAINTS Cretes solution and applies essential boundaries
+            %
+            % Syntax
+            %   [u,ess] = solution_init(obj)
+            %   [u,ess] = solution_init(obj,u)
+            %
+            % Description
+            %   [u,ess] = solution_init(obj) return the solution (u) with
+            %   essential boundaries applied and logcal vector of the
+            %   essential boundaries (ess) as extracted from mesh.get_dof
+            %
+            %   [u,ess] = solution_init(obj,u) sames as above but uses an
+            %   existing solution vector
+
+            % Initlize the solution
+            if nargin == 1;
+                u = zeros(obj.mesh.n_dof,1);
+            else
+                u = varargin{1};
+            end
+
+            % Apply the essential boundary condions
+            dof = zeros(obj.mesh.n_dof, length(obj.essential),'uint32');
+            for i = 1:length(obj.essential);
                dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id, 'Component', obj.essential(i).component);
                u(logical(dof(:,i))) = obj.essential(i).value;
-           end
-           
-           % Build the essential dofs
-           ess = any(dof,2);
+            end
+
+            % Build the essential dofs
+            ess = any(dof,2);
        end
    end
 end

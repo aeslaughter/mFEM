@@ -29,24 +29,10 @@ sys.add_matrix('K', 'B''*k*B');
 sys.add_vector('f', 'N''*b');
 sys.add_vector('f', 'N''*-q_top', 'Boundary', 1);
 
-% Assemble
-K = sys.assemble('K');
-f = sys.assemble('f');
-
-% Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',3); % 4
-non = ~ess;
-
-% Solve for the temperatures
-T = zeros(size(f));         % initialize the temperature vector
-T(ess) = 0;                 % apply essential boundary condtions
-T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
-
-% Solve for the reaction fluxes
-r = K*T - f;
-
-% Display the results
-T,r
+% Assemble and solve
+solver = solvers.LinearSolver(sys);
+solver.add_essential_boundary('id',3,'value',0);
+T = solver.solve()
 
 % Loop through the elements
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)

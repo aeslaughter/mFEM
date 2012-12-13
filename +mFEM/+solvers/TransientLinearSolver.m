@@ -29,14 +29,15 @@ classdef TransientLinearSolver < mFEM.base.Solver
        opt = ...        % Solver options
            struct('mass', 'M', 'stiffness', 'K', 'force', 'f', ...
            'theta', 0.5, 'dt', [], 'assemblemass', false, ...
-           'assemblestiffness', false, 'assembleforce', false);
+           'assemblestiffness', false, 'assembleforce', false, ...
+           'assembleall', false);
 
-       initialized = false;  % flag of initlization state
-       K;                   % stiffness matrix
-       M;                   % mass matrix
-       f;                   % force vector
-       f_old;               % force vector from previous time step
-       u_old;               % solution from previous time step
+       initialized = false;     % flag of initlization state
+       K;                       % stiffness matrix
+       M;                       % mass matrix
+       f;                       % force vector
+       f_old;                   % force vector from previous time step
+       u_old;                   % solution from previous time step
    end
    
    methods
@@ -153,7 +154,10 @@ classdef TransientLinearSolver < mFEM.base.Solver
            
            % Store the old solution
            obj.u_old = x; 
-          
+           
+           % Apply the boundary constraints
+           obj.u_old = obj.apply_constraints(obj.u_old);
+
            % Get the initial force vector
            obj.f_old = obj.get_component('force', 'vector');
           
@@ -161,7 +165,7 @@ classdef TransientLinearSolver < mFEM.base.Solver
            obj.initialized = true;
        end
        
-        function u = solve(obj)
+       function u = solve(obj)
             %SOLVE Solve the transient system, Mdu/dt + Ku = f.
             %
             % Syntax
@@ -196,8 +200,8 @@ classdef TransientLinearSolver < mFEM.base.Solver
                obj.M = obj.get_component('mass', 'matrix');
             end
 
-            % Initlize the solution
-            [u,ess] = obj.solution_init();
+            % Apply boundary conditions to old and new solution
+            [u,ess] = obj.apply_constraints();
 
             % Numerical constants
             theta = obj.opt.theta; % numerical intergration parameter

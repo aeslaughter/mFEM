@@ -95,8 +95,8 @@ classdef LinearSolver < mFEM.base.Solver
            % Extract/assemble the force vector
            f = obj.get_component('force', 'vector');
                 
-           % Initilize the solution
-           [u,ess] = obj.solution_init();
+           % Apply essential boundary constraings to the solution
+           [u,ess] = obj.apply_constraints();
            
            % Solve the equations
            u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));

@@ -116,11 +116,11 @@ K_hat = M(non,non) + theta*dt*K(non,non);
 f_K   = M(non,non) - (1-theta)*dt*K(non,non);
 
 % Perform 10 time-steps
-for t = 1:10;
+for t = 1%:10;
 
     % Compute the force componenet using previous time step T
     f_hat = dt*R + f_K*T(non,t);
-
+dt*R
     % Solve for non-essential boundaries
     T(non, t+1) = K_hat\f_hat;
     
