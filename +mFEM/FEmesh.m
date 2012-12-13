@@ -1240,7 +1240,7 @@ classdef FEmesh < mFEM.base.handle_hide
                         % If side is on the boundary and contains no
                         % boundary ids, assign the desired id
                         if (elem.side(s).on_boundary || isempty(elem.side(s).neighbor)) ...
-                                && (isempty(elem.side(s).boundary_id) || elem.side(s).boundary_id == 0);
+                                && (isempty(elem.side(s).boundary_id) || (isscalar(elem.side(s).boundary_id) && elem.side(s).boundary_id == 0));
                             
                             % Be sure to tag side and elemen as boundary
                             elem.side(s).on_boundary = true;

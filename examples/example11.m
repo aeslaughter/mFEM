@@ -7,8 +7,8 @@ import mFEM.*
 d_0 = @(x,y) (x-0.5).^2 + (y-0.75).^2 - 0.15^2;
 
 % Create the mesh
-mesh = FEmesh('Type','DG');
-mesh.grid('Quad4',0,1,0,1,10,10);
+mesh = FEmesh('Element','Quad4','Type','DG');
+mesh.grid(0,1,0,1,10,10);
 mesh.init();
 
 % Extract the x,y coordinates from the FEmesh and build a grid version

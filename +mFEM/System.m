@@ -54,11 +54,12 @@ classdef System < mFEM.base.handle_hide
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
             'functions', [], 'boundary_id', [], 'subdomain', [],...
-            'direct', {});
+            'direct', {}, 'explicit', {});
         
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'vector',{},...
-            'functions', [], 'boundary_id', [],'subdomain', [], 'direct', {});
+            'functions', [], 'boundary_id', [],'subdomain', [],...
+            'direct', {}, 'explicit', {});
         
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
@@ -239,7 +240,6 @@ classdef System < mFEM.base.handle_hide
             % Gather the user options
             options.subdomain = [];
             options.boundary = [];
-            %options.direct = false;
             options = gather_user_options(options, varargin{:});
     
             % Limit the use of name
@@ -269,7 +269,8 @@ classdef System < mFEM.base.handle_hide
             %
             % Syntax
             %   add_vector('VectorName', VectorEqn)
-            %   add_vector('VectorName', VectorEqn, 'PropertyName', PropertyValue)
+            %   add_vector('VectorName', NumericVector)
+            %   add_vector(..., 'PropertyName', PropertyValue)
             %
             % Description
             %   add_vector('VectorName', VectorEqn) adds
@@ -280,6 +281,9 @@ classdef System < mFEM.base.handle_hide
             %   level. The variable N is predefined as the element shape 
             %   functions vector and B is pre-defined as grad(N). Any
             %   constant added with the ADD_CONSTANT method may be used.
+            %
+            %   add_vector('VectorName', NumericVector) directly insert a
+            %   numeric vector.
             %
             %   add_vector('VectorName', VectorEqn, 'PropertyName',
             %       PropertyValue) same as above, but the equation is 
@@ -547,14 +551,17 @@ classdef System < mFEM.base.handle_hide
                 error('System:add_const', 'The constant %s is a reserved string, select a different name.', name);
             end
                         
-            % Limit the use of name
+            % Overwrite existing constant
             [~,idx] = obj.locate(name); 
             if ~isempty(idx);
-                error('ERROR:ADD_CONST', 'The name, %s, was previously used, csontant names must be unique.', name);
+                warning('SYSTEM:ADD_CONST', 'The name, %s, was previously defined, the old value has been overwritten.', name);
+            
+            % The name is unique, append it
+            else
+                idx = length(obj.const) + 1;    % location
             end
             
             % Add the constant
-            idx = length(obj.const) + 1;    % location
             obj.const(idx).name = name;     % constant name
             
             % If is string, insert existing constants and evaluate
@@ -589,16 +596,19 @@ classdef System < mFEM.base.handle_hide
             end
         end
              
-        function fcn = apply_func(obj, eqn, fidx, elem, x)
+        function fcn = apply_func(obj, fcn, fidx, elem, x)
             %APPLY_FUNC Inserts the function handle into the equation
             %
             % Syntax
-            %   fcn = apply_func(fcn, fidx, x)
+            %   fcn = apply_func(fcn, fidx, elem, x)
             %
             % Description
-            %   fcn = apply_func(fcn, fidx, x) applies the function
+            %   fcn = apply_func(fcn, fidx, elem, x) applies the function
             %   variables given by the indices in fidx for the position x
             %   to the string fcn supplied.
+            
+            % Convert function to string
+            eqn = func2str(fcn);
             
             % Loop through all the functions
             for i = 1:length(fidx);
@@ -614,7 +624,7 @@ classdef System < mFEM.base.handle_hide
                     obj.func(i).name, mat2str(value));             
             end
 
-            % Convert to a function
+            % Convert string to a function
             fcn = str2func(eqn);
         end     
         
@@ -675,13 +685,13 @@ classdef System < mFEM.base.handle_hide
                 end
 
                 % Insert element shape function and shape function derivatives
-                eqn = regexprep(eqn,'N',['elem.shape(',var,')']);
-                eqn = regexprep(eqn,'B',['elem.shape_deriv(',var,')']);
+                eqn = regexprep(eqn,'\<N\>',['elem.shape(',var,')']);
+                eqn = regexprep(eqn,'\<B\>',['elem.shape_deriv(',var,')']);
                
             % Build the direct equations    
             else
-                eqn = regexprep(eqn,'Ke','elem.stiffness()');
-                eqn = regexprep(eqn,'fe','elem.force()');
+                eqn = regexprep(eqn,'\<Ke\>','elem.stiffness()');
+                eqn = regexprep(eqn,'\<fe\>','elem.force()');
                 var = ''; % this causes the proper @ application below
                 
             end
@@ -857,7 +867,7 @@ classdef System < mFEM.base.handle_hide
             else
                 active_elem = obj.mesh.get_elements('Subdomain', obj.mat(idx).subdomain);
             end
-            
+        
             % Loop through all of the elements
             for e = 1:length(active_elem);
 
@@ -886,7 +896,7 @@ classdef System < mFEM.base.handle_hide
                         % Apply spatial/temporal functions
                         if ~isempty(obj.mat(idx).functions);
                             x = elem.get_position(qp{i,:});
-                            fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, elem, x);
+                            fcn = obj.apply_func(fcn, obj.mat(idx).functions, elem, x);
                         end
 
                         % Case without spatial/temporal functions
@@ -1102,7 +1112,7 @@ classdef System < mFEM.base.handle_hide
     end
     
     methods (Static, Hidden = true)
-        function [eqn, found] = insert_string(eqn, str, val)
+        function [out, found] = insert_string(eqn, str, val)
             %INSERT_STRING Inserts the variables into eqn string
             %
             % Syntax
@@ -1114,25 +1124,11 @@ classdef System < mFEM.base.handle_hide
             %   the str is located, then the found output variable is set
             %   to true.
 
-            % Set default value for TF flag
-            found = false;
-
             % Look for the constant as a complete string    
-            x1 = regexpi(eqn, str);
+            out = regexprep(eqn, ['\<',str,'\>'], val);
 
-            % Look for the constant without mathmatical symbols
-            s = textscan(eqn, '%s', 'delimiter', '*+-./^'''); s = s{1};
-            s = strtrim(s); % remove leading/trailing whitespace
-            x2 = find(strcmp(str, s),1);
-
-            % If the constant is present in both cases above, then
-            % insert it into the equation. Using the two cases
-            % elimnates problems with having constant names that are
-            % within other constant names (e.g., b and Qb)
-            if ~isempty(x1) && ~isempty(x2);
-                eqn = regexprep(eqn, str, val);
-                found = true;
-            end
+            % Test if output is different
+            found = ~strcmp(eqn, out);
         end
     end
 end
