@@ -53,13 +53,11 @@ classdef System < mFEM.base.handle_hide
         
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
-            'functions', [], 'boundary_id', [], 'subdomain', [],...
-            'direct', {}, 'explicit', {});
+            'boundary_id', [], 'subdomain', []);
         
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'vector',{},...
-            'functions', [], 'boundary_id', [],'subdomain', [],...
-            'direct', {}, 'explicit', {});
+            'boundary_id', [],'subdomain', []);
         
         const = ... % constant storage structure
             struct('name', char, 'value',[]);        
@@ -251,20 +249,15 @@ classdef System < mFEM.base.handle_hide
             % Storate location in matrix array
             idx = length(obj.mat) + 1;
             
-            % Test the input equation
-            direct = obj.test_input_eqn(eqn);
-            
             % Add to the matrix structure
             obj.mat(idx).name = name;
             obj.mat(idx).eqn = eqn;
-            obj.mat(idx).functions = obj.locate_functions(eqn);
             obj.mat(idx).matrix = mFEM.Matrix.empty;
             obj.mat(idx).boundary_id = options.boundary; 
             obj.mat(idx).subdomain = options.subdomain;
-            obj.mat(idx).direct = direct;
         end
 
-        function add_vector(obj, name, eqn, varargin)  
+        function add_vector(obj, name, input, varargin)  
             %ADD_VECTOR Create a finite element vector for assembly
             %
             % Syntax
@@ -320,17 +313,21 @@ classdef System < mFEM.base.handle_hide
             % Storage location for the vector
             idx = length(obj.vec) + 1;
             
-            % Test the input equation
-            direct = obj.test_input_eqn(eqn);
-            
             % Append the vector to the structure
             obj.vec(idx).name = name;
-            obj.vec(idx).eqn = eqn;
-            obj.vec(idx).functions = obj.locate_functions(eqn);
-            obj.vec(idx).vector = mFEM.Vector.empty;
+            
             obj.vec(idx).boundary_id = options.boundary; 
             obj.vec(idx).subdomain = options.subdomain;
-            obj.vec(idx).direct = direct;
+            
+            % Account for different types of vectors
+            if isnumeric(input);
+               obj.vec(idx).eqn = ''; 
+               obj.vec(idx).vector = mFEM.Vector(input);            
+            else
+               obj.vec(idx).eqn = input; 
+               obj.vec(idx).vector = mFEM.Vector.empty;
+            end
+            
         end
         
         function X = get(obj, name)
@@ -483,9 +480,13 @@ classdef System < mFEM.base.handle_hide
             end
         end
         
-        function direct = test_input_eqn(obj, eqn)
+        function info = test_input_eqn(obj, eqn)
             %TEST_INPUT_EQN
-            
+            %
+
+            % Intilize output
+            info = struct('direct',{},'function',{},'vector',{});
+
             % Search for standard assembly variables
             cstr = {'N','B'};
             for i = 1:length(cstr);
@@ -504,36 +505,28 @@ classdef System < mFEM.base.handle_hide
            
             % Indicate that direct assembly is being used
             elseif any(D);
-                direct = true;
+                info(1).direct = true;
                 
             % Indicate that standard assembly is being used
             else
-                direct = false;
+                info(1).direct = false;
             end
-        end
-        
-        function idx = locate_functions(obj, eqn)
-            %LOCATE_FUNCTIONS Searchs eqn for the presence of functions
-            %
-            % Syntax
-            %   idx = locate_functions(eqn)
-            %
-            % Description
-            %   idx = locate_functions(eqn) searches the equation string,
-            %   eqn, for the existance of function variables (i.e., those
-            %   added with ADD_FUNCTION). It returns the indices for the
-            %   func property for the variables that exist in eqn.
-
-            % Initialize output
-            idx = [];
-
-            % Loop through each function and store location, if found
+            
+            % Search for functions
             for i = 1:length(obj.func);
                 [~, flag] = obj.insert_string(eqn, obj.func(i).name, '');
                 if flag;
-                    idx(end+1) = i;
+                    info(1).function(end+1) = i;
                 end 
             end    
+            
+            % Search for vectors
+            for i = 1:length(obj.vec);
+                [~, flag] = obj.insert_string(eqn, obj.vec(i).name, '');
+                if flag;
+                    info(1).vector(end+1) = i;
+                end 
+            end
         end
         
         function add_const(obj, name, value)
@@ -595,8 +588,8 @@ classdef System < mFEM.base.handle_hide
                 eqn = obj.insert_string(eqn, str, val);
             end
         end
-             
-        function fcn = apply_func(obj, fcn, fidx, elem, x)
+        
+        function eqn = apply_explicit_vector(obj, eqn, idx, dof)
             %APPLY_FUNC Inserts the function handle into the equation
             %
             % Syntax
@@ -607,11 +600,31 @@ classdef System < mFEM.base.handle_hide
             %   variables given by the indices in fidx for the position x
             %   to the string fcn supplied.
             
-            % Convert function to string
-            eqn = func2str(fcn);
+            % Loop through all the functions
+            for i = 1:length(idx);
+                
+                % Extract local vector
+                value = obj.vec(i).vector.get_local(dof);
+                
+                % Insert the value for the current location
+                eqn = obj.insert_string(eqn, ...
+                    obj.vec(i).name, mat2str(value));             
+            end
+        end        
+        
+        function fcn = apply_func(obj, eqn, idx, elem, x)
+            %APPLY_FUNC Inserts the function handle into the equation
+            %
+            % Syntax
+            %   fcn = apply_func(fcn, fidx, elem, x)
+            %
+            % Description
+            %   fcn = apply_func(fcn, fidx, elem, x) applies the function
+            %   variables given by the indices in fidx for the position x
+            %   to the string fcn supplied.
             
             % Loop through all the functions
-            for i = 1:length(fidx);
+            for i = 1:length(idx);
                 % Value to insert
                 if strcmp(obj.func(i).type,'x');
                     value = feval(obj.func(i).handle, x, obj.time);
@@ -623,12 +636,12 @@ classdef System < mFEM.base.handle_hide
                 eqn = obj.insert_string(eqn, ...
                     obj.func(i).name, mat2str(value));             
             end
-
-            % Convert string to a function
+            
+            % Build function
             fcn = str2func(eqn);
-        end     
+        end   
         
-        function func = parse_equation(obj, eqn, varargin)
+        function [func, info] = parse_equation(obj, eqn, varargin)
             %PARSE_EQUATION Converts given equation into a useable function
             %
             % Syntax
@@ -647,10 +660,10 @@ classdef System < mFEM.base.handle_hide
             % PARSE_EQUATION Property Description
             %   side
             %       true | {false}
-            %
-            %   direct
-            %       true | {false}
 
+            % Test the input equation
+            info = obj.test_input_eqn(eqn);
+            
             % Get the dimensions of the FE space (use the local, it is what
             % determines the number of xi,eta,... inputs)
             n_dim = obj.mesh.local_n_dim;
@@ -703,7 +716,7 @@ classdef System < mFEM.base.handle_hide
             if isempty(var);
                 func = ['@(elem) ', eqn];     
             else
-                func= ['@(elem,',var,') ', eqn];
+                func = ['@(elem,',var,') ', eqn];
             end
         end
 
@@ -750,12 +763,8 @@ classdef System < mFEM.base.handle_hide
             %   K = assemble_matrix_side(idx) assembles the desired matrix 
             %   for a side where idx is the location in the mat structure.
            
-            % Deterimine what type of build direct or not
-            direct = obj.mat(idx).direct;
-            
-            % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn, ...
-                '-side', 'Direct', direct));
+            % Parse the equation
+            [the_function, info] = obj.parse_equation(obj.mat(idx).eqn,'-side');
 
             % Extract the boundary ids
             id = obj.mat(idx).boundary_id;
@@ -766,6 +775,9 @@ classdef System < mFEM.base.handle_hide
             % Loop through each element
             for e = 1:obj.mesh.n_elements;
 
+                % Reset the function string
+                str_func = the_function;
+                
                 % The current element
                 elem = obj.mesh.element(e);
 
@@ -783,11 +795,18 @@ classdef System < mFEM.base.handle_hide
 
                             % Create the side element
                             side = elem.build_side(s);
-
+                
+                            % Apply explicit vectors
+                            if ~isempty(info.vector);
+                                dof = elem.get_dof('side',s);
+                                str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
+                            end
+                            
                             % If direct build, perform the build and return
                             % to the next loop iteration
-                            if direct;
+                            if info.direct;
                                 dof = elem.get_dof('Side',s,'-local');
+                                fcn = str2func(str_func);
                                 Ke(dof,dof) = Ke(dof,dof) + fcn(side);
                             
                             % Perform quadrature
@@ -796,6 +815,7 @@ classdef System < mFEM.base.handle_hide
                                 % does not require intergration
                                 if elem.local_n_dim == 1;
                                     dof = elem.get_dof(s);
+                                    fcn = str2func(str_func);
                                     Ke(dof,dof) = Ke(dof,dof) + fcn(side);
 
                                 % Side elements that are not points    
@@ -813,9 +833,11 @@ classdef System < mFEM.base.handle_hide
                                     for j = 1:size(qp,1);
 
                                         % Apply spatial/temporal functions
-                                        if ~isempty(obj.mat(idx).functions);
+                                        if ~isempty(info.function);
                                             x = elem.get_position(qp{i,:});
-                                            fcn = obj.apply_func(obj.mat(idx).func, obj.mat(idx).functions, side, x);
+                                            fcn = obj.apply_func(str_func, info.function, side, x);
+                                        else
+                                            fcn = str2func(str_func); 
                                         end
 
                                         % Build local matrix
@@ -850,12 +872,8 @@ classdef System < mFEM.base.handle_hide
             %   over the entire domain where idx is the location in the 
             %   mat structure.
             
-            % Deterimine what type of build direct or not
-            direct = obj.mat(idx).direct;
-            
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.mat(idx).eqn,...
-                'Direct', direct));
+            [the_function, info] = obj.parse_equation(obj.mat(idx).eqn);
 
             % Get a reference to current Matrix object
             matrix = obj.mat(idx).matrix;
@@ -870,13 +888,23 @@ classdef System < mFEM.base.handle_hide
         
             % Loop through all of the elements
             for e = 1:length(active_elem);
+                
+                % Reset the function string
+                str_func = the_function;
 
                 % Extract current element
                 elem = active_elem(e);
                 
+                % Apply explicit vectors
+                if ~isempty(info.vector);
+                    dof = elem.get_dof();
+                    str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
+                end  
+                
                 % If direct build, perform the build and return
                 % to the next loop iteration
-                if direct;
+                if info.direct;
+                    fcn = str2func(str_func);
                     Ke = fcn(elem);
                     
                 % Otherwise, perform quadrature    
@@ -894,9 +922,11 @@ classdef System < mFEM.base.handle_hide
                     for i = 1:size(qp,1);       
 
                         % Apply spatial/temporal functions
-                        if ~isempty(obj.mat(idx).functions);
+                        if ~isempty(info.function);
                             x = elem.get_position(qp{i,:});
-                            fcn = obj.apply_func(fcn, obj.mat(idx).functions, elem, x);
+                            fcn = obj.apply_func(str_func, obj.mat(idx).function, elem, x);
+                        else
+                            fcn = str2func(str_func);
                         end
 
                         % Case without spatial/temporal functions
@@ -930,6 +960,12 @@ classdef System < mFEM.base.handle_hide
             % Loop through the indices
             for i = 1:length(idx);
                 
+                % Skip explicitly defined vectors
+                if isempty(obj.vec(idx(i)).eqn);
+                    warning('System:asemble_vector', 'There is nothing to assemble for the %s vector', obj.vec(idx(i)).name);
+                    continue;
+                end
+                
                 % Clear existing vector
                 obj.vec(idx(i)).vector = mFEM.Vector(obj.mesh);
 
@@ -957,12 +993,8 @@ classdef System < mFEM.base.handle_hide
             %   K = assemble_vector_side(idx) assembles the desired vector 
             %   for a side where idx is the location in the vec structure.  
             
-            % Deterimine what type of build direct or not
-            direct = obj.vec(idx).direct;
-            
-            % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn, '-side',...
-                'Direct', direct));
+            % Parse the equation
+            [the_function, info] = obj.parse_equation(obj.vec(idx).eqn,'-side');
             
             % Extract the boundary ids
             id = obj.vec(idx).boundary_id;
@@ -970,6 +1002,9 @@ classdef System < mFEM.base.handle_hide
             % Loop through each element
             for e = 1:obj.mesh.n_elements;
 
+                % Reset the function string
+                str_func = the_function;
+                
                 % The current element
                 elem = obj.mesh.element(e);
 
@@ -988,10 +1023,17 @@ classdef System < mFEM.base.handle_hide
                             % Create the side element
                             side = elem.build_side(s);
                             
+                            % Apply explicit vectors
+                            if ~isempty(info.vectors);
+                                dof = elem.get_dof('side',s);
+                                str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
+                            end
+                            
                             % If direct build, perform the build and return
                             % to the next loop iteration
                             if direct;
                                 dof = elem.get_dof('Side',s, '-local');
+                                fcn = str2func(str_func);
                                 fe(dof) = fe(dof) + fcn(side);
                                 
                             % Perform quadrature    
@@ -1001,13 +1043,14 @@ classdef System < mFEM.base.handle_hide
                                 if elem.local_n_dim == 1;
 
                                     % Apply spatial/temporal functions
-                                    if ~isempty(obj.vec(idx).functions);
+                                    if ~isempty(info.function);
                                         x = side.nodes;
-                                        fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
+                                        fcn = obj.apply_func(str_func, info.function, elem, x);
                                     end
 
                                     % Build local vector
                                     dof = elem.get_dof('Side', s, '-local');
+                                    fcn = str2func(str_func);
                                     fe(dof) = fe(dof) + fcn(side);
 
                                 % Side elements that are not points    
@@ -1024,9 +1067,11 @@ classdef System < mFEM.base.handle_hide
                                     for j = 1:size(qp,1);
 
                                         % Apply spatial/temporal functions
-                                        if ~isempty(obj.vec(idx).functions);
+                                        if ~isempty(info.function);
                                             x = elem.get_position(qp{i,:});
-                                            fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, side, x);
+                                            fcn = obj.apply_func(str_func, obj.vec(idx).function, side, x);
+                                        else
+                                            fcn = str2func(str_func);
                                         end
 
                                         % Build local vector
@@ -1058,12 +1103,8 @@ classdef System < mFEM.base.handle_hide
             %   over the entire domain where idx is the location in the 
             %   vec structure.     
             
-            % Deterimine what type of build direct or not
-            direct = obj.vec(idx).direct;
-            
             % Build the function for the side
-            fcn = str2func(obj.parse_equation(obj.vec(idx).eqn,...
-                'Direct', direct));
+            [the_function, info] = obj.parse_equation(obj.vec(idx).eqn);
 
             % Get the elements to loop over, if the subdomain is empty it
             % returns all of the elements.
@@ -1072,12 +1113,22 @@ classdef System < mFEM.base.handle_hide
             % Loop through all of the elements
             for e = 1:length(active_elem);
 
-                % Extract current element
+                % Reset the function string
+                str_func = the_function;
+                
+                % Extract current element 
                 elem = active_elem(e);
+                
+                % Apply explicit vectors
+                if ~isempty(info.vector);
+                    dof = elem.get_dof();
+                    str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
+                end         
                 
                 % If direct build, perform the build and return
                 % to the next loop iteration
-                if direct;
+                if info.direct;
+                    fcn = str2func(str_func);
                     fe = fcn(side);
                 
                 % Otherwise perform quadrature    
@@ -1089,14 +1140,16 @@ classdef System < mFEM.base.handle_hide
                     if ~exist('qp','var');
                         [qp,W] = elem.quad.rules('-cell');
                     end
-
+                    
                     % Loop through all of the quadrature points
                     for j = 1:size(qp,1);
 
                         % Apply spatial/temporal functions
-                        if ~isempty(obj.vec(idx).functions);
+                        if ~isempty(info.function);
                             x = elem.get_position(qp{j,:});
-                            fcn = obj.apply_func(obj.vec(idx).func, obj.vec(idx).functions, elem, x);
+                            fcn = obj.apply_func(str_func, info.function, elem, x);
+                        else
+                            fcn = str2func(str_func);
                         end
 
                         % Build the local vector

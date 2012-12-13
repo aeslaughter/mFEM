@@ -45,6 +45,8 @@ classdef Vector < mFEM.base.handle_hide
            %    contained in the FEMESH object.
            %
            %    Vector(m) create an m x 1 matrix.
+           %
+           %    Vector(vec) create an initilized vector
 
            % Case when creating from an FEmesh object
            if nargin == 1 && isa(m,'mFEM.FEmesh');
@@ -52,12 +54,17 @@ classdef Vector < mFEM.base.handle_hide
                obj.m = mesh.n_dof;
 
            % Case when only m is specfied     
-           elseif nargin == 1;
+           elseif nargin == 1 && isscalar(m);
                obj.m = m;
+               
+           % Case when a vector is given    
+           elseif nargin == 1;
+               obj.m = length(m);
+               obj.f = m;
 
-           % Too many inputs
+           % Input not understood
            else
-               error('Matrix:Matrix', 'Input Error');
+               error('Vector:Vector', 'Input Error');
            end
            
            % Create a zero vector
@@ -91,6 +98,19 @@ classdef Vector < mFEM.base.handle_hide
             %    where f is the global vector.
 
             obj.f(dof) = obj.f(dof) + fe;
+       end
+       
+       function out = get_local(obj, dof)
+           %GET_LOCAL extract a local vector given the dof
+           %
+           % Syntax
+           %    out = get_local(dof)
+           %
+           % Description
+           %    out = get_local(dof) returns a subvector, where dof are the
+           %    indices of the subvector
+           
+           out = obj.f(dof);
        end
        
        function f = init(obj)
