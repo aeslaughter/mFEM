@@ -197,17 +197,7 @@ classdef TransientLinearSolver < mFEM.base.Solver
             end
 
             % Initlize the solution
-            u = zeros(size(obj.f));
-
-            % Apply the essential boundary condions     
-            dof = zeros(length(obj.f), length(obj.essential),'uint32');
-            for i = 1:length(obj.essential);
-               dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id);
-               u(logical(dof(:,i))) = obj.essential(i).value;
-            end
-
-            % Define the essential boundary conditions
-            ess = any(dof,2);
+            [u,ess] = obj.solution_init();
 
             % Numerical constants
             theta = obj.opt.theta; % numerical intergration parameter

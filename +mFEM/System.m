@@ -1101,7 +1101,7 @@ classdef System < mFEM.base.handle_hide
         end
     end
     
-    methods (Static)
+    methods (Static, Hidden = true)
         function [eqn, found] = insert_string(eqn, str, val)
             %INSERT_STRING Inserts the variables into eqn string
             %

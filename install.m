@@ -33,8 +33,8 @@ end
 
 % Add the necessary paths and save 
 addpath(cd);
-addpath('bin');
-addpath('examples');
+addpath(fullfile(cd,'bin'));
+addpath(fullfile(cd,'examples'));
 savepath; 
 
 % Set the pusblishing options

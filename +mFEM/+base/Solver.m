@@ -78,8 +78,17 @@ classdef Solver < mFEM.base.handle_hide
             %
             % Syntax
             %   add_essential_boundary('PropertyName', PropertyValue,...);
+            %   add_essential_boundary(C1,C2,...); 
             %
             % Description
+            %   add_essential_boundary('PropertyName', PropertyValue,...)
+            %   adds based on the properties an essential boundary
+            %   condition that will be applied to the solution
+            %
+            %   add_essential_boundary(C1,C2,...) same as above where each
+            %   input is a seperate cell array of property pairings, this
+            %   simply allows multiple boundary conditions to be assigned
+            %   together.
             %
             % ADD_ESSENTIAL_BOUNDARY Property Descriptions
             %   id
@@ -94,52 +103,30 @@ classdef Solver < mFEM.base.handle_hide
             %   given boundary ids are assigned the value, if an array it
             %   must be have the same number of columns as the ids.
             %
-            %   Examples
-            %       add_essential_boundary('id',1,'value',0);
-            %       add_essential_boundary('id',[1,2],'value',0);
-            %       add_essential_boundary('id',[1,2],'value',[0,10]);
-            %       add_essential_boundary('id',1,'value',[10,20,30]);
+            %   Component
+            %       scalar | 'x' | 'y' | 'z'
+            %       Returns the dof associated with the vector space or
+            %       multipe dof per node elements like the Beam element.
             %
-            %   The last example is a special case, the length of the value
-            %   array must be the same as the length of the number of dofs
-            %   such that the following is valid.
-            %       dof = mesh.get_dof('Boundary',1);
-            %       x(dof) = value; % x is the solution vector
-            %   The id property must be a scalar in this case.
-            %
+            
+            % Cell input case
+            if nargin > 0 && iscell(varargin{1});
 
-            % Gather the input
-            opt.id = [];
-            opt.value = [];
-            opt = gather_user_options(opt, varargin{:});
-            
-            % Test that id and value are given
-            if isempty(opt.id) || isempty(opt.value);
-                error('Solver:add_essential_boundary','Both the id and value properties must be set.');
-            end
-            
-            % Scalar input
-            if isscalar(opt.id);
+                % Loop through each input, they should all be cells
+                for i = 1:length(varargin);
+                    
+                    % Give an error if the input is not a cell
+                    if ~iscell(varargin{i});
+                        error('Solver:add_essential_boundary', 'Expected a cell, but recieved a %s', class(varargin{i}));
+                    end
+                    
+                    % Add to the dof
+                    obj.add_essential_boundary_private(varargin{i}{:});  
+                end
                 
-                % Append storage data structure
-                idx = length(obj.essential);
-                obj.essential(idx+1).id = opt.id;
-                obj.essential(idx+1).value = opt.value;
-                
-            % Vector input
+            % Traditional input case    
             else
-                
-                % Expand values to same size as id if given as a sclar
-                if isscalar(opt.value);
-                    opt.value = repmat(opt.value, length(opt.id), 1);
-                end
-                
-                % Loop through each id and assign append storage structure
-                for i = 1:length(opt.id);
-                    idx = length(obj.essential);
-                    obj.essential(idx+1).id = opt.id(i);
-                    obj.essential(idx+1).value = opt.value(i);
-                end
+                obj.add_essential_boundary_private(varargin{:});  
             end
         end
         
@@ -157,7 +144,7 @@ classdef Solver < mFEM.base.handle_hide
         end
     end
     
-    methods (Access = protected)
+    methods (Hidden = true, Access = protected)
        function x = get_component(obj, name, type)
            %GET_COMPONENT returns the matrix of vector ready for solving
            %
@@ -188,6 +175,42 @@ classdef Solver < mFEM.base.handle_hide
            else
                 x = obj.opt.(name);
            end   
+       end
+         
+       function add_essential_boundary_private(obj, varargin)
+           
+            % Gather the input
+            options.id = [];
+            options.value = [];
+            options.component = [];
+            options = gather_user_options(options, varargin{:});
+            
+            % Test that id and value are given
+            if isempty(options.id) || isempty(options.value);
+                error('Solver:add_essential_boundary_private','Both the id and value properties must be set.');
+            end
+            
+            % Append storage data structure
+            idx = length(obj.essential);
+            obj.essential(idx+1).id = options.id;
+            obj.essential(idx+1).value = options.value;  
+            obj.essential(idx+1).component = options.component;                 
+       end
+       
+       function [u,ess] = solution_init(obj)
+           
+           % Initlize the solution
+           u = zeros(obj.mesh.n_dof,1);
+           
+           % Apply the essential boundary condions
+           dof = zeros(obj.mesh.n_dof, length(obj.essential),'uint32');
+           for i = 1:length(obj.essential);
+               dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id, 'Component', obj.essential(i).component);
+               u(logical(dof(:,i))) = obj.essential(i).value;
+           end
+           
+           % Build the essential dofs
+           ess = any(dof,2);
        end
    end
 end

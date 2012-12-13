@@ -95,18 +95,10 @@ classdef LinearSolver < mFEM.base.Solver
            % Extract/assemble the force vector
            f = obj.get_component('force', 'vector');
                 
-           % Initlize the solution
-           u = zeros(size(f));
-           
-           % Apply the essential boundary condions
-           dof = zeros(length(f), length(obj.essential),'uint32');
-           for i = 1:length(obj.essential);
-               dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id);
-               u(logical(dof(:,i))) = obj.essential(i).value;
-           end
+           % Initilize the solution
+           [u,ess] = obj.solution_init();
            
            % Solve the equations
-           ess = any(dof,2);
            u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
        end
    end
