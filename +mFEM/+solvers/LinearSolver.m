@@ -91,7 +91,7 @@ classdef LinearSolver < mFEM.base.Solver
 
            % Extract/assemble the stiffness matrix
            K = obj.get_component('stiffness', 'matrix');
-           
+          
            % Extract/assemble the force vector
            f = obj.get_component('force', 'vector');
                 

@@ -1151,7 +1151,7 @@ classdef FEmesh < mFEM.base.handle_hide
                    dof_s = sort(elem.global_dof(elem.side_dof(s,:)));
                    if all(dof_s == dof)
                        elem.side(s).on_boundary = true;                       
-                       elem.side(s).boundary_id = id;
+                       elem.side(s).boundary_id(end+1) = id;
                    end
                end
             end

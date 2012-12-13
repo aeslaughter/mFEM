@@ -46,30 +46,10 @@ solver = solvers.TransientLinearSolver(sys, 'dt', 30);
 solver.add_essential_boundary('id',3,'value','T_s');
 
 % Initialize the temperatures
- T(:,1) = sys.get('T_0') * ones(mesh.n_dof,1); % initialize temperature vector
-% T(ess,1) = sys.get('T_s');               % apply essential boundaries
-solver.init(T(:,1));
-
-% % Compute residual for non-essential boundaries, the mass matrix does not
-% % contribute because the dT/dt = 0 on the essential boundaries
-% R(:,1) = f(non) - K(non,ess)*T(ess,1);
-% 
-% % Use a general time integration scheme
-% dt = 30;
-% theta = 0.5;
-
-% K_hat = M(non,non) + theta*dt*K(non,non);
-% f_K   = M(non,non) - (1-theta)*dt*K(non,non);
+T(:,1) = solver.init('T_0');
 
 % Perform 10 time-steps
-for t = 1:10;
-
-    % Compute the force componenet using previous time step T
-%     f_hat = dt*R + f_K*T(non,t);
-% 
-%     % Solve for non-essential boundaries
-%     T(non, t+1) = K_hat\f_hat;
-    
+for t = 1:10;    
     % Set values for the essential boundary conditions the next time step 
     T(:, t+1) = solver.solve();
 end

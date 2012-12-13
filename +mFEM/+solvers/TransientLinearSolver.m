@@ -137,7 +137,7 @@ classdef TransientLinearSolver < mFEM.base.Solver
            obj.opt = gather_user_options(obj.opt, varargin{:});
        end
 
-       function init(obj, x)
+       function u = init(obj, u)
            %INIT Initilizes the TransientLinearSolver
            %
            % Syntax
@@ -145,15 +145,24 @@ classdef TransientLinearSolver < mFEM.base.Solver
            %
            % Description
            %    init(u) initlizes the transient solution to the vector u
-           %    supplied by the user
+           %    supplied by the user. If the class was constructed with a
+           %    System class u may also be a component accessible with the
+           %    Sytem::get method.
+
+           % System method
+           if ischar(u) && ~isempty(obj.system);
+               txt = u;
+               u = zeros(obj.mesh.n_dof,1);
+               u(:) = obj.system.get(txt);
+           end
            
            % Test size
-           if length(x) ~= obj.mesh.n_dof;
-               error('TransientLinearSolver:init', 'Expected a vector of length %d for the solution, but recieved on of length %d.', obj.mesh.n_dof, length(x));
+           if length(u) ~= obj.mesh.n_dof;
+               error('TransientLinearSolver:init', 'Expected a vector of length %d for the solution, but recieved on of length %d.', obj.mesh.n_dof, length(u));
            end
            
            % Store the old solution
-           obj.u_old = x; 
+           obj.u_old = u; 
            
            % Apply the boundary constraints
            obj.u_old = obj.apply_constraints(obj.u_old);

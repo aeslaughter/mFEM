@@ -1,5 +1,5 @@
 % MAE4700/5700 HW8, Prob. 2
-function example9
+function example9b
 
 % Import the mFEM library
 import mFEM.*;
@@ -10,8 +10,10 @@ mesh.grid(0,2,0,1,1,1);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'bottom','left');
+mesh.add_boundary(1, 'bottom','left'); 
 mesh.add_boundary(2, 'right','top');
+mesh.add_boundary(3, {'x==0','y==0'});
+mesh.add_boundary(4, {'x==2','y==0'});
 
 % Create system and add matrix components
 sys = System(mesh);
@@ -23,24 +25,12 @@ sys.add_matrix('K', 'B''*D*B');
 sys.add_vector('f', 'N''*r', 'Boundary', 1);
 sys.add_vector('f', 'N''*-r', 'Boundary', 2);
 
-% Assemble the matrix and vector
-K = sys.assemble('K'); 
-f = sys.assemble('f') + sys.assemble('f');
-
-% Define dof indices for the essential dofs and non-essential dofs
-ess = [1,2,4];
-non = [3,5,6,7,8];
-
-% Solve for the temperatures
-u = zeros(size(f));         % initialize the displacement vector
-u(ess) = 0;                 % apply essential boundary condtions
-u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
-
-% Solve for the reaction fluxes
-r = K*u - f;
+% Assemble and solve
+solver = solvers.LinearSolver(sys);
+solver.add_essential_boundary({'id',3,'value',0},{'id',4,'component','y','value',0});
+u = solver.solve()
 
 % Display the displacement results
-u
 mesh.plot(u,'-Deform','-ShowNodes','Colorbar','Magnitude of Disp. (m)',...
     'Patch',{'EdgeColor','k'});
 xlabel('x'); ylabel('y');

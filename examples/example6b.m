@@ -21,7 +21,7 @@
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
 
-function example6c(varargin)
+function example6b(varargin)
 
 % Import the mFEM library
 import mFEM.* mFEM.solvers.*;
@@ -56,12 +56,10 @@ T = T_exact(x,y,0);
 
 % Plot the initial condition
 figure; hold on;
-mesh.plot(T);
+mesh.plot(T,'colorbar','Temperature');
 title('t = 0');
 xlabel('x');
 ylabel('y');
-cbar = colorbar;
-set(get(cbar,'YLabel'),'String','Temperature');
 
 % Create and initilize the transient solver
 dt = 0.1;

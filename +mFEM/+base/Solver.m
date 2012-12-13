@@ -189,7 +189,7 @@ classdef Solver < mFEM.base.handle_hide
 
             % Generic case, the user supplied the actual matrix or vector    
             else
-                x = obj.opt.(name);
+                x(:) = obj.opt.(name);
             end   
         end
          

@@ -1,5 +1,5 @@
 % MAE4700/5700 HW8, Ex. Prob.
-function example7
+function example7b
 
 % Import the mFEM library
 import mFEM.*;
@@ -23,18 +23,9 @@ sys.add_matrix('K', 'B''*D*B');
 sys.add_vector('f', 'N''*P', 'Boundary', 2);
 
 % Assemble the matrix and vector
-K = sys.assemble('K');
-f = sys.assemble('f');
-
-% Define dof indices for the essential boundaries
-ess = mesh.get_dof('Boundary', 1);
-
-% Define known displacements
-u = zeros(mesh.n_dof,1);            % initialize the displacement vector
-u(ess) = 0;                         % set initial boundaries
-
-% Solve for the unknown displacements
-u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
+solver = solvers.LinearSolver(sys);
+solver.add_essential_boundary('id',1,'value',0);
+u = solver.solve();
 
 % Display the displacement results
 subplot(2,1,1);

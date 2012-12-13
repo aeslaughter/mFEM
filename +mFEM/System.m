@@ -1031,7 +1031,7 @@ classdef System < mFEM.base.handle_hide
                             % Add the local force vector to the global vector
                             dof = elem.get_dof();    
                             obj.vec(idx).vector.add_vector(fe,dof);
-                        end
+                         end
                     end   
                 end 
             end
