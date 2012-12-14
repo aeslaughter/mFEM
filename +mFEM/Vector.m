@@ -52,10 +52,12 @@ classdef Vector < mFEM.base.handle_hide
            if nargin == 1 && isa(m,'mFEM.FEmesh');
                mesh = m;
                obj.m = mesh.n_dof;
-
+               obj.zero();
+               
            % Case when only m is specfied     
            elseif nargin == 1 && isscalar(m);
                obj.m = m;
+               obj.zero();
                
            % Case when a vector is given    
            elseif nargin == 1;
@@ -66,9 +68,6 @@ classdef Vector < mFEM.base.handle_hide
            else
                error('Vector:Vector', 'Input Error');
            end
-           
-           % Create a zero vector
-           obj.zero();
        end
        
        function varargout = size(obj, varargin)

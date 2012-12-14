@@ -436,7 +436,7 @@ classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
         end  
     end
     
-    methods (Hidden = true, Access = private)        
+    methods (Hidden = true, Access = {?mFEM.FEmesh})        
         function D = transform_dof(obj, d)
             %TRANSFROM_DOF Converts the dofs for vector element space
             %
@@ -451,26 +451,38 @@ classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
             D = transform_dof(d,obj.n_dof_node); % call func in bin
         end
         
-        function d = distance(obj)
+        function d = distance(obj, varargin)
             %DISTANCE Compute distances between all points
             %
             % Syntax
             %   d = distance()
+            %   d = distance(node)
             %
             % Description
             %   d = distance() computes the distance between all nodes, so
             %   is returns N! distances, where N is the number of nodes
             %   minus one.
+            %
+            %   d = distance(node) distance of all nodes from the node
+            %   given.
            
-            d = zeros(factorial(obj.n_nodes-1),1);
-            k = 0;
-            for i = 1:obj.n_nodes;
-                for j = i+1:obj.n_nodes;
-                    k = k + 1;
-                    d(k) = norm(obj.nodes(i,:) - obj.nodes(j,:));
+            if nargin == 1;
+                d = zeros(factorial(obj.n_nodes-1),1);
+                k = 0;
+                for i = 1:obj.n_nodes;
+                    for j = i+1:obj.n_nodes;
+                        k = k + 1;
+                        d(k) = norm(obj.nodes(i,:) - obj.nodes(j,:));
+                    end
                 end
+                
+            elseif nargin == 2
+                node = varargin{1};
+                d = zeros(obj.n_nodes,1);
+                for i = 1:obj.n_nodes;
+                    d(i) = norm(obj.nodes(i,:) - node);
+                end 
             end
-
         end
     end
 end

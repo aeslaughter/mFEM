@@ -49,7 +49,7 @@ classdef System < mFEM.base.handle_hide
     
     properties(Access = private)
         reserved = ... % reserved variables, not available for constants
-            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','fe'};
+            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','fe','grad'};
         
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
@@ -64,8 +64,6 @@ classdef System < mFEM.base.handle_hide
         
         func = ... % vector storage structure
             struct('name', {}, 'handle', {});
-        
-        solver; 
     end
 
     methods (Access = public)
@@ -315,7 +313,6 @@ classdef System < mFEM.base.handle_hide
             
             % Append the vector to the structure
             obj.vec(idx).name = name;
-            
             obj.vec(idx).boundary_id = options.boundary; 
             obj.vec(idx).subdomain = options.subdomain;
             
@@ -328,6 +325,46 @@ classdef System < mFEM.base.handle_hide
                obj.vec(idx).vector = mFEM.Vector.empty;
             end
             
+        end
+        
+        function output = point_value(obj, name, elem, x)
+            
+            [type,idx] = obj.locate(name);
+            if ~strcmp(type,'vector');
+                error('System:point_value', 'This method only works with vectors');
+            end
+            
+            % Degrees of freedom
+            dof = elem.get_dof();
+
+            % Extract local vector
+            u = obj.vec(idx).vector.get_local(dof);
+
+            % Shape functions at point x
+            N = elem.shape(x{:});
+
+            % Output the value
+            output = N*u;
+        end
+        
+        function output = point_gradient(obj, name, elem, x)
+            
+            [type,idx] = obj.locate(name);
+            if ~strcmp(type,'vector');
+                error('System:point_value', 'This method only works with vectors');
+            end
+            
+            % Degrees of freedom
+            dof = elem.get_dof();
+
+            % Extract local vector
+            u = obj.vec(idx).vector.get_local(dof);
+
+            % Shape functions at point x
+            B = elem.shape_deriv(x{:});
+
+            % Output the value
+            output = B*u;
         end
         
         function X = get(obj, name)
@@ -485,11 +522,11 @@ classdef System < mFEM.base.handle_hide
             %
 
             % Intilize output
-            info = struct('direct',{},'function',{},'vector',{});
+            info = struct('direct',{},'function',{},'vector',{},'gradient', {});
 
             % Search for standard assembly variables
             cstr = {'N','B'};
-            for i = 1:length(cstr);
+            for i = 1:length(cstr);                
                 [~, S(i)] = obj.insert_string(eqn, cstr{i}, '');
             end
             
@@ -520,10 +557,22 @@ classdef System < mFEM.base.handle_hide
                 end 
             end    
             
+            % Search for gradient of the vectors
+            for i = 1:length(obj.vec);
+                expr = ['grad\(\s*',obj.vec(i).name,'\s*\)'];
+                ix = regexp(eqn, expr, 'once');
+                
+                if ~isempty(ix);
+                    info(1).gradient(end+1) = i;
+                end
+            end
+            
             % Search for vectors
             for i = 1:length(obj.vec);
-                [~, flag] = obj.insert_string(eqn, obj.vec(i).name, '');
-                if flag;
+                expr = ['(?<!grad\(\s*)', obj.vec(i).name];
+                ix = regexp(eqn, expr, 'once');    
+                
+                if ~isempty(ix);
                     info(1).vector(end+1) = i;
                 end 
             end
@@ -589,8 +638,8 @@ classdef System < mFEM.base.handle_hide
             end
         end
         
-        function eqn = apply_explicit_vector(obj, eqn, idx, dof)
-            %APPLY_FUNC Inserts the function handle into the equation
+        function eqn = apply_explicit_vector(obj, eqn, idx, elem, x)
+            %APPLY_EXPLICIT_VECTOR Inserts the vector into the equation
             %
             % Syntax
             %   fcn = apply_func(fcn, fidx, elem, x)
@@ -600,19 +649,47 @@ classdef System < mFEM.base.handle_hide
             %   variables given by the indices in fidx for the position x
             %   to the string fcn supplied.
             
-            % Loop through all the functions
+            % Loop through all the vectors
             for i = 1:length(idx);
                 
-                % Extract local vector
-                value = obj.vec(i).vector.get_local(dof);
+                % The name of the vector to extract from
+                name = obj.vec(idx(i)).name;
+
+                % The value extracted from the vector
+                value = obj.point_value(name, elem, x);
                 
-                % Insert the value for the current location
-                eqn = obj.insert_string(eqn, ...
-                    obj.vec(i).name, mat2str(value));             
+                % Insert the value into the equation
+                eqn = obj.insert_string(eqn, name, mat2str(value));             
             end
         end        
         
-        function fcn = apply_func(obj, eqn, idx, elem, x)
+        function eqn = apply_explicit_vector_grad(obj, eqn, idx, elem, x)
+            %APPLY_EXPLICIT_VECTOR Inserts the vector into the equation
+            %
+            % Syntax
+            %   fcn = apply_func(fcn, fidx, elem, x)
+            %
+            % Description
+            %   fcn = apply_func(fcn, fidx, elem, x) applies the function
+            %   variables given by the indices in fidx for the position x
+            %   to the string fcn supplied.
+            
+            % Loop through all the vectors
+            for i = 1:length(idx);
+                
+                % The name of the vector to extract from
+                name = obj.vec(idx(i)).name;
+
+                % The value extracted from the vector
+                value = obj.point_gradient(name, elem, x);
+                
+                % Insert the value into the equation
+                expr = ['grad\(\s*',name,'\s*\)'];
+                eqn = regexprep(eqn, expr, mat2str(value));             
+            end
+        end     
+        
+        function eqn = apply_func(obj, eqn, idx, elem, x)
             %APPLY_FUNC Inserts the function handle into the equation
             %
             % Syntax
@@ -636,9 +713,6 @@ classdef System < mFEM.base.handle_hide
                 eqn = obj.insert_string(eqn, ...
                     obj.func(i).name, mat2str(value));             
             end
-            
-            % Build function
-            fcn = str2func(eqn);
         end   
         
         function [func, info] = parse_equation(obj, eqn, varargin)
@@ -795,12 +869,6 @@ classdef System < mFEM.base.handle_hide
 
                             % Create the side element
                             side = elem.build_side(s);
-                
-                            % Apply explicit vectors
-                            if ~isempty(info.vector);
-                                dof = elem.get_dof('side',s);
-                                str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
-                            end
                             
                             % If direct build, perform the build and return
                             % to the next loop iteration
@@ -835,12 +903,21 @@ classdef System < mFEM.base.handle_hide
                                         % Apply spatial/temporal functions
                                         if ~isempty(info.function);
                                             x = elem.get_position(qp{i,:});
-                                            fcn = obj.apply_func(str_func, info.function, side, x);
-                                        else
-                                            fcn = str2func(str_func); 
+                                            str_func = obj.apply_func(str_func, info.function, side, x);
                                         end
-
+                
+                                        % Apply explicit vectors
+                                        if ~isempty(info.vector);
+                                            str_func = obj.apply_explicit_vector(str_func, info.vector, side, qp(j,:));
+                                        end  
+                                        
+                                        % Apply explicit vectors gradients
+                                        if ~isempty(info.gradient);
+                                            str_func = obj.apply_explicit_vector_grad(str_func, info.gradient, side, qp(j,:));
+                                        end  
+                                        
                                         % Build local matrix
+                                        fcn = str2func(str_func);
                                         Ke(dof,dof) = Ke(dof,dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                     end
                                 end
@@ -894,13 +971,7 @@ classdef System < mFEM.base.handle_hide
 
                 % Extract current element
                 elem = active_elem(e);
-                
-                % Apply explicit vectors
-                if ~isempty(info.vector);
-                    dof = elem.get_dof();
-                    str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
-                end  
-                
+
                 % If direct build, perform the build and return
                 % to the next loop iteration
                 if info.direct;
@@ -924,12 +995,21 @@ classdef System < mFEM.base.handle_hide
                         % Apply spatial/temporal functions
                         if ~isempty(info.function);
                             x = elem.get_position(qp{i,:});
-                            fcn = obj.apply_func(str_func, obj.mat(idx).function, elem, x);
-                        else
-                            fcn = str2func(str_func);
+                            str_func = obj.apply_func(str_func, info.function, elem, x);
                         end
-
+                
+                        % Apply explicit vectors
+                        if ~isempty(info.vector);
+                            str_func = obj.apply_explicit_vector(str_func, info.vector, elem, qp(i,:));
+                        end  
+                        
+                        % Apply explicit vectors gradients
+                        if ~isempty(info.gradient);
+                            str_func = obj.apply_explicit_vector_grad(str_func, info.gradient, elem, qp(i,:));
+                        end  
+                                        
                         % Case without spatial/temporal functions
+                        fcn = str2func(str_func);
                         Ke = Ke + W(i)*fcn(elem, qp{i,:})*elem.detJ(qp{i,:});
                     end
                 end
@@ -1045,7 +1125,7 @@ classdef System < mFEM.base.handle_hide
                                     % Apply spatial/temporal functions
                                     if ~isempty(info.function);
                                         x = side.nodes;
-                                        fcn = obj.apply_func(str_func, info.function, elem, x);
+                                        str_func = obj.apply_func(str_func, info.function, elem, x);
                                     end
 
                                     % Build local vector
@@ -1068,13 +1148,22 @@ classdef System < mFEM.base.handle_hide
 
                                         % Apply spatial/temporal functions
                                         if ~isempty(info.function);
-                                            x = elem.get_position(qp{i,:});
-                                            fcn = obj.apply_func(str_func, obj.vec(idx).function, side, x);
-                                        else
-                                            fcn = str2func(str_func);
+                                            x = elem.get_position(qp{j,:});
+                                            str_func = obj.apply_func(str_func, obj.vec(idx).function, side, x);
                                         end
-
+                                        
+                                        % Apply explicit vectors
+                                        if ~isempty(info.vector);
+                                            str_func = obj.apply_explicit_vector(str_func, info.vector, side, qp(j,:));
+                                        end
+                                        
+                                        % Apply explicit vectors gradients
+                                        if ~isempty(info.gradient);
+                                            str_func = obj.apply_explicit_vector_grad(str_func, info.gradient, side, qp(j,:));
+                                        end  
+                                        
                                         % Build local vector
+                                        fcn = str2func(str_func);
                                         fe(dof) = fe(dof) + W(j)*fcn(side,qp{j,:})*side.detJ(qp{j,:});
                                     end
                                 end
@@ -1119,12 +1208,6 @@ classdef System < mFEM.base.handle_hide
                 % Extract current element 
                 elem = active_elem(e);
                 
-                % Apply explicit vectors
-                if ~isempty(info.vector);
-                    dof = elem.get_dof();
-                    str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
-                end         
-                
                 % If direct build, perform the build and return
                 % to the next loop iteration
                 if info.direct;
@@ -1147,12 +1230,21 @@ classdef System < mFEM.base.handle_hide
                         % Apply spatial/temporal functions
                         if ~isempty(info.function);
                             x = elem.get_position(qp{j,:});
-                            fcn = obj.apply_func(str_func, info.function, elem, x);
-                        else
-                            fcn = str2func(str_func);
+                            str_func = obj.apply_func(str_func, info.function, elem, x);
                         end
-
+                        
+                        % Apply explicit vectors
+                        if ~isempty(info.vector);
+                            str_func = obj.apply_explicit_vector(str_func, info.vector, elem, qp(j,:));
+                        end       
+                        
+                        % Apply explicit vectors gradients
+                        if ~isempty(info.gradient);
+                            str_func = obj.apply_explicit_vector_grad(str_func, info.gradient, elem, qp(j,:));
+                        end  
+                        
                         % Build the local vector
+                        fcn = str2func(str_func);
                         fe = fe + W(j)*fcn(elem,qp{j,:})*elem.detJ(qp{j,:});
                     end
                 end

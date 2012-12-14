@@ -470,7 +470,11 @@ classdef FEmesh < mFEM.base.handle_hide
             %   Subdomain
             %       scalar
             %       Extract the dofs for the subdomain specified, where the
-            %       scalar is the numeric tag added using ADD_SUBDOMAIN. 
+            %       scalar is the numeric tag added using ADD_SUBDOMAIN.
+            %
+            %   Contains
+            %       numeric array
+            %       Returns the element that contains the point supplied.
             
             % Cell input case
             if nargin > 0 && iscell(varargin{1});
@@ -750,6 +754,7 @@ classdef FEmesh < mFEM.base.handle_hide
             % Set the default values for the varius inputs
             options.subdomain = [];
             options.boundary = [];
+            options.contains = [];
             options = gather_user_options(options, varargin{:});
 
             % Return dofs for the specified boundary id
@@ -772,11 +777,34 @@ classdef FEmesh < mFEM.base.handle_hide
                 % Collect the dofs
                 e(:,1) = unique(obj.map.elem(logical(idx)));
                 
-            % Return all the dofs    
+            % Return the element that contains the point
+            elseif ~isempty(options.contains);
+            %TODO: A better method for locating a point should be applied
+                % Locate the nearest node
+                pnt = options.contains;
+                d = obj.map.node > repmat(pnt,length(obj.map.node),1);
+                idx = find(all(d,2),1,'first');
+                node = obj.map.node(idx,:);
+
+                % Locate the elements with this node
+                d = obj.map.node == repmat(node,length(obj.map.node),1);
+                elem = obj.map.elem(all(d,2));
+                
+                % Loop through possible elements and locate the element
+                % containing the point
+                for i = 1:length(elem);
+                    en = obj.element(elem(i)).nodes;
+                    n_en = obj.element(elem(i)).n_nodes;
+                    d = max(en - repmat(pnt,n_en,1),[],2);
+                    if min(d) < 0 && max(d) > 0;
+                       e = elem(i); 
+                    end
+                end
+                
+            % Return all the elements
             else 
                 e = 1:obj.n_elements;
             end
-            
         end
         
         function dof = get_dof_private(obj, varargin)
