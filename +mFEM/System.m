@@ -293,13 +293,19 @@ classdef System < mFEM.base.handle_hide
             %       Limits the application of the supplied equation to the 
             %       elements on the subdomain, see FEMESH.ADD_SUBDOMAIN
             %
+            %   OverWrite
+            %       true | {false}
+            %       If true the vector is overwritten if the same name is
+            %       encounter, otherwise the new vector is added to any
+            %       existing.
+            %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
             % Gather the user options
             options.subdomain = [];
             options.boundary = [];
-            options.direct = false;
+            options.overwrite = false; 
             options = gather_user_options(options, varargin{:});
             
             % Limit the use of name
@@ -308,9 +314,16 @@ classdef System < mFEM.base.handle_hide
                 error('ERROR:ADD_VECTOR', 'The name, %s, was previously used for defining a matrix, vectors and matrices may not share names.', name);
             end
             
-            % Storage location for the vector
-            idx = length(obj.vec) + 1;
+            % Get the location of vector if overwritting is desired
+            if options.overwrite;
+                [~,idx] = obj.locate(name,'vec');
+            end
             
+            % If the index has not been defined, append to any existing
+            if isempty(idx);
+                idx = length(obj.vec) + 1;
+            end
+         
             % Append the vector to the structure
             obj.vec(idx).name = name;
             obj.vec(idx).boundary_id = options.boundary; 

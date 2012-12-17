@@ -97,15 +97,15 @@ classdef TransientLinearSolver < mFEM.base.Solver
            %        scalar
            %        Defines the time step to use. This may be changed at
            %        any point using the SET method.
-           %            theta = 0 results in forward difference integration
-           %            theta = 1/2 (default) is the Crank-Nicolson scheme
-           %            theta = 2/3 is the Galerkin method
-           %            theta = 1 is the backward difference scheme
            %
            %    theta
            %        scalar
            %        Defines numerical integration coefficient. This value
            %        must be between 0 and 1. 
+           %            theta = 0 results in forward difference integration
+           %            theta = 1/2 (default) is the Crank-Nicolson scheme
+           %            theta = 2/3 is the Galerkin method
+           %            theta = 1 is the backward difference scheme
            %
            %    AssembleStiffness
            %        true | {false}
