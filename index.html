@@ -47,13 +47,10 @@ The install functions simply adds the necessary directories to the path and adds
 </p>
 
 <h2>Demo Problem</h2>
-<p> The following code solves a simple displacement problem using 17 lines of code, with a few extra for plotting the results. This is demo was extracted from Example 7 of the mFEM source code, which contains dozens of example problems, with and without the automatic assembly functionality.
-<p> Import the mFEM code. 
-<pre><code> import mFEM.*; </pre></code>
-</p>
+<p> The following code solves a simple displacement problem using 13 lines of code, with a few extra for plotting the results. This is demo was extracted from Example 7 of the mFEM source code, which contains dozens of example problems, with and without the automatic solvers and assembly functionality.
 
 <p> Generate a rectangular, 2D grid. This grid rangs from 0 to 10 in the x-direction and -0.5 to 0.5 in the y-direction. It is discritized into 30 and 20 elements in the x- and y-direction, respectively.
-<pre><code>mesh = FEmesh('Element','Quad4','Space','vector');
+<pre><code>mesh = mFEM.FEmesh('Element','Quad4','Space','vector');
 mesh.grid(0,10,-0.5,0.5,30,20);
 mesh.init();
 </pre></code>
@@ -66,7 +63,7 @@ mesh.add_boundary(2, 'left');
 </p>
 
 <p>Add the finite element equations.
-<pre><code>sys = System(mesh);
+<pre><code>sys = mFEM.System(mesh);
 sys.add_constant('E', 1e7, 'v', 0.3, 'P', [0;100]);
 sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.add_matrix('K', 'B''*D*B');
@@ -74,17 +71,10 @@ sys.add_vector('f', 'N''*P', 'Boundary', 2);
 </pre></code>
 </p>
 
-<p>Assemble the stiffness matrix and force vector.
-<pre><code>K = sys.assemble('K');
-f = sys.assemble('f');
-</pre></code>
-</p>
-
-<p>Extract and set the prescribed values for the essential boundary conditions and solve for the non-essential unknowns. Currently the solution step is handled manually, as shown, but future development will include some basic built-in solving routines.
-<pre><code>ess = mesh.get_dof('Boundary', 1);
-u = zeros(mesh.n_dof,1);            
-u(ess) = 0;     
-u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
+<p>Assemble and solve the equations.
+<pre><code>solver = mFEM.solvers.LinearSolver(sys);
+solver.add_essential_boundary('id', 1, 'value', 0);
+u = solver.solve();
 </pre></code>
 </p>
 
