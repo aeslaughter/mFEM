@@ -93,7 +93,7 @@ classdef LinearSolver < mFEM.base.Solver
            K = obj.get_component('stiffness', 'matrix');
           
            % Extract/assemble the force vector
-           f = obj.get_component('force', 'vector');
+           f = obj.get_component('force', 'vector')
                 
            % Apply essential boundary constraings to the solution
            [u,ess] = obj.apply_constraints();

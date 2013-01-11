@@ -33,7 +33,7 @@ classdef Vector < mFEM.base.handle_hide
     end
    
     methods
-       function obj = Vector(m)
+       function obj = Vector(m,varargin)
            %Vector Class constructor
            %
            % Syntax
@@ -45,6 +45,9 @@ classdef Vector < mFEM.base.handle_hide
            %    contained in the FEMESH object.
            %
            %    Vector(m) create an m x 1 matrix.
+           %
+           %    Vector(m, c) creates an m x 1 matrix with all values
+           %    assigned to c
            %
            %    Vector(vec) create an initilized vector
 
@@ -63,6 +66,11 @@ classdef Vector < mFEM.base.handle_hide
            elseif nargin == 1;
                obj.m = length(m);
                obj.f = m;
+               
+           % Case when a constant vector is desired
+           elseif nargin == 2;
+               obj.m = m;
+               obj.f = ones(m,1)*varargin{1};
 
            % Input not understood
            else

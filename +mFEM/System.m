@@ -141,8 +141,8 @@ classdef System < mFEM.base.handle_hide
             %   valid MATLAB function handle. 
             %
             %   There are two forms that are acceptable:
-            %       FunctionHandle = @(x,t) ...
-            %       FunctionHandle = @(elem, t) ...
+            %       FunctionHandle = @(sys,x,t) ...
+            %       FunctionHandle = @(sys,elem, t) ...
             %   
             %   In the first case, x is a vector which represents the real
             %   coordinates in the mesh (computed at the Gauss
@@ -157,6 +157,10 @@ classdef System < mFEM.base.handle_hide
             %   time, this allows for the specification of function that is
             %   given the element object.
             %
+            %   In both cases, the first input is the System class to which
+            %   the function is added, this allows access to all matrices
+            %   and constants within the function.
+            %
             % Examples
             %   sys.add_function('k',@(x,t) x(1)^2 + x(2)^2);
             
@@ -169,15 +173,14 @@ classdef System < mFEM.base.handle_hide
             % Extract input variables, for tiesting the input
             str = func2str(fhandle);
             i1 = strfind(str,'(');
-            i2 = strfind(str,',');
-            i3 = strfind(str,')');
-            var1 = str(i1+1:i2-1);
-            var2 = str(i2+1:i3-1);
+            i2 = strfind(str,')');
+            var = textscan(str(i1(1)+1:i2(1)-1),'%s',3,'delimiter',',');
+            var = var{1};
             
             % Perform test
-            if strcmp(var1,'x') && strcmp(var2,'t');
+            if strcmp(var{2},'x') && strcmp(var{3},'t');
                 type = 'x';
-            elseif strcmp(var1,'elem') && strcmp(var2,'t');
+            elseif strcmp(var{2},'elem') && strcmp(var{3},'t');
                 type = 'elem';
             else
                 error('System:add_function', 'Function handle is invalid.');
@@ -332,7 +335,7 @@ classdef System < mFEM.base.handle_hide
             % Account for different types of vectors
             if isnumeric(input);
                obj.vec(idx).eqn = ''; 
-               obj.vec(idx).vector = mFEM.Vector(input);            
+               obj.vec(idx).vector = mFEM.Vector(obj.mesh.n_dof, input);            
             else
                obj.vec(idx).eqn = input; 
                obj.vec(idx).vector = mFEM.Vector.empty;
@@ -341,6 +344,7 @@ classdef System < mFEM.base.handle_hide
         end
         
         function output = point_value(obj, name, elem, x)
+            %POINT_VALUE extract the value for a vector at a point x
             
             [type,idx] = obj.locate(name);
             if ~strcmp(type,'vector');
@@ -361,6 +365,7 @@ classdef System < mFEM.base.handle_hide
         end
         
         function output = point_gradient(obj, name, elem, x)
+            %POINT_GRADIENT extract the gradient of a vector at a point x
             
             [type,idx] = obj.locate(name);
             if ~strcmp(type,'vector');
@@ -402,7 +407,7 @@ classdef System < mFEM.base.handle_hide
             % Extract the value based on the type
             switch type;
                 case 'matrix';   X = obj.mat(idx).matrix;
-                case 'vector';   X = obj.vet(idx).vector;
+                case 'vector';   X = obj.vec(idx).vector;
                 case 'constant'; X = obj.const(idx).value;
                 case 'function'; X = obj.func(idx).handle;
             end
@@ -717,9 +722,9 @@ classdef System < mFEM.base.handle_hide
             for i = 1:length(idx);
                 % Value to insert
                 if strcmp(obj.func(i).type,'x');
-                    value = feval(obj.func(i).handle, x, obj.time);
+                    value = feval(obj.func(i).handle, obj, x, obj.time);
                 else
-                    value = feval(obj.func(i).handle, elem, obj.time);
+                    value = feval(obj.func(i).handle, obj, elem, obj.time);
                 end
                 
                 % Insert the value for the current location
@@ -757,14 +762,13 @@ classdef System < mFEM.base.handle_hide
             
             % Adjust for special side case
             options.side = false;
-            options.direct = false;
             options = gather_user_options(options, varargin{:});
             
             % Apply constants
             eqn = obj.apply_constants(eqn);
             
             % Build the traditional shape function equation
-            if ~options.direct
+            if ~info.direct
             
                 %  Adjust the dimension for side case
                 if options.side;
@@ -988,7 +992,16 @@ classdef System < mFEM.base.handle_hide
                 % If direct build, perform the build and return
                 % to the next loop iteration
                 if info.direct;
+
+                    % Apply spatial/temporal functions
+                    if ~isempty(info.function);
+                        str_func = obj.apply_func(str_func, info.function, elem, []);
+                    end   
+                    
+                    % Convert to function handle
                     fcn = str2func(str_func);
+                    
+                    % Compute element matrix
                     Ke = fcn(elem);
                     
                 % Otherwise, perform quadrature    
@@ -1056,6 +1069,7 @@ classdef System < mFEM.base.handle_hide
                 % Skip explicitly defined vectors
                 if isempty(obj.vec(idx(i)).eqn);
                     warning('System:asemble_vector', 'There is nothing to assemble for the %s vector', obj.vec(idx(i)).name);
+                    f = obj.get(obj.vec(idx(i)).name).init();
                     continue;
                 end
                 
@@ -1117,14 +1131,14 @@ classdef System < mFEM.base.handle_hide
                             side = elem.build_side(s);
                             
                             % Apply explicit vectors
-                            if ~isempty(info.vectors);
+                            if ~isempty(info.vector);
                                 dof = elem.get_dof('side',s);
                                 str_func = obj.apply_explicit_vector(str_func, info.vector, dof);
                             end
                             
                             % If direct build, perform the build and return
                             % to the next loop iteration
-                            if direct;
+                            if info.direct;
                                 dof = elem.get_dof('Side',s, '-local');
                                 fcn = str2func(str_func);
                                 fe(dof) = fe(dof) + fcn(side);

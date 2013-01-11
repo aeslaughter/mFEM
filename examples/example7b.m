@@ -28,16 +28,19 @@ solver.add_essential_boundary('id',1,'value',0);
 u = solver.solve();
 
 % Display the displacement results
-subplot(2,1,1);
-mesh.plot(u,'-deform','Patch',{'EdgeColor','k'});
-title('FEM Solution');
-xlabel('x'); ylabel('y');
+%subplot(2,1,1);
+mesh.plot(u,'-deform','Patch',{'EdgeColor','k'},...
+    'Colorbar','y-disp. (m)','Component', 2);
+%title('FEM Solution');
+xlabel('x (m)'); 
+set(gca,'Ytick',[]);
+return;
 xlim([-0.1,10]);
 
 % Display the exact solution
 subplot(2,1,2);
 u_exact = exact_soln(sys);
-mesh.plot(u_exact,'-deform');
+mesh.plot(u_exact,'-deform','Colorbar','y-disp. (m)','Component',2);
 title('Exact Solution');
 xlabel('x'); ylabel('y');
 xlim([-0.1,10]);
