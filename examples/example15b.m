@@ -1,39 +1,35 @@
 % A transient heat transfer example, using System class
 %
 % Syntax:
-%   example6b
-%   example6b('PropertyName', PropertyValue)
+%   example15b
+%   example15b('PropertyName', PropertyValue)
 %
 % Description:
-%   example6b solves a simple transient heat conduction problem, with the
+%   example15b solves a simple transient heat conduction problem, with the
 %   default settings.
 %
-%   example6c('PropertyName', PropertyValue) allows the user to customize
+%   example15c('PropertyName', PropertyValue) allows the user to customize
 %   the behavior of this example using the property pairs listed below.
 %
-% Example6c Property Descriptions
+% Example15c Property Descriptions
 %
 % N
 %   scalar
-%    The number of elements in the x and y directions, the default is 32.
-%
-% Element
-%   {'Quad4'} | 'Tri3' | 'Tri6'
-%   Specifies the type of element for the mesh
+%    The number of elements in the x,y, and z directions, the default is 8.
 
-function example6b(varargin)
+function example15b(varargin)
 
 % Import the mFEM library
 import mFEM.* mFEM.solvers.*;
 
 % Set the default options and apply the user defined options
-opt.n = 16;
-opt.element = 'Quad4';
+opt.n = 8;
+opt.element = 'Hex8';
 opt = gather_user_options(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Element',opt.element);
-mesh.grid(0,1,0,1,opt.n,opt.n);
+mesh.grid(0,1,0,1,0,1,opt.n,opt.n,opt.n);
 mesh.init();
 
 % Label the boundaries
@@ -49,10 +45,11 @@ sys.add_matrix('K', 'B''*D*B');
 nodes = mesh.get_nodes();
 x = nodes(:,1);
 y = nodes(:,2);
+z = nodes(:,3);
 
 % Define exact temperature
-T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
-T = T_exact(x,y,0);
+T_exact = @(x,y,z,t) exp(-t)*sin(pi*x).*sin(pi*y).*sin(pi*z);
+T = T_exact(x,y,z,0);
 
 % Plot the initial condition
 figure; hold on;

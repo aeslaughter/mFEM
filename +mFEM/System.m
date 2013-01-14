@@ -302,6 +302,11 @@ classdef System < mFEM.base.handle_hide
             %       encounter, otherwise the new vector is added to any
             %       existing.
             %
+            %   Dof
+            %       numeric vector
+            %       Limits the application of the numeric input to specific
+            %       dofs.
+            %
             % Example
             %   sys.add_vector('f','N''*b'); % b is a constant
             
@@ -309,6 +314,7 @@ classdef System < mFEM.base.handle_hide
             options.subdomain = [];
             options.boundary = [];
             options.overwrite = false; 
+            options.dof = [];
             options = gather_user_options(options, varargin{:});
             
             % Limit the use of name
@@ -334,8 +340,13 @@ classdef System < mFEM.base.handle_hide
             
             % Account for different types of vectors
             if isnumeric(input);
-               obj.vec(idx).eqn = ''; 
-               obj.vec(idx).vector = mFEM.Vector(obj.mesh.n_dof, input);            
+               obj.vec(idx).eqn = '';                
+                if isempty(options.dof);
+                    obj.vec(idx).vector = mFEM.Vector(obj.mesh.n_dof, input); 
+                else
+                    obj.vec(idx).vector = mFEM.Vector(obj.mesh.n_dof, 0);
+                    obj.vec(idx).vector.add_vector(input,options.dof);
+                end
             else
                obj.vec(idx).eqn = input; 
                obj.vec(idx).vector = mFEM.Vector.empty;
@@ -830,7 +841,7 @@ classdef System < mFEM.base.handle_hide
                 % Create the Matrix object
                 obj.mat(idx(i)).matrix = mFEM.Matrix(obj.mesh);
 
-                % Case when the vector is only applied to a side
+                % Case when the matrix is only applied to a side
                 if ~isempty(obj.mat(idx(i)).boundary_id);
                    obj.assemble_matrix_side(idx(i));
 

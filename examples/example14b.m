@@ -10,7 +10,6 @@ opt.n = 1;
 opt.direct = false;
 opt = gather_user_options(opt,varargin{:});
 
-
 % Load the mFEM library
 import mFEM.*
 

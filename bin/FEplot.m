@@ -211,6 +211,17 @@ function opt = parse_input(obj, varargin)
         n = max(max(floor(log10(abs(opt.data)))));
         opt.scale = 10^(-sign(n)*(abs(n)-1));  
     end
+    
+    % Account for text input for component option
+    if ischar(opt.component);
+        switch lower(opt.component);
+            case 'x'; opt.component = 1;
+            case 'y'; opt.component = 2;
+            case 'z'; opt.component = 3;
+            otherwise
+                error('FEplot:parse_input','Un-reconginzed option, %s, for component option.', opt.component);
+        end
+    end
 end
 
 function h = plot1D_scalar(obj, opt)
