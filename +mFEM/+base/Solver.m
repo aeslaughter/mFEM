@@ -232,10 +232,10 @@ classdef Solver < mFEM.base.handle_hide
             if ischar(options.value) && ~isempty(obj.system);
                 obj.essential(idx+1).value = obj.system.get(options.value);
 
-            elseif isnumeric(options.value);
+            elseif isnumeric(options.value) || isa(options.value,'function_handle');
                 obj.essential(idx+1).value = options.value;
-
-            else
+                
+           else
                 error('Solver:add_essential_boundary_private', 'Error extacting value from the System');
             end
 
@@ -264,10 +264,16 @@ classdef Solver < mFEM.base.handle_hide
             end
 
             % Apply the essential boundary condions
-            dof = zeros(obj.mesh.n_dof, length(obj.essential),'uint32');
+            dof = false(obj.mesh.n_dof, length(obj.essential));
             for i = 1:length(obj.essential);
-               dof(:,i) = obj.mesh.get_dof('Boundary', obj.essential(i).id, 'Component', obj.essential(i).component);
-               u(logical(dof(:,i))) = obj.essential(i).value;
+               dof(:,i) = logical(obj.mesh.get_dof('Boundary', obj.essential(i).id, 'Component', obj.essential(i).component));
+               
+               if isa(obj.essential(i).value, 'function_handle');
+                   x = obj.mesh.get_nodes(); 
+                   u(dof(:,i)) = obj.essential(i).value(x(dof(:,i),:));
+               else
+                   u(dof(:,i)) = obj.essential(i).value;
+               end
             end
 
             % Build the essential dofs

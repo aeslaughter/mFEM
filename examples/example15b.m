@@ -16,6 +16,10 @@
 % N
 %   scalar
 %    The number of elements in the x,y, and z directions, the default is 8.
+%
+% Element
+%   {'Hex8'}
+%   Specifies the type of element for the mesh
 
 function example15b(varargin)
 
@@ -52,7 +56,7 @@ T_exact = @(x,y,z,t) exp(-t)*sin(pi*x).*sin(pi*y).*sin(pi*z);
 T = T_exact(x,y,z,0);
 
 % Plot the initial condition
-figure; hold on;
+%figure; hold on;
 mesh.plot(T,'colorbar','Temperature');
 title('t = 0');
 xlabel('x');
@@ -60,7 +64,7 @@ ylabel('y');
 
 % Create and initilize the transient solver
 dt = 0.1;
-solver = TransientLinearSolver(sys, 'dt', dt, 'force', 0);
+solver = TransientLinearSolver(sys, 'dt', 0.1, 'force', 0);
 solver.add_essential_boundary('id', 1, 'value',0);
 solver.init(T);
 
