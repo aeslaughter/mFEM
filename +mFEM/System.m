@@ -39,6 +39,8 @@ classdef System < mFEM.base.handle_hide
     
     properties(Access = public);
         time = 0;                   % system time, used in functions
+        
+        kernels = {};% = mFEM.base.Kernel.empty();
     end
     
     properties (SetAccess = private, GetAccess = public)
@@ -50,6 +52,8 @@ classdef System < mFEM.base.handle_hide
     properties(Access = private)
         reserved = ... % reserved variables, not available for constants
             {'N','B','L','x','t','xi','eta','zeta','elem','Ke','fe','grad'};
+        
+        
         
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
@@ -124,7 +128,7 @@ classdef System < mFEM.base.handle_hide
             
             % Loop through each name and store in the const property
             for i = 1:2:n;
-                obj.add_const(varargin{i}, varargin{i+1});
+                obj.kernels{end+1} = mFEM.kernels.ConstantKernel(obj, varargin{i}, varargin{i+1});
             end
         end
         
@@ -236,26 +240,29 @@ classdef System < mFEM.base.handle_hide
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
             
-            % Gather the user options
-            options.subdomain = [];
-            options.boundary = [];
-            options = gather_user_options(options, varargin{:});
-    
-            % Limit the use of name
-            [type, x] = obj.locate(name, {'vec','const','func'}); 
-            if ~isempty(x);
-                error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
-            end
             
-            % Storate location in matrix array
-            idx = length(obj.mat) + 1;
-            
-            % Add to the matrix structure
-            obj.mat(idx).name = name;
-            obj.mat(idx).eqn = eqn;
-            obj.mat(idx).matrix = mFEM.Matrix.empty;
-            obj.mat(idx).boundary_id = options.boundary; 
-            obj.mat(idx).subdomain = options.subdomain;
+%             % Gather the user options
+%             options.subdomain = [];
+%             options.boundary = [];
+%             options = gather_user_options(options, varargin{:});
+
+            obj.kernels{end+1} = mFEM.kernels.MatrixKernel(obj, name, eqn);
+
+%             % Limit the use of name
+%             [type, x] = obj.locate(name, {'vec','const','func'}); 
+%             if ~isempty(x);
+%                 error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
+%             end
+%             
+%             % Storate location in matrix array
+%             idx = length(obj.mat) + 1;
+%             
+%             % Add to the matrix structure
+%             obj.mat(idx).name = name;
+%             obj.mat(idx).eqn = eqn;
+%             obj.mat(idx).matrix = mFEM.Matrix.empty;
+%             obj.mat(idx).boundary_id = options.boundary; 
+%             obj.mat(idx).subdomain = options.subdomain;
         end
 
         function add_vector(obj, name, input, varargin)  
@@ -607,65 +614,28 @@ classdef System < mFEM.base.handle_hide
             end
         end
         
-        function add_const(obj, name, value)
-            %ADD_CONST Adds a single constant to the system
-            %
-            % Syntax
-            %   add_const(name,value)
-            %
-            % Description
-            %   add_const(name,value) adds a single constant to the System, 
-            %   see ADD_CONSTANT for details.
-            
-            % Test that the constant is not reserved
-            if any(strcmp(name,obj.reserved));
-                error('System:add_const', 'The constant %s is a reserved string, select a different name.', name);
-            end
-                        
-            % Overwrite existing constant
-            [~,idx] = obj.locate(name); 
-            if ~isempty(idx);
-                warning('SYSTEM:ADD_CONST', 'The name, %s, was previously defined, the old value has been overwritten.', name);
-            
-            % The name is unique, append it
-            else
-                idx = length(obj.const) + 1;    % location
-            end
-            
-            % Add the constant
-            obj.const(idx).name = name;     % constant name
-            
-            % If is string, insert existing constants and evaluate
-            if ischar(value);
-                value = eval(obj.apply_constants(value));
-            end
-            
-            % Assign the numeric constant
-            obj.const(idx).value = value;   % constant value
-        end
-        
-        function eqn = apply_constants(obj, eqn)
-            %APPLY_CONSTANTS applies constants to a string equation
-            %
-            % Syntax
-            %   eqn = apply_constant(eqn)
-            %
-            % Description
-            %   eqn = apply_constant(eqn) given the eqn string (see 
-            %   ADD_MATRIX and ADD_VECTOR) and applies any constants that
-            %   were given via ADD_CONSTANT.
-                        
-            % Loop through each constant and add if present
-            for i = 1:length(obj.const);
-
-                % Current constant name and value
-                str = obj.const(i).name;    
-                val = mat2str(obj.const(i).value);  
-
-                % Insert the value                
-                eqn = obj.insert_string(eqn, str, val);
-            end
-        end
+%         function eqn = apply_constants(obj, eqn)
+%             %APPLY_CONSTANTS applies constants to a string equation
+%             %
+%             % Syntax
+%             %   eqn = apply_constant(eqn)
+%             %
+%             % Description
+%             %   eqn = apply_constant(eqn) given the eqn string (see 
+%             %   ADD_MATRIX and ADD_VECTOR) and applies any constants that
+%             %   were given via ADD_CONSTANT.
+%                         
+%             % Loop through each constant and add if present
+%             for i = 1:length(obj.const);
+% 
+%                 % Current constant name and value
+%                 str = obj.const(i).name;    
+%                 val = mat2str(obj.const(i).value);  
+% 
+%                 % Insert the value                
+%                 eqn = obj.insert_string(eqn, str, val);
+%             end
+%         end
         
         function eqn = apply_explicit_vector(obj, eqn, idx, elem, x)
             %APPLY_EXPLICIT_VECTOR Inserts the vector into the equation
