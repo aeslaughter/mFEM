@@ -6,18 +6,15 @@ classdef ConstantKernel < mFEM.base.Kernel;
 
         
     methods 
-        function obj = ConstantKernel(system, name, input)
-            obj = obj@mFEM.base.Kernel(system, name, input);
+        function obj = ConstantKernel(name, input)
+            obj = obj@mFEM.base.Kernel(name, input);
+            if isnumeric(obj.input);
+                obj.input = num2str(obj.input);
+            end
         end
         
-        function output = init(obj)
-            
-            if isnumeric(obj.input);
-                output = num2str(obj.input);
-                return;
-            end
-            
-            output = init@mFEM.base.Kernel(obj);
+        function output = init(obj,kernels)
+            output = init@mFEM.base.Kernel(obj,kernels);
             output = num2str(eval(output));
         end
         

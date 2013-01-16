@@ -106,6 +106,8 @@ classdef System < mFEM.base.handle_hide
             end
         end
         
+
+        
         function add_constant(obj, varargin)
             %ADD_CONSTANT Adds constant(s) variables to the system.
             %
@@ -128,7 +130,20 @@ classdef System < mFEM.base.handle_hide
             
             % Loop through each name and store in the const property
             for i = 1:2:n;
-                obj.kernels{end+1} = mFEM.kernels.ConstantKernel(obj, varargin{i}, varargin{i+1});
+                
+                idx = obj.find_kernel(varargin{i});
+                
+                if ~isempty(idx) && isa(obj.kernels{idx}, 'mFEM.kernels.ConstantKernel');
+                    warning('A constant named %s already exists, the new value will replace the existing value.', varargin{i});   
+                    
+                elseif ~isempty(idx) && ~isa(obj.kernels{idx}, 'mFEM.kernels.ConstantKernel');
+                    error('System::add_constant', 'The name %s already exists and it is not an existing constant, thus a new constant using this name is not permitted.', varargin{i});
+                end
+                
+                obj.kernels{end+1} = mFEM.kernels.ConstantKernel(varargin{i}, varargin{i+1});
+
+                
+                
             end
         end
         
@@ -495,6 +510,19 @@ classdef System < mFEM.base.handle_hide
     
     methods (Hidden = true, Access = private)
         
+        function idx = find_kernel(obj, name)
+            
+            idx = [];
+            for i = 1:length(obj.kernels);
+               
+                if strcmp(name,obj.kernels{i}.name);
+                    idx = i;
+                    break;
+                end
+            end
+
+        end
+                
         function [type, idx] = locate(obj, name, varargin)
             %LOCATE Returns the type and index for the supplied name
             % 
