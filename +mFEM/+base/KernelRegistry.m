@@ -2,13 +2,15 @@ classdef KernelRegistry < handle
     properties
         reserved = ... % reserved variables, not available for constants
             {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
-        
+        options = struct(...
+            'disablewarnings', false);
+
 
     end
     
     methods
-        function obj = KernelRegistry()
-
+        function obj = KernelRegistry(varargin)
+            obj.options = gather_user_options(obj.options,varargin{:});
         end
         
         function test_name(obj,name)
@@ -20,7 +22,7 @@ classdef KernelRegistry < handle
     end
         
     methods (Static)
-        function [idx,found] = locate(name,kernels)
+        function [idx,found] = locate(name, kernels)
             
             idx = [];
             found = false;
@@ -37,10 +39,7 @@ classdef KernelRegistry < handle
             end
             
         end
-        
-        
-        
-    end
-    
+  
+    end  
 end
 

@@ -1,14 +1,16 @@
 classdef MatrixKernel < mFEM.base.Kernel;
 
-%     properties
-%        const; 
-%         
-%     end
+    properties
+       const; 
+       boundary;
+       subdomain;
+        
+    end
     
     
     methods 
-        function obj = MatrixKernel(name)
-            obj = obj@mFEM.base.Kernel(name);
+        function obj = MatrixKernel(name,varargin)
+            obj = obj@mFEM.base.Kernel(name,varargin{:});
             
             
             

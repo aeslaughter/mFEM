@@ -1,4 +1,5 @@
-classdef Registry < mFEM.base.ConstantKernelRegistry
+classdef Registry < mFEM.base.ConstantKernelRegistry ...
+                  & mFEM.base.MatrixKernelRegistry
     properties
 %         reserved = ... % reserved variables, not available for constants
 %             {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
@@ -8,30 +9,31 @@ classdef Registry < mFEM.base.ConstantKernelRegistry
     
     methods
         function obj = Registry()
-            
-            
+ 
         end
         
         
         function add_constant(obj, varargin)
+            obj.add('constant',varargin{:});
+        end
         
-            % special case
-            if length(varargin) == 3;
-                obj.add(varargin{:})
-                return;
-            end
-                   
-            % Location of last input flag
-            n = nargin - 2;
+        function add_matrix(obj, varargin)
+           % obj.add@mFEM.base.MatrixKernelRegistry(varargin{:});
             
-            % Loop through each name and store in the const property
-            for i = 1:2:n;
-                name = varargin{i};
-                value = varargin{i+1};
-                obj.add(name,value);
-            end 
         end
 
+    end
+    
+    methods %(Access = private)
+        
+        function add(obj,type,varargin)
+            switch lower(type)
+                case 'constant'
+                    obj.add@mFEM.base.ConstantKernelRegistry(varargin{:});
+            end
+    
+        end
+        
     end
     
 end

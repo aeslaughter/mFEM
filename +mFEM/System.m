@@ -38,9 +38,9 @@ classdef System < mFEM.base.handle_hide
     %----------------------------------------------------------------------
     
     properties(Access = public);
-        time = 0;                   % system time, used in functions
+        time = 0;                   
         
-        kernels = {};% = mFEM.base.Kernel.empty();
+        registry = mFEM.base.Registry;
     end
     
     properties (SetAccess = private, GetAccess = public)
@@ -60,9 +60,6 @@ classdef System < mFEM.base.handle_hide
         vec = ... % vector storage structure
             struct('name', char, 'eqn' ,char, 'vector',{},...
             'boundary_id', [],'subdomain', []);
-        
-        const = ... % constant storage structure
-            struct('name', char, 'value',[]);        
         
         func = ... % vector storage structure
             struct('name', {}, 'handle', {});
@@ -97,20 +94,19 @@ classdef System < mFEM.base.handle_hide
             % Store the mesh object
             obj.mesh = mesh;
             
-            % Check for direct build element type
-            types = {'Truss'};
-            if any(strcmpi(obj.mesh.opt.element, types));
-                obj.opt.direct = true;
-            end
+%             % Check for direct build element type
+%             types = {'Truss'};
+%             if any(strcmpi(obj.mesh.opt.element, types));
+%                 obj.opt.direct = true;
+%             end
         end
-        
-
-        
+          
         function add_constant(obj, varargin)
             %ADD_CONSTANT Adds constant(s) variables to the system.
             %
             % Syntax
             %   add_constant('ConstantName', ConstantValue, ...)
+            %   add_constant('ConstantName', ConstantValue, '-add')
             %
             % Description
             %   add_constant('ConstantName', ConstantValue, ...) adds
@@ -119,33 +115,17 @@ classdef System < mFEM.base.handle_hide
             %   may be a numeric (scalar or matrix) or a string that may be
             %   evaluated using MATLAB's eval function.
             %
+            %   add_constant('ConstantName', ConstantValue, '-add') is a
+            %   special case that allows you to add the ConstantValue to an
+            %   existing constant, only one constant at a time may be
+            %   input for this case
+            %
             % Examples
             %   sys.add_constant('k',10,'r',2);
             %   sys.add_cosntant('D','k^2');
-
-            % Location of last ConstantName
-            n = nargin - 2;
+            %   sys.add_constant('D',2,'-add');
             
-            % Loop through each name and store in the const property
-            for i = 1:2:n;
-                
-                idx = obj.find_kernel(varargin{i});
-                
-                if ~isempty(idx) && isa(obj.kernels{idx}, 'mFEM.kernels.ConstantKernel');
-                    warning('A constant named %s already exists, the new value will replace the existing value.', varargin{i});   
-                    
-                elseif ~isempty(idx) && ~isa(obj.kernels{idx}, 'mFEM.kernels.ConstantKernel');
-                    error('System::add_constant', 'The name %s already exists and it is not an existing constant, thus a new constant using this name is not permitted.', varargin{i});
-                
-                else
-                    idx = length(obj.kernels) + 1;
-                end
-                
-                obj.kernels{idx} = mFEM.kernels.ConstantKernel(varargin{i}, varargin{i+1});
-
-                
-                
-            end
+            obj.registry.add_constant(varargin{:});
         end
         
         function add_function(obj, name, fhandle)
@@ -255,30 +235,27 @@ classdef System < mFEM.base.handle_hide
             % Examples
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
-            
-            
-%             % Gather the user options
-%             options.subdomain = [];
-%             options.boundary = [];
-%             options = gather_user_options(options, varargin{:});
+  
+            % Gather the user options
+            options.subdomain = [];
+            options.boundary = [];
+            options = gather_user_options(options, varargin{:});
 
-            obj.kernels{end+1} = mFEM.kernels.MatrixKernel(obj, name, eqn);
-
-%             % Limit the use of name
-%             [type, x] = obj.locate(name, {'vec','const','func'}); 
-%             if ~isempty(x);
-%                 error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
-%             end
-%             
-%             % Storate location in matrix array
-%             idx = length(obj.mat) + 1;
-%             
-%             % Add to the matrix structure
-%             obj.mat(idx).name = name;
-%             obj.mat(idx).eqn = eqn;
-%             obj.mat(idx).matrix = mFEM.Matrix.empty;
-%             obj.mat(idx).boundary_id = options.boundary; 
-%             obj.mat(idx).subdomain = options.subdomain;
+            % Limit the use of name
+            [type, x] = obj.locate(name, {'vec','const','func'}); 
+            if ~isempty(x);
+                error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
+            end
+            
+            % Storate location in matrix array
+            idx = length(obj.mat) + 1;
+            
+            % Add to the matrix structure
+            obj.mat(idx).name = name;
+            obj.mat(idx).eqn = eqn;
+            obj.mat(idx).matrix = mFEM.Matrix.empty;
+            obj.mat(idx).boundary_id = options.boundary; 
+            obj.mat(idx).subdomain = options.subdomain;
         end
 
         function add_vector(obj, name, input, varargin)  

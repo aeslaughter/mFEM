@@ -60,12 +60,8 @@ classdef Tri3 < mFEM.base.Element
     methods (Access = protected)    
         
         function J = jacobian(obj, varargin)
-            % Define the Jacobain (see Fish p. 180)
-            
-            % The Jacobian is constant, produce a warning for agruements
-%             if nargin > 1;
-%                 warning('Tri3:jacobian', 'The Jacobian for the Tri3 element is constant, thus no spatial coordinates are needed.');
-%             end
+            %JACOBIAN Define the Jacobain (see Fish p. 180)
+            %  Note, the Jacobian is a constant.
            
             % Define short-hand for difference between two points
             x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
@@ -75,15 +71,21 @@ classdef Tri3 < mFEM.base.Element
             J = [x(1,3), y(1,3); x(2,3), y(2,3)];
         end
         
-        function N = basis(~, xi1, xi2)
-            % Returns a row vector of local shape functions
+        function N = basis(~, x)
+            %BASIS Returns a row vector of local shape functions
+            
+            % Redefine inputs 
+            xi1 = x(1); xi2 = x(2);
+            
+            % Shape function vector
             N(1) = xi1;
             N(2) = xi2;
             N(3) = 1 - xi2 - xi1;
           end
 
         function B = grad_basis(obj, varargin) 
-            % Gradient of shape functions (Fish, p. 174)
+            %GRAD_BASIS Gradient of shape functions (Fish, p. 174)
+            %   Note, the gradient of N is constant.
 
             % Define short-hand for difference between two points
             x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);

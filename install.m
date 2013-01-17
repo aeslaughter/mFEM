@@ -67,3 +67,6 @@ end
 % Make the html folder available in the help browser
 builddocsearchdb([cd,filesep,'doc',filesep,'html']);
 
+% Set the mFEM root preference
+setpref('MFEM_PREF','ROOT_DIR',cd);
+

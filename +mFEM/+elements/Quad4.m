@@ -57,7 +57,7 @@ classdef Quad4 < mFEM.base.Element
     methods (Access = protected)      
         function N = basis(~, x)
             %BASIS Returns a row vector of local shape functions
-    
+
             % Define xi and eta from vector input
             xi = x(1);
             eta = x(2);
@@ -84,23 +84,15 @@ classdef Quad4 < mFEM.base.Element
         function B = grad_basis(obj, x) 
             %GRAD_BASIS Gradient of shape functions
                         
-            % Define xi and eta from vector input
-            xi = x(1);
-            eta = x(2);
-            
             % Compute the gradient of bais in x,y
-            B = inv(obj.jacobian(xi, eta)) * obj.local_grad_basis(xi, eta);
+            B = inv(obj.jacobian(x)) * obj.local_grad_basis(x);
         end
         
         function J = jacobian(obj, x)
             %JACOBIAN Returns the jacobian matrix  
                         
-            % Define xi and eta from vector input
-            xi = x(1);
-            eta = x(2);
-            
             % Compute the Jacobian
-            J = obj.local_grad_basis(xi, eta)*obj.nodes;                 
+            J = obj.local_grad_basis(x)*obj.nodes;                 
         end
     end
 end

@@ -98,13 +98,13 @@ classdef Gauss
             %   [qp,w] = rules('-cell') this is the same as above, but
             %   outputs the qp vector or matrix in a consistent manner
             %   between the two types of output discussed above. It also
-            %   outputs qp as a cell structure for dimension independant
+            %   outputs qp as a matrix for dimension independant
             %   application. For example, the above examples would both
             %   work regardless of the type if this flag is used as
             %   follows:
             %       [qp,w] = gauss_object.rules(-cell)
-            %       for i = 1:size(qp,1)
-            %           Ke = Ke + w(i)*B(qp{i,:})'*k*B(qp{i,:})*elem.detJ(qp{i,:});
+            %       for i = 1:length(qp)
+            %           Ke = Ke + w(i)*B(qp{i})'*k*B(qp{i})*elem.detJ(qp{i});
             %       end
             %   The '-cell' flag sets the 'cell' property, see the
             %   descrition below for an alternative syntax.
@@ -247,7 +247,7 @@ classdef Gauss
     end
         
     methods (Access = private)
-        function [qp, w] = cell_rules(obj, qp, w)
+        function [qp_cell, w] = cell_rules(obj, qp, w)
             %CELL_RULES Converts the qp and w vector to the a cell array
             %
             % Syntax
@@ -273,7 +273,10 @@ classdef Gauss
             
             % These types only require conversion to a cell array
             if any(strcmpi(obj.opt.type,{'line','tet','tri'}));
-            	qp = num2cell(qp);
+            	qp_cell = cell(size(qp,1),1);
+                for i = 1:size(qp,1);
+                    qp_cell{i} = qp(:,1);
+                end
             
             % The 'quad' and 'hex' must be repeated to build a complete set
             else
@@ -290,14 +293,18 @@ classdef Gauss
                 end 
 
                 % Convert matrices to a cell array
-                idx = cell2mat(out);             
-                qp = num2cell(qp(idx));
+                idx = cell2mat(out); 
+                qp = qp(idx);
+                qp_cell = cell(size(qp,1),1);
+                for i = 1:size(qp,1);
+                    qp_cell{i} = qp(i,:);
+                end
 
                 % Make sure that qp and w are a column vectors
-                if size(idx,1) == 1;
-                    idx = idx';
-                    qp = qp';
-                end
+%                 if size(idx,1) == 1;
+%                     idx = idx';
+%                     qp = qp';
+%                 end
                 
                 % Compute the product weights
                 w = prod(w(idx),2);

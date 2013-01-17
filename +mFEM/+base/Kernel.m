@@ -5,7 +5,7 @@ classdef Kernel < handle;%< matlab.mixin.Heterogeneous
     end
       
     methods 
-        function obj = Kernel(name)
+        function obj = Kernel(name,varargin)
             obj.name = name;
         end
     end
