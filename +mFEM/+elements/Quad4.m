@@ -55,27 +55,51 @@ classdef Quad4 < mFEM.base.Element
     
     % Define the inherited abstract methods (protected)
     methods (Access = protected)      
-        function N = basis(~, xi, eta)
-            % Returns a row vector of local shape functions
+        function N = basis(~, x)
+            %BASIS Returns a row vector of local shape functions
+    
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute the shape function vector
             N(1) = 1/4*(1-xi)*(1-eta);
             N(2) = 1/4*(1+xi)*(1-eta);
             N(3) = 1/4*(1+xi)*(1+eta);
             N(4) = 1/4*(1-xi)*(1+eta);
         end
         
-        function GN = local_grad_basis(~, xi, eta)
-            % Returns gradient, in xi and eta, of the shape functions
+        function GN = local_grad_basis(~, x)
+            %LOCAL_GRAD_BASIS gradient, in xi and eta, of shape functions
+            
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute gradient
             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
                       xi-1, -xi-1, 1+xi, 1-xi];
         end
         
-        function B = grad_basis(obj, xi, eta) 
-            % Gradient of shape functions
+        function B = grad_basis(obj, x) 
+            %GRAD_BASIS Gradient of shape functions
+                        
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute the gradient of bais in x,y
             B = inv(obj.jacobian(xi, eta)) * obj.local_grad_basis(xi, eta);
         end
         
-        function J = jacobian(obj, xi, eta)
-            % Returns the jacobian matrix  
+        function J = jacobian(obj, x)
+            %JACOBIAN Returns the jacobian matrix  
+                        
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute the Jacobian
             J = obj.local_grad_basis(xi, eta)*obj.nodes;                 
         end
     end

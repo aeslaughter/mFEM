@@ -12,10 +12,13 @@ sys = System(mesh);
 
 sys.add_constant('a',0.1);
 
-sys.kernels{1}.init(sys.kernels);
+% sys.kernels{1}.init(sys.kernels);
 
-sys.add_constant('a','2');
+sys.add_constant('b','2*a');
 
+sys.kernels{1}.init();
+
+sys.kernels{:}
 return;
 
 sys.add_constant('c','52');

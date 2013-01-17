@@ -51,10 +51,8 @@ classdef System < mFEM.base.handle_hide
     
     properties(Access = private)
         reserved = ... % reserved variables, not available for constants
-            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','fe','grad'};
-        
-        
-        
+            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
+
         mat = ... % matrix storage structure
             struct('name', char, 'eqn', char, 'matrix', {},  ...
             'boundary_id', [], 'subdomain', []);
@@ -138,9 +136,12 @@ classdef System < mFEM.base.handle_hide
                     
                 elseif ~isempty(idx) && ~isa(obj.kernels{idx}, 'mFEM.kernels.ConstantKernel');
                     error('System::add_constant', 'The name %s already exists and it is not an existing constant, thus a new constant using this name is not permitted.', varargin{i});
+                
+                else
+                    idx = length(obj.kernels) + 1;
                 end
                 
-                obj.kernels{end+1} = mFEM.kernels.ConstantKernel(varargin{i}, varargin{i+1});
+                obj.kernels{idx} = mFEM.kernels.ConstantKernel(varargin{i}, varargin{i+1});
 
                 
                 

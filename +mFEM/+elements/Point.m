@@ -38,7 +38,7 @@ classdef Point < mFEM.base.Element
     end
     
     methods (Access = protected)          
-        function N = basis(~)
+        function N = basis(obj,varargin)
             % Returns a row vector of local shape functions
             N = 1;
         end
