@@ -19,8 +19,6 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
 
             opt.d = 1;
             opt.function = false;
-            
-            
             opt = gather_user_options(opt,varargin{:});
             
             if isa(opt.d,'function_handle') || (opt.function && ischar(opt.d));

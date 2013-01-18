@@ -39,8 +39,6 @@ classdef KernelRegistry < handle
             
         end
         function test_name(obj,name)
-            
-            %if isempty(obj); return; end
             if any(strcmp(name,obj.reserved));
                 error('KernelRegistry:test_name', 'The name %s is reserved and may not be used for naming variables of any type.', name);
             end

@@ -14,8 +14,13 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
         
         function add(obj,name,value,varargin)
             
+            % three options
+            %   explicit Kernel input (i.e., Diffusion)
+            %   text of existing kernel in +kernels
+            %   'N..' auto input -> AutoMatrixKernel
+            
             obj.test_name(name);
-            [idx,found] = obj.locate(name,obj.constants);
+            [idx, found] = obj.locate(name,obj.constants);
 
             p = mfilename('fullpath')
 

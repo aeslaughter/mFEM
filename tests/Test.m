@@ -1,4 +1,4 @@
-classdef Test < handle
+classdef Test
     %TEST A class for testing code
     %   Detailed explanation goes here
     

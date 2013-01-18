@@ -1,7 +1,7 @@
-classdef Registry < handle 
+classdef Registry %< handle 
     properties
         constants = mFEM.registry.base.ConstantKernelRegistry();
-        functions  = mFEM.registry.base.FunctionKernelRegistry();
+        functions = mFEM.registry.base.FunctionKernelRegistry();
     end
     
     methods
@@ -9,6 +9,11 @@ classdef Registry < handle
  
         end
             
+%         function delete(obj)
+%            delete(obj.constants);
+%            delete(obj.functions);
+%         end
+        
         function add_constant(obj, varargin)
             obj.constants.add(varargin{:});
         end
