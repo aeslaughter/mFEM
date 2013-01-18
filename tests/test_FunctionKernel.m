@@ -8,23 +8,31 @@ test = Test(mfilename('fullfile'));
 out = test.func(@code_to_test);
 
 % Evaluate the results
-test.compare(out{1}, 8, 'Inline function');
-test.compare(out{2}, 24, 'Text function');
-test.compare(out{3}, 27, 'Externel, element function');
+test.compare(out(1), 8, 'Inline function');
+test.compare(out(2), 24, 'Text function');
+test.compare(out(3), 27, 'Externel, element function');
+test.compare(out(4), 170, 'Function with constant registry');
 end
 
 function out = code_to_test
     elem = mFEM.elements.Line2(1,[0;3]);
 
     kern = mFEM.kernels.base.FunctionKernel('func', @(elem,x,t) 2*x^2);
-    out{1} = kern.eval(elem,2,0);
+    out(1) = kern.eval(elem,2,0);
     
     kern = mFEM.kernels.base.FunctionKernel('func', '3*x^3');
-    out{2} = kern.eval(elem,2,0);
+    out(2) = kern.eval(elem,2,0);
     
     fcn = @(elem,x,t) elem.size()*t*x;
     kern = mFEM.kernels.base.FunctionKernel('func', fcn);
-    out{3} = kern.eval(elem,3,3);
+    out(3) = kern.eval(elem,3,3);
+    
+    % Test inclusion of constant registry
+    constReg = mFEM.registry.ConstantKernelRegistry();
+    constReg.add('a',5);
+    constReg.add('b',10);
+    kern = mFEM.kernels.base.FunctionKernel('func', 't*(x(1)+a+b)', 'constants', constReg);
+    out(4) = kern.eval(elem,2,10);
 end
 
 

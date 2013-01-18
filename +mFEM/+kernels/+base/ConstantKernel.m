@@ -1,9 +1,5 @@
 classdef ConstantKernel < mFEM.kernels.base.Kernel;
-    
-%     properties (Access = private)
-%         value;
-%     end
-    
+ 
     methods 
         function obj = ConstantKernel(name, input)
             obj = obj@mFEM.kernels.base.Kernel(name);
@@ -14,23 +10,27 @@ classdef ConstantKernel < mFEM.kernels.base.Kernel;
             end
         end        
 
-%         function merge(obj,kernel)
-%            
-%             if ~isa(kernel,class(obj));
-%                error('ConstantKernel:merge', 'Cannot merge with a class type of %s.', class(kernel));
-%             end
-%             
-%             obj.value = [obj.value,' + ', kernel.value];
-%             obj.valur = num2str(eval(obj.value));
-%             
-%         end
         
-%         function str = apply(obj,str)
-%             % Apply OBJ's value to STR
-%             if ischar(obj.value);
-%                 str = regexprep(obj.value, ['\<',obj.name,'\>'], str); 
-%             end
-%         end
+        function apply(obj,kern)
+            % Apply OBJ's value to KERN
+            expr = ['\<',obj.name,'\>'];
+            repstr = obj.value;
+            str = kern.value;
+            
+            switch class(kern); 
+                case 'mFEM.kernels.base.ConstantKernel';
+                    kern.value = regexprep(str, expr, repstr); 
+                    
+                case 'mFEM.kernels.base.FunctionKernel';
+                    if ~ischar(str);
+                        error('ConstantKernel:apply', 'The supplied function must be a character string');
+                    end
+                    kern.value = regexprep(str, expr, repstr);      
+                    
+                otherwise
+                    error('ConstantKernel:apply', 'Application of constants to the %s classes is not yet supported.', class(kern));
+            end
+        end
         
         function value = eval(obj,varargin)
             value = eval(obj.value);

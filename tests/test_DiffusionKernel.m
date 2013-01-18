@@ -17,7 +17,7 @@ end
 function out = code_to_test
 
     % Define a single element for testing
-    mesh = mFEM.FEmesh('Element','Tri3');
+    mesh = mFEM.FEmesh('Element','Tri3','time',false);
     mesh.add_element([0,0; 2,0.5; 0,1]);
     mesh.init();
 
@@ -28,7 +28,7 @@ function out = code_to_test
     
     % TEST 2
     % K from Fish (2007), p. 199 (Example 8.2)
-    mesh = mFEM.FEmesh('Element','Quad4');
+    mesh = mFEM.FEmesh('Element','Quad4','time',false);
     mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
     mesh.init();
     kern = mFEM.kernels.Diffusion(mesh,'D', 5);

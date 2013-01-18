@@ -1,29 +1,38 @@
 classdef FunctionKernel < mFEM.kernels.base.Kernel;
-%     properties(Access = public);
-%         func;
-%     end
+    properties
+        input;  % function as input
+        constReg;
+        options = struct('constants',[]);
+    end
 
     methods 
-        function obj = FunctionKernel(name, input)
+        function obj = FunctionKernel(name, input, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
+              
+            obj.options = gather_user_options(obj.options,varargin{:});
+            if isa(obj.options.constants, 'mFEM.registry.ConstantKernelRegistry');
+               obj.constReg = obj.options.constants;
+            end
             
             if ~isa(input,'function_handle') && ~ischar(input);
-                error('FunctionKernel:FunctionKernel', 'The input must be a function handle or a character string convertable to a handle, but a %s was given.',class(input));    
+                error('FunctionKernel:FunctionKernel', 'The input must be a function handle or a character string convertable to a handle, but a %s was given.', class(input));    
             end
             
-            obj.value = input;
+            obj.input = input;
             
-            if ischar(input);
-                obj.value = str2func(['@(elem,x,t) ',input]);
-            else
-                obj.value = input;
-            end
-             
-            n = nargin(obj.value);
-            if n ~= 3;
-                error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
-            end
-             
+%             if ischar(obj.func);
+%                 if ~isempty(obj.constReg)
+%                     obj.constReg.apply(obj);
+%                 end
+%                 obj.func = str2func(['@(elem,x,t) ',obj.func]);
+%             else
+%                 obj.func = input;
+%             end
+%              
+%             n = nargin(obj.func);
+%             if n ~= 3;
+%                 error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
+%             end
         end        
 
         function value = eval(obj,elem,x,varargin)
@@ -33,18 +42,22 @@ classdef FunctionKernel < mFEM.kernels.base.Kernel;
                 t = varargin{1};
             end
             
-%             if ischar(obj.func);
-%                 fcn = str2func(['@(elem,x,t) ',obj.func]);
-%             else
-%                 fcn = obj.func;
-%             end
-%              
-%             n = nargin(fcn);
-%             if n ~= 3;
-%                 error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
-%             end
-            
-            value = feval(obj.value,elem,x,t);
+            obj.value = obj.input;
+            if ischar(obj.value);
+                if ~isempty(obj.constReg)
+                    obj.constReg.apply(obj);
+                end
+                fcn = str2func(['@(elem,x,t) ',obj.value]);
+            else
+                fcn = obj.value;
+            end
+             
+            n = nargin(fcn);
+            if n ~= 3;
+                error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
+            end
+   
+            value = feval(fcn, elem, x, t);
         end
 
         

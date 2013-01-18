@@ -34,7 +34,7 @@ classdef FEmesh < handle
         subdomain = uint32([]);     % list of subdomain tags
         map = ...                   % structure of node, elem, dof, and boundary maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
-            'boundary', uint32([]),'subdomain',uint32([]));       
+            'boundary', uint32([]),'subdomain', uint32([]));       
         opt = ...                   % struct of default user options
             struct('space', 'scalar', 'type', 'CG', 'time', true,...
                 'element', 'Line2');
@@ -193,17 +193,6 @@ classdef FEmesh < handle
             obj.n_dim = obj.element(1).n_dim;
             obj.local_n_dim = obj.element(1).local_n_dim;
             obj.n_dof_node = obj.element(1).n_dof_node;
-            
-%             % Determine the no. of dofs per node
-%             if strcmpi(obj.opt.space, 'scalar');
-%                 obj.n_dof_node = 1;
-%                 
-%             elseif strcmpi(obj.opt.space, 'vector');
-%                 obj.n_dof_node = obj.n_dim;
-%                 
-%             else
-% 
-%             end
             
             % Computes the global degree-of-freedom map
             obj.compute_dof_map();
