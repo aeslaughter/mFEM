@@ -13,7 +13,7 @@ test.compare(out{1},0.25, 'Function added to registry');
 end
 
 function out = code_to_test
-    reg = mFEM.registry.base.FunctionKernelRegistry('-disableWarnings');
+    reg = mFEM.registry.base.KernelRegistry('Type','function','-disableWarnings');
 
     reg.add('f1','x(1)^2');
     

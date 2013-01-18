@@ -26,10 +26,10 @@ classdef Registry %< handle
             end
         end
         
-%         function add_matrix(obj, varargin)
-%            % obj.add@mFEM.base.MatrixKernelRegistry(varargin{:});
-%             
-%         end
+        function add_matrix(obj, varargin)
+           % obj.add@mFEM.base.MatrixKernelRegistry(varargin{:});
+            
+        end
 
     end
     

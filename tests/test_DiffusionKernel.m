@@ -17,16 +17,22 @@ end
 function out = code_to_test
 
     % Define a single element for testing
-    elem = mFEM.elements.Tri3(1,[0,0; 2,0.5; 0,1]);
+    mesh = mFEM.FEmesh('Element','Tri3');
+    mesh.add_element([0,0; 2,0.5; 0,1]);
+    mesh.init();
 
     % TEST 1
     % K(1) from Fish (2007), p. 194 (Example 8.1)
-    kern = mFEM.kernels.Diffusion('D', 5);
-    out{1} = kern.eval(elem,[0.5,0.5]);   
+    kern = mFEM.kernels.Diffusion(mesh,'D', 5);
+    out{1} = kern.eval(mesh.element(1),[0.5,0.5]);   
     
     % TEST 2
     % K from Fish (2007), p. 199 (Example 8.2)
-    elem = mFEM.elements.Quad4(1,[0,1; 0,0; 2,0.5; 2,1]);
+    mesh = mFEM.FEmesh('Element','Quad4');
+    mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
+    mesh.init();
+    kern = mFEM.kernels.Diffusion(mesh,'D', 5);
+    elem = mesh.element(1);
     [qp,W] = elem.quad.rules('-cell');
     Ke = zeros(elem.n_dof,elem.n_dof);
     for i = 1:length(qp)

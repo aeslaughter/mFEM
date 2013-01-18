@@ -8,19 +8,23 @@ test = Test(mfilename('fullfile'));
 out = test.func(@code_to_test);
 
 % Evaluate the results
-test.compare(out.kernels(1).eval(),3, 'a = 3');
-test.compare(out.kernels(2).eval(),2, 'b = 2');
-test.compare(out.kernels(3).eval(),10, 'c = 10');
-
+test.compare(out(1), 2, 'Text input');
+test.compare(out(2), 5, 'Numeric input');
+test.compare(out(3), 4, 'Function of another input');
+test.compare(out(4), 7, 'Replace existing');
 end
 
-function varargout = code_to_test
-    reg = mFEM.registry.base.ConstantKernelRegistry('-disableWarnings');
+function out = code_to_test
+    reg = mFEM.registry.base.KernelRegistry('Type','constant','-disableWarnings');
+    %reg = mFEM.registry.base.ConstantKernelRegistry();
 
-    reg.add('a','1');
-    reg.add('b', 2);
-    reg.add('a', 3);
-    reg.add('c', '2*a');
-    reg.add('c','4','-add');
-    varargout{1} = reg;
+    reg.add('a','2');
+    reg.add('b', 5);
+    reg.add('c', '2*a'); 
+    reg.add('d', 5);
+    reg.add('d', 7);
+    
+    for i = 1:length(reg.kernels);
+        out(i) = reg.kernels(i).eval();
+    end
 end

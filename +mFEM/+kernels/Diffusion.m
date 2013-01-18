@@ -12,10 +12,8 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
     end
     
     methods
-        function obj = Diffusion(varargin)
-            
-            
-            obj = obj@mFEM.kernels.base.MatrixKernel('Diffusion');
+        function obj = Diffusion(mesh, varargin)
+            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion');
 
             opt.d = 1;
             opt.function = false;

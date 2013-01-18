@@ -1,25 +1,27 @@
 classdef Kernel < handle
     properties(Access = public);
         name;
-        input;
-        %t;
+        value;
     end
       
     methods 
-        function obj = Kernel(name,input)
+        function obj = Kernel(name)
             obj.name = name;
-            obj.input = input;
-        end
-        
-%         function str = apply(obj,str)
-%             str = regexprep(str, ['\<',obj.name,'\>'], obj.value);  
-%         end
-        
+        end    
     end
     
     methods (Abstract)
         value = eval(obj,elem,qp,t);
-        %str = apply(obj,varargin);
+
     end
+    
+%     methods (Access = private)
+%         function str = apply(obj,str,varargin)
+%             % Apply OBJ's value to STR
+%             if ischar(obj.value);
+%                 str = regexprep(obj.value, ['\<',obj.name,'\>'], str); 
+%             end
+%         end
+%     end
 end
 

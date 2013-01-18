@@ -1,4 +1,4 @@
-classdef Source < mFEM.base.Kernel
+classdef Source < mFEM.kernels.base.Kernel
     %SOURCE A kernel for the diffusion equation.
     %   
     %
@@ -13,7 +13,7 @@ classdef Source < mFEM.base.Kernel
     
     methods
         function obj = Source(varargin)
-            obj = obj@mFEM.base.Kernel('Source');
+            obj = obj@mFEM.kernels.base.Kernel('Source',[]);
 
             opt.b = 1;
             opt.function = false;
@@ -21,9 +21,9 @@ classdef Source < mFEM.base.Kernel
             opt = gather_user_options(opt,varargin{:});
             
             if isa(opt.b,'function_handle') || (opt.function && ischar(opt.b));
-                obj.B = mFEM.base.FunctionKernel('b',opt.b);
+                obj.B = mFEM.kernels.base.FunctionKernel('b',opt.b);
             else
-                obj.B = mFEM.base.ConstantKernel('b',opt.b);
+                obj.B = mFEM.kernels.base.ConstantKernel('b',opt.b);
             end
         end
         
