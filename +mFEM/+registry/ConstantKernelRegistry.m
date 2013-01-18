@@ -4,7 +4,6 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
     
     properties
         kernels = mFEM.kernels.base.ConstantKernel.empty();
-        options = struct('disablewarnings', false);
     end
     
     methods %(Access = Public)
@@ -23,7 +22,21 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
                 value = varargin{i+1};
                 kern = obj.add_kernel(name, value);
             end  
-        end 
+        end
+    end
+        
+    methods (Access = protected)
+        function kern = add_kernel(obj,name,value,varargin)
+            
+            obj.test_name(name);
+            idx = obj.locate(name);
+   
+            kern = mFEM.kernels.base.ConstantKernel(name, value, varargin{:});
+
+            obj.apply(kern);
+
+            obj.kernels(idx) = kern;
+        end
     end
 end
 

@@ -1,16 +1,18 @@
-classdef MatrixKernel < mFEM.kernels.base.Kernel;
+classdef MatrixKernel < mFEM.kernels.base.Kernel ...
+                      & matlab.mixin.Heterogeneous
+    %MATRICKERNEL Abstract class for defining finite element matrices
 
     properties
-       options = struct(...
-           'boundary',[],'subdomain',[]);
        mesh;
        matrix;
+       options = struct(...
+           'boundary', [], 'subdomain', []);
     end
-    
     
     methods 
         function obj = MatrixKernel(mesh, name, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
+
             obj.options = gather_user_options(obj.options, varargin{:});
             obj.mesh = mesh;
             obj.value = mFEM.Matrix(mesh);
@@ -19,8 +21,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel;
         function K = assemble(obj)
             K = obj.value.init();
         end
-        
-        
+          
         function integrate(obj,e)
             % Initialize the stiffness matrix (K) and the force vector (f), for
             % larger systems K should be sparse.
@@ -37,8 +38,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel;
             end
             
             dof = elem.get_dof();
-            obj.matrix.add_matrix(Ke, dof);
-            
+            obj.matrix.add_matrix(Ke, dof);  
         end
         
     end

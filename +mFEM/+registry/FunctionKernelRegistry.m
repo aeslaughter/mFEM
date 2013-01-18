@@ -5,14 +5,13 @@ classdef FunctionKernelRegistry < mFEM.registry.base.KernelRegistry
     properties
         kernels = mFEM.kernels.base.FunctionKernel.empty();
         constReg;
-        options = struct(...
-            'disablewarnings', false, 'constants', []);
     end
     
     methods %(Access = Public)
         function obj = FunctionKernelRegistry(varargin)
             obj = obj@mFEM.registry.base.KernelRegistry(varargin{:});
             
+            obj.options.constants = [];  
             obj.options = gather_user_options(obj.options,varargin{:});
 
             if isa(obj.options.constants, 'mFEM.registry.ConstantKernelRegistry');
@@ -24,8 +23,13 @@ classdef FunctionKernelRegistry < mFEM.registry.base.KernelRegistry
            
             opt.constants = obj.constReg;
             opt = gather_user_options(opt,varargin{:});
-            kern = obj.add_kernel(name, input, 'constants', opt.constants);
 
+            obj.test_name(name);
+            idx = obj.locate(name);
+   
+            kern = mFEM.kernels.base.FunctionKernel(name, input, 'constants', opt.constants);
+
+            obj.kernels(idx) = kern;
 
         end
     end

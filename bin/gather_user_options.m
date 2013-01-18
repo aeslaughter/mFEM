@@ -4,6 +4,7 @@ function opt =  gather_user_options(opt,varargin)
     % Syntax
     %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
     %   opt = gather_user_options(...,-PropertyName,...);
+    %   opt = gather_user_options(...,{'-DisableGatherUserOptionsWarning'});
     %   opt = gather_user_options(opt,optUser);
     %
     % Description
@@ -48,10 +49,18 @@ function opt =  gather_user_options(opt,varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+% Gathe the options for the functin itself
+options.disablewarn = false;
+if ~isempty(varargin) && iscell(varargin{end});
+    c = varargin{end};
+    options = gather_user_options(options,c{:});
+    varargin = varargin(1:end-1);
+end
+
 % Intilize the data
     q = varargin;           % User supplied input
     k = 1;                  % Intilize the counter
-    N = nargin - 1;         % Number of property inputs
+    N = length(q);      % Number of property inputs
 
 % Convert data input as a structure to a cell array
 if length(q) == 1 && isstruct(q{1});
@@ -84,8 +93,10 @@ while k <= N
             
        % Produce a warning and move on, if the item is not recognized
        else
-            mes = ['The option, ',itm,', was not recoignized.'];
-            warning(mes);
+            if ~options.disablewarn;
+                mes = ['The option, ',itm,', was not recognized and is being ignored.'];
+                warning(mes);
+            end
             continue;
        end
        
@@ -99,8 +110,8 @@ while k <= N
         opt.(lower(itm)) = value;
 
     % Produce a warning if the property is not recongnized    
-    else 
-        mes = ['The option, ',itm,', was not recoignized.'];
+    elseif ~options.disablewarn;
+        mes = ['The option, ',itm,', was not recognized and is being ignored.'];
         warning(mes);
     end
 end

@@ -25,7 +25,7 @@ function out = code_to_test
     reg.add('d', 5);
     reg.add('d', 7);
     reg.add('e', 32, 'f', 43');
-    
+
     for i = 1:length(reg.kernels);
         out(i) = reg.kernels(i).eval();
     end

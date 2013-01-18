@@ -2,12 +2,11 @@ classdef KernelRegistry < handle
     properties
         reserved = ... % reserved variables, not available for constants
             {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
-        type;
+        options = struct('disablewarnings', false, 'allowduplicates',false);
     end
     
     properties (Abstract)
         kernels;
-        options;
     end
     
     methods (Abstract)
@@ -16,8 +15,7 @@ classdef KernelRegistry < handle
 
     methods
         function obj = KernelRegistry(varargin)
-            obj.options = gather_user_options(obj.options,varargin{:});
-            obj.type = class(obj.kernels);
+            obj.options = gather_user_options(obj.options,varargin{:},{'-disablewarn'});
         end
         
         function apply(obj, kern)
@@ -32,16 +30,19 @@ classdef KernelRegistry < handle
             end
         end
   
+        function idx = locate(obj, name)
 
-        function [idx,found] = locate(obj, name)
-            
             idx = [];
-            found = false;
             for i = 1:length(obj.kernels);
                 if strcmp(name, obj.kernels(i).name)
-                    idx = i;
-                    found = true;
-                    return;
+                    idx = [idx,i];
+                    
+                    if ~obj.options.disablewarnings && ~obj.options.allowduplicates;
+                        warning('The value %s was previously defined, the new value will replace the existing.', name);
+                    end
+                    if ~obj.options.allowduplicates;
+                        return;
+                    end
                 end
             end
             
@@ -51,24 +52,20 @@ classdef KernelRegistry < handle
         end
     end    
       
-    methods (Access = protected)
-        function kern = add_kernel(obj,name,value,varargin)
-            
-            obj.test_name(name);
-            [idx, found] = obj.locate(name);
-   
-            kern = feval(obj.type, name, value, varargin{:});
-
-            if found && ~obj.options.disablewarnings;
-                warning('The value %s was previously defined, the new value will replace the existing.', kern.name);
-            end
-
-            if isa(kern, 'mFEM.kernels.base.ConstantKernel');
-                obj.apply(kern);
-            end
-            
-            obj.kernels(idx) = kern;
-        end  
-    end
+%     methods (Access = protected)
+%         function kern = add_kernel(obj,name,value,varargin)
+%             
+%             obj.test_name(name);
+%             idx = obj.locate(name);
+%    
+%             kern = feval(obj.type, name, value, varargin{:});
+% 
+%             if isa(kern, 'mFEM.kernels.base.ConstantKernel');
+%                 obj.apply(kern);
+%             end
+%             
+%             obj.kernels(idx) = kern;
+%         end  
+%    end
 end
 
