@@ -1,4 +1,4 @@
-classdef Point < mFEM.base.Element
+classdef Point < mFEM.elements.base.Element
     %POINT A 1-node "element", for use as side element of 1D elements.
     %
     %----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-classdef Line3 < mFEM.base.Element
+classdef Line3 < mFEM.elements.base.Element
     %LINE3 A 3-node, 1D quadradtic element.
     %
     %      (-1)   (0)   (1)

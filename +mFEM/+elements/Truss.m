@@ -1,4 +1,4 @@
-classdef Truss < mFEM.base.ElementCore
+classdef Truss < mFEM.elements.base.ElementCore
     % A 2-node Truss element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)

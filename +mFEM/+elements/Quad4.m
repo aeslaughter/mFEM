@@ -1,4 +1,4 @@
-classdef Quad4 < mFEM.base.Element
+classdef Quad4 < mFEM.elements.base.Element
     %Quad4 4-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)

@@ -1,4 +1,4 @@
-classdef Gauss
+classdef Gauss < handle
     %GAUSS A class for Gauss quadrature points and weight functions.
     % Includes rectanglar and triangular quadrature rules and weight
     % functions for use in finite element calculations. An instance of this

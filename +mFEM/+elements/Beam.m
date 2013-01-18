@@ -1,4 +1,4 @@
-classdef Beam < mFEM.base.Element
+classdef Beam < mFEM.elements.base.Element
     % A 2-node Beam element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)

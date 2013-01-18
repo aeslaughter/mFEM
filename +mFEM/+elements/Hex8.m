@@ -1,4 +1,4 @@
-classdef Hex8 < mFEM.base.Element
+classdef Hex8 < mFEM.elements.base.Element
     %Hex8 8-node hexahedron element
     %
     %----------------------------------------------------------------------

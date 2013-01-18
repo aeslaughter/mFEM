@@ -1,4 +1,4 @@
-classdef LinearSolver < mFEM.base.Solver
+classdef LinearSolver < mFEM.solvers.base.Solver
     %LINEARSOLVER A basic linear solver.
     % This solver solve the basic Ku = f matrix equation, where u is the
     % unknown. See the class constructor for details regarding initlizeing

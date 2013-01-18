@@ -1,4 +1,4 @@
-classdef Tri3 < mFEM.base.Element
+classdef Tri3 < mFEM.elements.base.Element
     %Tri3 3-node triangle element
     % 
     %        xi2  

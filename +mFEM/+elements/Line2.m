@@ -1,4 +1,4 @@
-classdef Line2 < mFEM.base.Element
+classdef Line2 < mFEM.elements.base.Element
     %LINE2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)

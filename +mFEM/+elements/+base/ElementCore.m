@@ -1,4 +1,4 @@
-classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
+classdef ElementCore < handle & matlab.mixin.Heterogeneous
     %ELEMENTCORE class for defining core behavior common to all elements.
     %
     %----------------------------------------------------------------------
@@ -23,10 +23,10 @@ classdef ElementCore < mFEM.base.handle_hide & matlab.mixin.Heterogeneous
 
     % Abstract Properties (must be redefined in subclass)
     properties (Abstract = true, SetAccess = protected, GetAccess = public) 
-      n_sides;      % no. of sides
-      side_dof;     % array of local node ids for each side
-      side_type;    % defines the type of element that defines the sides
-      quad;         % Instance of Gauss quadrature class to use
+        n_sides;      % no. of sides
+        side_dof;     % array of local node ids for each side
+        side_type;    % defines the type of element that defines the sides
+        quad;         % Instance of Gauss quadrature class to use
     end
         
     % Public properties (read only)

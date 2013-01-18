@@ -1,4 +1,4 @@
-classdef TransientLinearSolver < mFEM.base.Solver
+classdef TransientLinearSolver < mFEM.solvers.base.Solver
     %TRANSIENTLINEARSOLVER A basic transient linear solver.
     % This solver solve the basic Mdu/dt + Ku = f matrix equation, 
     % where u is the unknown. See the class constructor for details 
