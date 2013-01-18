@@ -35,6 +35,7 @@ end
 addpath(cd);
 addpath(fullfile(cd,'bin'));
 addpath(fullfile(cd,'examples'));
+addpath(fullfile(cd,'tests'));
 savepath; 
 
 % Set the pusblishing options

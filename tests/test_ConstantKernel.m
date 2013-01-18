@@ -14,8 +14,8 @@ test.compare(out{2}.eval(),0.2, 'D = 0.2');
 end
 
 function c = code_to_test
-    c{1} = mFEM.base.ConstantKernel('k',0.1);
-    c{2} = mFEM.base.ConstantKernel('D','0.2');
+    c{1} = mFEM.kernels.base.ConstantKernel('k',0.1);
+    c{2} = mFEM.kernels.base.ConstantKernel('D','0.2');
 end
 
 

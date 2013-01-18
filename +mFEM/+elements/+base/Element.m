@@ -1,4 +1,4 @@
-classdef Element < mFEM.base.ElementCore
+classdef Element < mFEM.elements.base.ElementCore
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -72,7 +72,7 @@ classdef Element < mFEM.base.ElementCore
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
             %       to that value.
-            obj = obj@mFEM.base.ElementCore(id, nodes, varargin{:});
+            obj = obj@mFEM.elements.base.ElementCore(id, nodes, varargin{:});
         end
         
         function N = shape(obj, varargin)

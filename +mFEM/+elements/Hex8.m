@@ -42,7 +42,7 @@ classdef Hex8 < mFEM.elements.base.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.base.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:}); 
            
            % Set the node plotting order
            obj.node_plot_order = [1,2,3,4,8,7,6,5]; 

@@ -1,6 +1,5 @@
-classdef ConstantKernel < mFEM.base.Kernel;
+classdef ConstantKernel < mFEM.kernels.base.Kernel;
     properties(Access = public);
-       input;
        value;
 
     end
@@ -8,15 +7,14 @@ classdef ConstantKernel < mFEM.base.Kernel;
         
     methods 
         function obj = ConstantKernel(name, input)
-            obj = obj@mFEM.base.Kernel(name);
+            obj = obj@mFEM.kernels.base.Kernel(name,input);
             if isnumeric(input);
-                obj.input = num2str(input);
+                obj.value = num2str(input);
             elseif ischar(input)
-                obj.input = input;
+                obj.value = input;
             else
                 error('ConstantKernel:ConstantKernel', 'The input must be a numeric or character, but a %s was given.', class(input));    
             end
-            obj.value = obj.input;
         end        
 
         function merge(obj,kernel)
@@ -25,13 +23,14 @@ classdef ConstantKernel < mFEM.base.Kernel;
                error('ConstantKernel:merge', 'Cannot merge with a class type of %s.', class(kernel));
             end
             
-            obj.input = [obj.input, ' + ', kernel.input];
-            %obj.value = num2str(eval(obj.input));
+            obj.input = [num2str(obj.input),' + ', num2str(kernel.input)];
+            obj.value = [obj.value, ' + ', kernel.value];
+            obj.value = num2str(eval(obj.value));
             
         end
         
         function str = apply(obj,str)
-            str = regexprep(str, ['\<',obj.name,'\>'], obj.input);  
+            str = regexprep(str, ['\<',obj.name,'\>'], obj.value);  
         end
         
         function value = eval(obj,varargin)

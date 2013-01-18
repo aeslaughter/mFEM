@@ -38,8 +38,11 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
         n_dof_node = uint32(1);     % no. of dofs per node (scalar = 1)  
         nodes = [];                 % global coordinates (no. nodes, no. dim)
         node_plot_order;            % node plotting order (only needed if nodes are out of order)
+        weight;                     % Gauss quadrature weights
+        qpoints;                    % Gauss quadrature points        
         opt = ...                   % Options structure
           struct('space', 'scalar');
+      
     end
     
     % Public properties (read only; except FEmesh and Element)
@@ -120,6 +123,9 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             
             % Initialize neighbor array
             obj.neighbors = feval([class(obj),'.empty']);
+            
+            % Get the quadrature points and weights
+            [obj.weight, obj.qpoints] = obj.quad.rules('-cell');
         end
                
         function size(obj)

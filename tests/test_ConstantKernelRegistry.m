@@ -8,20 +8,19 @@ test = Test(mfilename('fullfile'));
 out = test.func(@code_to_test);
 
 % Evaluate the results
-test.compare(out.constants(1).eval(),3, 'a = 3');
-test.compare(out.constants(2).eval(),2, 'b = 2');
-test.compare(out.constants(3).eval(),10, 'c = 10');
+test.compare(out.kernels(1).eval(),3, 'a = 3');
+test.compare(out.kernels(2).eval(),2, 'b = 2');
+test.compare(out.kernels(3).eval(),10, 'c = 10');
 
 end
 
 function varargout = code_to_test
-    reg = mFEM.base.ConstantKernelRegistry('-disableWarnings');
+    reg = mFEM.registry.base.ConstantKernelRegistry('-disableWarnings');
 
     reg.add('a','1');
     reg.add('b', 2);
     reg.add('a', 3);
     reg.add('c', '2*a');
     reg.add('c','4','-add');
-    
     varargout{1} = reg;
 end

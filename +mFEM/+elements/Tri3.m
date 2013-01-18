@@ -52,7 +52,7 @@ classdef Tri3 < mFEM.elements.base.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.base.Element(id, nodes, varargin{:});
+           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:});
         end
     end
     

@@ -46,7 +46,7 @@ classdef Beam < mFEM.elements.base.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.base.Element(id, nodes, 'Space', 2); 
+           obj = obj@mFEM.elements.base.Element(id, nodes, 'Space', 2); 
         end
         
         % Define the size function

@@ -64,7 +64,7 @@ classdef Tri6 < mFEM.base.Element
            end
 
            % Call the base class constructor
-           obj = obj@mFEM.base.Element(id, nodes, varargin{:});
+           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:});
            
            % Set the node plotting order (this is only needed because the
            % nodes are not in order)

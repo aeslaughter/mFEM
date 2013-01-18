@@ -1,4 +1,4 @@
-classdef MatrixKernelRegistry < handle
+classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
     %CONSTANTKERNELREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -7,7 +7,9 @@ classdef MatrixKernelRegistry < handle
     end
     
     methods %(Access = Public)
-        function obj = MatrixKernelRegistry()
+        function obj = MatrixKernelRegistry(varargin)
+            obj = obj@mFEM.registry.base.KernelRegistry(varargin{:});
+
         end
         
         function add(obj,name,value,varargin)
@@ -19,7 +21,7 @@ classdef MatrixKernelRegistry < handle
 
             
             
-            if isa(value,'mFEM.base.MatrixKernel');
+            if isa(value,'mFEM.kernels.base.MatrixKernel');
                 obj.matrices(idx) = value;
                 
             %elseif ischar
