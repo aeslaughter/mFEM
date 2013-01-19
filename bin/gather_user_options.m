@@ -95,7 +95,7 @@ while k <= N
        else
             if ~options.disablewarn;
                 mes = ['The option, ',itm,', was not recognized and is being ignored.'];
-                warning(mes);
+                warning('gather_user_options:unknown', mes);
             end
             continue;
        end
@@ -112,6 +112,6 @@ while k <= N
     % Produce a warning if the property is not recongnized    
     elseif ~options.disablewarn;
         mes = ['The option, ',itm,', was not recognized and is being ignored.'];
-        warning(mes);
+        warning('gather_user_options:unknown', mes);
     end
 end

@@ -30,13 +30,14 @@ classdef KernelRegistry < handle
             end
         end
   
-        function idx = locate(obj, name)
+        function [idx, found] = locate(obj, name)
 
             idx = [];
+            found = false;
             for i = 1:length(obj.kernels);
                 if strcmp(name, obj.kernels(i).name)
                     idx = [idx,i];
-                    
+                    found = true;
                     if ~obj.options.disablewarnings && ~obj.options.allowduplicates;
                         warning('The value %s was previously defined, the new value will replace the existing.', name);
                     end

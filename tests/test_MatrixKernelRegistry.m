@@ -1,48 +1,29 @@
-function test_MatrixKernelRegistry
+function T = test_MatrixKernelRegistry
 %TEST_MATRIXKERNEL Tests the ConstantKernel class
 
 % Call the Test class for this file
-test = Test(mfilename('fullfile'));
+T = mFEM.Test(mfilename('fullfile'));
 
-% Run the code that is being tested
-out = test.func(@code_to_test);
+% Create a mesh (single Tri3 element);
+mesh = mFEM.FEmesh('Element','Tri3','time',false);
+mesh.add_element([0,0; 2,0.5; 0,1]);
+mesh.init();
 
-% Evaluate the results
-% test.compare(out{1}, 8, 'Inline function');
-% test.compare(out{2}, 24, 'Text function');
-% test.compare(out{3}, 27, 'Externel, element function');
-end
+% Create two Diffusion kernels (each 1/2 of what a single should be) for
+% computing K(1) from Fish (2007), p. 194 (Example 8.1)
+kern1 = mFEM.kernels.Diffusion(mesh,'D', 2.5);
+kern2 = mFEM.kernels.Diffusion(mesh,'D', 2.5);
 
-function out = code_to_test
-    % Define a single element for testing
-    mesh = mFEM.FEmesh('Element','Tri3','time',false);
-    mesh.add_element([0,0; 2,0.5; 0,1]);
-    mesh.init();
+% Create a Kernel Registry and add the two kernels
+reg = mFEM.registry.MatrixKernelRegistry(mesh);
+reg.add('K', kern1);
+reg.add('K', kern2);
 
-    % TEST 1
-    % K(1) from Fish (2007), p. 194 (Example 8.1)
-    kern1 = mFEM.kernels.Diffusion(mesh,'D', 5);
-    kern2 = mFEM.kernels.Diffusion(mesh,'D', 5);
-    kern3 = mFEM.kernels.Diffusion(mesh,'D', 5);
-    
-    reg = mFEM.registry.MatrixKernelRegistry(mesh);
-    reg.add('K', kern1);
-    reg.add('K2', kern2);
-    reg.add('K', kern3);
-    
-    reg.locate('K')
-    
-    
-    out(1) = 0;
-%     out{1} = kern.eval(elem,2,0);
-%     
-%     kern = mFEM.kernels.base.FunctionKernel('func', '3*x^3');
-%     out{2} = kern.eval(elem,2,0);
-%     
-%     fcn = @(elem,x,t) elem.size()*t*x;
-%     kern = mFEM.kernels.base.FunctionKernel('func', fcn);
-%     out{3} = kern.eval(elem,3,3);
-end
+% Assemble the 'K' matrix and test that it is correct
+Kexact = [5.3125,-0.625,-4.6875; -0.625, 1.25, -0.625; -4.6875, -0.625, 5.3125];
+Kcalc = reg.assemble('K');
+T.compare(Kexact, Kcalc, 'B''*D*B on Tri3, Fish, 2007, p. 194');
 
-
-
+% Test the handle and associated matrix are identical for the two kernels
+T.compare(kern1.get(),kern2.get(), 'Matrix numbers are identical');
+T.compare(kern1.matrix, kern2.matrix, 'Matrix handles are identical');

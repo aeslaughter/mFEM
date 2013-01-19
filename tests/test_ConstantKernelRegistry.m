@@ -1,32 +1,26 @@
-function test_ConstantKernelRegistry
+function T = test_ConstantKernelRegistry
 %TEST_CONSTANTKERNELREGISTRY Tests the ConstantKernelRegistry class
 
 % Call the Test class for this file
-test = Test(mfilename('fullfile'));
+T = mFEM.Test(mfilename('fullfile'));
 
-% Run the code that is being tested
-out = test.func(@code_to_test);
+% Create a registry
+reg = mFEM.registry.ConstantKernelRegistry('-disableWarnings');
 
-% Evaluate the results
-test.compare(out(1), 2, 'Text input');
-test.compare(out(2), 5, 'Numeric input');
-test.compare(out(3), 4, 'Function of another constant');
-test.compare(out(4), 7, 'Replace existing');
-test.compare(out(5), 32, 'Multiple inputs (1)');
-test.compare(out(6), 32, 'Multiple inputs (2)');
-end
+reg.add('a','2');
+T.compare(reg.kernels(1).eval(), 2, 'Adding kernel, text input');
 
-function out = code_to_test
-    reg = mFEM.registry.ConstantKernelRegistry('-disableWarnings');
+reg.add('b', 5);
+T.compare(reg.kernels(2).eval(), 2, 'Adding kernel, numeric input');
 
-    reg.add('a','2');
-    reg.add('b', 5);
-    reg.add('c', '2*a'); 
-    reg.add('d', 5);
-    reg.add('d', 7);
-    reg.add('e', 32, 'f', 43');
+reg.add('c', '2*a'); 
+T.compare(reg.kernels(3).eval(), 2, 'Adding kernel, function of another constant');
 
-    for i = 1:length(reg.kernels);
-        out(i) = reg.kernels(i).eval();
-    end
+reg.add('b', 10);
+T.compare(reg.kernels(2).eval(), 10, 'Adding kernel, replace existint value');
+
+reg.add('d', 32, 'e', 43');
+T.compare(reg.kernels(4).eval(), 10, 'Adding kernel, first input of multiple inputs');
+T.compare(reg.kernels(5).eval(), 10, 'Adding kernel, second input of multiple inputs');
+
 end

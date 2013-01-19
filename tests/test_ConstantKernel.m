@@ -1,22 +1,19 @@
-function test_ConstantKernel
+function T = test_ConstantKernel
 %TEST_CONSTANTKERNEL Tests the ConstantKernel class
 
 % Call the Test class for this file
-test = Test(mfilename('fullfile'));
+T = mFEM.Test(mfilename('fullfile'));
 
 % Run the code that is being tested
-out = test.func(@code_to_test);
+kern1 = mFEM.kernels.base.ConstantKernel('k', 0.1);
+T.compare(kern1.eval(),0.1, 'Constant creation, numeric input');
 
 % Evaluate the results
-test.compare(out{1}.eval(),0.1, 'k = 0.1');
-test.compare(out{2}.eval(),0.2, 'D = 0.2');
+kern2 = mFEM.kernels.base.ConstantKernel('D','0.2');
+T.compare(kern2.eval(),0.2, 'Constant creation, text input');
 
 end
 
-function c = code_to_test
-    c{1} = mFEM.kernels.base.ConstantKernel('k',0.1);
-    c{2} = mFEM.kernels.base.ConstantKernel('D','0.2');
-end
 
 
 

@@ -13,7 +13,7 @@ classdef Source < mFEM.kernels.base.Kernel
     
     methods
         function obj = Source(varargin)
-            obj = obj@mFEM.kernels.base.Kernel('Source',[]);
+            obj = obj@mFEM.kernels.base.Kernel('Source');
 
             opt.b = 1;
             opt.function = false;
