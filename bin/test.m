@@ -1,5 +1,39 @@
-function test(varargin)
-%RUN_TESTS
+function err = test(varargin)
+%TEST
+
+% User options
+opt.tests = {};
+opt.throw = false;
+opt = gather_user_options(opt,varargin{:});
+
+% Build a list of test functions to run
+func = getTestFunctions(opt.tests{:});
+
+% Perform tests
+T = mFEM.Test();
+err = struct([]);
+for i = 1:length(func);
+    try
+        t = feval(func{i});
+        T.compare(all(t.results),true,t.name,'-main');
+        disp(' ');
+        
+    catch e
+        if isempty(err);
+            err = e;
+        else
+            err(end+1) = e;
+        end
+        msg = [func{i},'.m failed to execute, see error structure ', num2str(length(err))];
+        T.compare(false,true,msg,'-main');
+        disp(' ');
+        if opt.throw;
+            rethrow(e);
+       end
+    end
+end
+
+function func = getTestFunctions(varargin)
 
 % Extract all the available tests
 loc = fullfile(getpref('MFEM_PREF','ROOT_DIR'),'tests','test_*.m');
@@ -26,11 +60,3 @@ else
     end
 end
 
-func
-% Perform tests
-T = mFEM.Test();
-for i = 1:length(func);
-    t = feval(func{i});
-    T.compare(all(t.results),true,t.name,'-main');
-    disp(' ');
-end
