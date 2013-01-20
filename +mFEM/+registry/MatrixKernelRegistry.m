@@ -43,7 +43,9 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
         end
         
         function K = assemble(obj,name,varargin)
-            
+                opt.zero = false;
+                opt = gather_user_options(opt, varargin{:});   
+                
            idx = obj.locate(name);
            
             for i = 1:length(idx);
@@ -51,6 +53,9 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
             end
            
            K = obj.kernels(idx(1)).matrix.init(); 
+            if opt.zero;
+                obj.kernels(idx(1)).matrix.zero();
+            end           
            
         end
         

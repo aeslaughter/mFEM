@@ -1,6 +1,6 @@
 classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                       & matlab.mixin.Heterogeneous
-    %MATRICKERNEL Abstract class for defining finite element matrices
+    %MATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
        mesh;
@@ -26,6 +26,10 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
         end
         
         function varargout = assemble(obj, varargin)
+                
+                opt.zero = false;
+                opt = gather_user_options(opt, varargin{:});
+                
 
                for e = 1:obj.mesh.n_elements;
 
@@ -43,8 +47,10 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
 
                if nargout == 1;
                     varargout{1} = obj.matrix.init(); 
+                    if opt.zero;
+                        obj.matrix.zero();
+                    end
                end
-
         end       
     end
 

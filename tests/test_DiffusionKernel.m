@@ -23,8 +23,10 @@ mesh.init();
 % K from Fish (2007), p. 199 (Example 8.2)
 kern = mFEM.kernels.Diffusion(mesh,'D', 5);
 Kexact = [4.75961538461539 -3.50961538461538 -2.98076923076923 1.73076923076923;-3.50961538461538 4.13461538461539 1.73076923076923 -2.35576923076923;-2.98076923076923 1.73076923076923 6.53846153846154 -5.28846153846154;1.73076923076923 -2.35576923076923 -5.28846153846154 5.91346153846154]; 
-Kcalc = kern.assemble();
+Kcalc = kern.assemble('-zero');
 T.compare(Kexact, Kcalc, 'B''*D*B on Quad4, Fish, 2007, p. 199', 'Tol', 10^-15);
 
-
+% Test that the matrix was cleared
+Kcalc = kern.assemble();
+T.compare(Kexact, Kcalc, 'Matrix properly cleared', 'Tol', 10^-15);
 
