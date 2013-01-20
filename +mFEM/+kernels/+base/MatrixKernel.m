@@ -5,7 +5,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     properties
        mesh;
        options = struct(...
-           'boundary', [], 'subdomain', [],'type', 'matrix');
+           'boundary', [], 'subdomain', [], 'type', 'matrix');
     end
     
     properties (SetAccess = {?mFEM.registry.MatrixKernelRegistry})
@@ -37,28 +37,22 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
         function varargout = assemble(obj, varargin)
                 
                 opt.zero = false;
+                opt.boundary = [];
+                opt.subdomain = [];
+                opt.component = [];
                 opt = gather_user_options(opt, varargin{:});
                 
-
+                elem = obj.mesh.get_elements(varargin{:});
                 
-                
-                
-               for e = 1:obj.mesh.n_elements;
-
-                    elem = obj.mesh.element(e);
-                    
-                    if strcmpi(obj.options.type,'matrix');
-                          Ke = zeros(elem.n_dof);
+               for i = 1:length(elem);
+               
+                    if isempty(opt.boundary);
+                        Ke = obj.integrate(elem(i));
                     else
-                          Ke = zeros(elem.n_dof,1);         
+                        Ke = obj.integrate_side(elem(i), opt.boundary);
                     end
 
-                    % Loop over the quadrature points
-                    for i = 1:length(elem.qp);
-                        Ke = Ke + elem.W(i)*obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
-                    end
-
-                    dof = elem.get_dof();
+                    dof = elem(i).get_dof();
                     obj.matrix.add(Ke, dof); 
                end
 
@@ -68,7 +62,54 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                         obj.matrix.zero();
                     end
                end
-        end       
+        end   
+        
+    end
+    
+    methods (Access = protected)
+        function Ke = integrate(obj, elem)
+              
+            if strcmpi(obj.options.type,'matrix');
+                  Ke = zeros(elem.n_dof);
+            else
+                  Ke = zeros(elem.n_dof,1);         
+            end
+
+            % Loop over the quadrature points
+            for i = 1:length(elem.qp);
+                Ke = Ke + elem.W(i)*obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
+            end
+        end
+        
+        function Ke = integrate_side(obj, elem, id)
+        
+            if strcmpi(obj.options.type,'matrix');
+                  Ke = zeros(elem.n_dof);
+            else
+                  Ke = zeros(elem.n_dof,1);         
+            end
+            
+            if elem.local_n_dim == 1;
+                for s = 1:elem.n_sides; 
+                    if any(elem.side(s).boundary_id == id);
+                        side = elem.build_side(s);
+                        dof = elem.get_dof('Side', s, '-local');
+                        Ke(dof) = Ke(dof) + obj.eval(side,[]);  
+                        delete(side);
+                    end
+                end     
+            else
+                error('2D side not working yet');
+            end
+            
+            
+            
+            
+        end
+        
+        
+        
+        
     end
 
 end

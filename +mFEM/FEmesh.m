@@ -466,7 +466,7 @@ classdef FEmesh < handle
             %       Returns the element that contains the point supplied.
             
             % Cell input case
-            if nargin > 0 && iscell(varargin{1});
+            if nargin > 1 && iscell(varargin{1});
                 
                 % Initilize the dof output
                 idx = false(obj.n_elements, length(varargin));
