@@ -5,7 +5,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     properties
        mesh;
        options = struct(...
-           'boundary', [], 'subdomain', []);
+           'boundary', [], 'subdomain', [],'type', 'matrix');
     end
     
     properties (SetAccess = {?mFEM.registry.MatrixKernelRegistry})
@@ -18,7 +18,16 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
 
             obj.options = gather_user_options(obj.options, varargin{:});
             obj.mesh = mesh;
-            obj.matrix = mFEM.Matrix(mesh);
+            
+            if any(strcmpi(obj.options.type,{'matrix','mat','m'}));
+                obj.matrix = mFEM.Matrix(mesh);
+                obj.options.type = 'matrix';
+            elseif any(strcmpi(obj.options.type,{'vector','vec','v'}));
+                obj.matrix = mFEM.Vector(mesh);
+                obj.options.type = 'vector';
+            else
+                error('MatrixKernel:MatrixKernel', 'Unknown type %s.', obj.options.type);
+            end
         end
 
         function K = get(obj)
@@ -31,10 +40,18 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                 opt = gather_user_options(opt, varargin{:});
                 
 
+                
+                
+                
                for e = 1:obj.mesh.n_elements;
 
                     elem = obj.mesh.element(e);
-                    Ke = zeros(elem.n_dof);
+                    
+                    if strcmpi(obj.options.type,'matrix');
+                          Ke = zeros(elem.n_dof);
+                    else
+                          Ke = zeros(elem.n_dof,1);         
+                    end
 
                     % Loop over the quadrature points
                     for i = 1:length(elem.qp);
@@ -42,7 +59,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                     end
 
                     dof = elem.get_dof();
-                    obj.matrix.add_matrix(Ke, dof); 
+                    obj.matrix.add(Ke, dof); 
                end
 
                if nargout == 1;

@@ -117,20 +117,20 @@ classdef Matrix < handle
            end
        end
        
-       function add_matrix(obj, B, varargin)
-            %ADD_MATRIX Adds a dense sub-matrix to the global matrix
+       function add(obj, B, varargin)
+            %ADD Adds a dense sub-matrix to the global matrix
             %
             % Syntax
-            %    add_matrix(B, dof)
-            %    add_matrix(B, dof1, dof2)
+            %    add(B, dof)
+            %    add(B, dof1, dof2)
             %
             % Description
-            %    add_matrix(B, dof) adds the dense matrix B to the locations
+            %    add(B, dof) adds the dense matrix B to the locations
             %    specified in dof, this is equivelent to the following:
             %        M(dof,dof) = M(dof,dof) + B,
             %    where M is the global sparse matrix.
             %
-            %    add_matrix(B, dof1, dof2) adds the dense matrix B to the 
+            %    add(B, dof1, dof2) adds the dense matrix B to the 
             %    locations specified in dof1 and dof2, this is equivelent to 
             %    the following:
             %        M(dof1,dof2) = M(dof1,dof2) + B,

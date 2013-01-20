@@ -91,14 +91,14 @@ classdef Vector < handle
            varargout{1} = obj.m;
        end
        
-       function add_vector(obj, fe, dof)
-            %ADD_VECTOR Adds a sub-vector to the global vector
+       function add(obj, fe, dof)
+            %ADD Adds a sub-vector to the global vector
             %
             % Syntax
-            %    add_matrix(fe, dof)
+            %    add(fe, dof)
             %
             % Description
-            %    add_matrix(fe, dof) adds the local vector fe to the 
+            %    add(fe, dof) adds the local vector fe to the 
             %    locations specified in dof, this is equivelent to the 
             %    following:
             %        f(dof) = f(dof) + fe,

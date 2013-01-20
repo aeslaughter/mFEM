@@ -13,7 +13,7 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
     
     methods
         function obj = Diffusion(mesh, varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion');
+            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion','Type','Matrix');
 
             opt.d = 1;
             opt.function = false;
