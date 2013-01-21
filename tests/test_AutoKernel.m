@@ -1,5 +1,5 @@
 function T = test_AutoKernel
-%TEST_MATRIXKERNEL Tests the ConstantKernel class
+%TEST_AUTOKERNEL Tests the ConstantKernel class
 
 % Call the Test class for this file
 T = mFEM.Test(mfilename('fullfile'));

@@ -33,7 +33,7 @@ classdef FunctionKernelRegistry < mFEM.registry.base.KernelRegistry
             opt = gather_user_options(opt,varargin{:});
 
             obj.test_name(name);
-            idx = obj.locate(name);
+            idx = obj.locate(name,'-index');
    
             kern = mFEM.kernels.base.FunctionKernel(name, input, 'constants', opt.constants);
 

@@ -31,8 +31,13 @@ classdef KernelRegistry < handle
             end
         end
   
-        function [idx, found] = locate(obj, name)
+        function [idx, found] = locate(obj, name, varargin)
 
+            opt = obj.options;
+            opt.index = false;
+            opt = gather_user_options(opt, varargin{:});
+            
+            
             idx = [];
             found = false;
             for i = 1:length(obj.kernels);
@@ -48,7 +53,12 @@ classdef KernelRegistry < handle
                 end
             end
             
-            if isempty(idx);
+            if ~opt.index;
+                if ~isempty(idx);
+                    idx = obj.kernels(idx);
+                end
+                
+            elseif isempty(idx);
                 idx = length(obj.kernels) + 1;
             end
         end

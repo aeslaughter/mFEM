@@ -11,7 +11,7 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
    
     methods 
         function obj = AutoKernel(mesh, name, eqn, varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, name);
+            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, name, varargin{:});
             obj.mesh = mesh;
             obj.value = eqn;
             

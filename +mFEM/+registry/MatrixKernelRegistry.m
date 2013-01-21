@@ -13,7 +13,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
             obj.mesh = mesh;
         end 
         
-        function varargout = apply(obj, varargin)
+        function apply(~, varargin)
            error('Not implmented'); 
         end
         
@@ -24,7 +24,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
             kern = input;
             kern.name = name;          
             
-            [idx, found] = obj.locate(name);
+            [idx, found] = obj.locate(name,'-index');
 
             if found;
                 if any(obj.kernels(idx) == kern);
@@ -45,18 +45,22 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
         end
         
         function K = assemble(obj,name,varargin)
-                opt.zero = false;
-                opt = gather_user_options(opt, varargin{:});   
+            
+            opt.zero = false;
+            opt.boundary = [];
+            opt.subdomain = [];
+            opt.component = [];
+            opt = gather_user_options(opt, varargin{:});   
                 
-           idx = obj.locate(name);
+            kern = obj.locate(name);
            
-            for i = 1:length(idx);
-                obj.kernels(idx(i)).assemble();
+            for i = 1:length(kern);
+                kern(i).assemble();
             end
            
-           K = obj.kernels(idx(1)).matrix.init(); 
+            K = kern(1).matrix.init(); 
             if opt.zero;
-                obj.kernels(idx(1)).matrix.zero();
+                kern(1).matrix.zero();
             end           
            
         end

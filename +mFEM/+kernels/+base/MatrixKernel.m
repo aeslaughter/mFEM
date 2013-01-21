@@ -4,7 +4,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
 
     properties
        options = struct(...
-           'boundary', [], 'subdomain', [], 'type', 'matrix');
+           'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
     end
     
     properties (SetAccess = {?mFEM.registry.MatrixKernelRegistry})
@@ -41,17 +41,14 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
             K = obj.matrix.init();
         end
         
-        function varargout = apply(varargin)
-            error('Not implemented');
-        end
+
         
         function varargout = assemble(obj, varargin)
                 
                 opt.zero = false;
-                opt.boundary = [];
-                opt.subdomain = [];
-                opt.component = [];
-                %opt.direct = obj.direct;
+                opt.boundary = obj.options.boundary;
+                opt.subdomain = obj.options.subdomain;
+                opt.component = obj.options.component;
                 opt = gather_user_options(opt, varargin{:});
 
                 elem = obj.mesh.get_elements(varargin{:});
@@ -99,7 +96,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
             end
         end
         
-        function Ke = integrateSide(obj, elem, id)
+        function Ke = evaluateSide(obj, elem, id)
         
             if strcmpi(obj.options.type,'matrix');
                   Ke = zeros(elem.n_dof);

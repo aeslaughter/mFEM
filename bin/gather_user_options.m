@@ -52,6 +52,10 @@ function [opt, unknowns] =  gather_user_options(opt,varargin)
 
 % Gathe the options for the functin itself
 options.disablewarn = false;
+if nargout == 2;
+    options.disablewarn = true;
+end
+
 if ~isempty(varargin) && iscell(varargin{end});
     c = varargin{end};
     options = gather_user_options(options,c{:});
@@ -116,11 +120,13 @@ while k <= N
         opt.(lower(itm)) = value;
 
     % Produce a warning if the property is not recongnized    
-    elseif ~options.disablewarn;
+    else
         unknowns{u} = itm; 
         unknowns{u+1} = value;
         u = u + 2;
-        mes = ['The option, ',itm,', was not recognized and is being ignored.'];
-        warning('gather_user_options:unknown', mes);
+        if ~options.disablewarn;
+            mes = ['The option, ',itm,', was not recognized and is being ignored.'];
+            warning('gather_user_options:unknown', mes);
+        end
     end
 end

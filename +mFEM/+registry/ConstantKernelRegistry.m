@@ -35,7 +35,7 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
         function kern = add_kernel(obj,name,value,varargin)
             
             obj.test_name(name);
-            idx = obj.locate(name);
+            idx = obj.locate(name,'-index');
    
             kern = mFEM.kernels.base.ConstantKernel(name, value, varargin{:});
 

@@ -461,6 +461,11 @@ classdef FEmesh < handle
             %       Extract the dofs for the subdomain specified, where the
             %       scalar is the numeric tag added using ADD_SUBDOMAIN.
             %
+            %   Component
+            %       scalar | character
+            %       Extraxt the dofs only for a certain component of a
+            %       vector based problem.
+            %
             %   Contains
             %       numeric array
             %       Returns the element that contains the point supplied.

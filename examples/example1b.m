@@ -83,7 +83,7 @@ TGex = -25*x0 + 97.5;
 
 % Create Temperature plot
 h = subplot(2,1,1);
-mesh.plot(T,'Axes',h); hold on;
+mesh.plot(T,'Axes',h,'-showNodes'); hold on;
 plot(h,x0,Tex,'k-','LineWidth',1);
 legend({'FEM','Exact'},'location','best');
 xlabel('x (m)','interpreter','tex');

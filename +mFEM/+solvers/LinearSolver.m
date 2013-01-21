@@ -26,7 +26,7 @@ classdef LinearSolver < mFEM.solvers.base.Solver
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
    properties (Access = protected)
-       opt = ...        % Solver options
+       options = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
    end
    
@@ -73,10 +73,10 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            %        the character 'f'.      
            
            % Call the base class constructor
-           obj@mFEM.base.Solver(input)
+           obj@mFEM.solvers.base.Solver(input)
 
            % Collect the inputs
-           obj.opt = gather_user_options(obj.opt, varargin{:});
+           obj.options = gather_user_options(obj.options, varargin{:});
        end
 
        function u = solve(obj)
@@ -90,10 +90,10 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            %    equations, Ku = f.
 
            % Extract/assemble the stiffness matrix
-           K = obj.get_component('stiffness', 'matrix');
+           K = obj.get_component('stiffness');
           
            % Extract/assemble the force vector
-           f = obj.get_component('force', 'vector');
+           f = obj.get_component('force');
                 
            % Apply essential boundary constraings to the solution
            [u,ess] = obj.apply_constraints();

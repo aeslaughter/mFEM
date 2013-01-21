@@ -1,4 +1,4 @@
-classdef Solver < mFEM.base.handle_hide
+classdef Solver < handle
     %SOLVER A base class for defining solvers.
     % This class serves as the backbone of the various built-in solvers
     % located in the +solvers name space. This is an abstract class that
@@ -27,7 +27,7 @@ classdef Solver < mFEM.base.handle_hide
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     properties (Abstract, Access = protected)
-        opt;        % abstract options property
+        options;        % abstract options property
     end
     
     methods (Abstract)
@@ -154,8 +154,8 @@ classdef Solver < mFEM.base.handle_hide
     end
     
     methods (Hidden = true, Access = protected)
-        function x = get_component(obj, name, type)
-           %GET_COMPONENT returns the matrix of vector ready for solving
+        function x = get_component(obj, name)
+           %GET_COMPONENT returns the matrix or vector ready for solving
            %
            % Syntax
            %    x = get_component(name, type)
@@ -170,26 +170,27 @@ classdef Solver < mFEM.base.handle_hide
            %    obj.opt.(name) structure is returned.
           
             % Initilize the output
-            if strcmp(type,'matrix');
-                x = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
-            elseif strcmp(type,'vector');
-                x = zeros(obj.mesh.n_dof,1);
-            end
+%             if strcmp(type,'matrix');
+%                 x = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
+%             elseif strcmp(type,'vector');
+%                 x = zeros(obj.mesh.n_dof,1);
+%             end
            
             % System case, call the assemble function        
-            if ~isempty(obj.system) && ischar(obj.opt.(name));
+            if ~isempty(obj.system) && ischar(obj.options.(name));
                 % Test if the component exists in the system and is the
                 % correct type, if both tests pass call the assemble method
-                [TF, sys_type] = obj.system.exists(obj.opt.(name));
-                if TF && strcmp(sys_type, type);
-                    x = obj.system.assemble(obj.opt.(name)); 
+                TF = obj.system.exists(obj.options.(name));
+                
+                if TF;% && strcmp(sys_type, type);
+                    x = obj.system.assemble(obj.options.(name)); 
                 else
                    warning('Solver:get_component', 'The %s %s was not found in the system when attempting to assemble, a zero %s was used.', obj.opt.(name), type, type);
                 end
 
             % Generic case, the user supplied the actual matrix or vector    
             else
-                x(:) = obj.opt.(name);
+                x = obj.opt.(name);
             end   
         end
          
@@ -208,32 +209,32 @@ classdef Solver < mFEM.base.handle_hide
             %   see ADD_ESSENTIAL_BOUNDARY
 
             % Gather the input
-            options.id = [];
-            options.value = [];
-            options.component = [];
-            options.clear = false;
-            options = gather_user_options(options, varargin{:});
+            opt.id = [];
+            opt.value = [];
+            opt.component = [];
+            opt.clear = false;
+            opt = gather_user_options(opt, varargin{:});
 
-            if options.clear
+            if opt.clear
                 obj.essential = struct('id',{},'value',{},'component',{});
             end
 
             % Test that id and value are given
-            if isempty(options.id) || isempty(options.value);
+            if isempty(opt.id) || isempty(opt.value);
                 error('Solver:add_essential_boundary_private','Both the id and value properties must be set.');
             end
 
             % Append storage data structure
             idx = length(obj.essential);
-            obj.essential(idx+1).id = options.id;
-            obj.essential(idx+1).component = options.component;   
+            obj.essential(idx+1).id = opt.id;
+            obj.essential(idx+1).component = opt.component;   
 
             % Apply the value
-            if ischar(options.value) && ~isempty(obj.system);
-                obj.essential(idx+1).value = obj.system.get(options.value);
+            if ischar(opt.value) && ~isempty(obj.system);
+                obj.essential(idx+1).value = obj.system.get(opt.value);
 
-            elseif isnumeric(options.value) || isa(options.value,'function_handle');
-                obj.essential(idx+1).value = options.value;
+            elseif isnumeric(opt.value) || isa(opt.value,'function_handle');
+                obj.essential(idx+1).value = opt.value;
                 
            else
                 error('Solver:add_essential_boundary_private', 'Error extacting value from the System');
