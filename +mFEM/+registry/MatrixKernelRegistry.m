@@ -13,6 +13,10 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
             obj.mesh = mesh;
         end 
         
+        function varargout = apply(obj, varargin)
+           error('Not implmented'); 
+        end
+        
         function kern = add(obj,name,input,varargin)
             opt.mesh = obj.mesh;
             opt = gather_user_options(opt,varargin{:});

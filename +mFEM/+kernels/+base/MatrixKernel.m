@@ -3,7 +3,6 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     %MATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
-       mesh;
        options = struct(...
            'boundary', [], 'subdomain', [], 'type', 'matrix');
     end
@@ -12,6 +11,11 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
         matrix;
     end
    
+    properties (Access = protected)
+    	mesh;
+        direct = false;
+    end
+        
     methods 
         function obj = MatrixKernel(mesh, name, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
@@ -40,16 +44,17 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                 opt.boundary = [];
                 opt.subdomain = [];
                 opt.component = [];
+                opt.direct = obj.direct;
                 opt = gather_user_options(opt, varargin{:});
-                
+
                 elem = obj.mesh.get_elements(varargin{:});
                 
                for i = 1:length(elem);
                
                     if isempty(opt.boundary);
-                        Ke = obj.integrate(elem(i));
+                        Ke = obj.evaluateElement(elem(i), opt.direct);
                     else
-                        Ke = obj.integrate_side(elem(i), opt.boundary);
+                        Ke = obj.evaluateSide(elem(i), opt.boundary, opt.direct);
                     end
 
                     dof = elem(i).get_dof();
@@ -67,8 +72,14 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     end
     
     methods (Access = protected)
-        function Ke = integrate(obj, elem)
+        function Ke = evaluateElement(obj, elem, direct)
               
+            if direct
+                error('Not yet supported');
+                %Ke = obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
+                return;
+            end
+            
             if strcmpi(obj.options.type,'matrix');
                   Ke = zeros(elem.n_dof);
             else
@@ -77,11 +88,11 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
 
             % Loop over the quadrature points
             for i = 1:length(elem.qp);
-                Ke = Ke + elem.W(i)*obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
+                Ke = Ke + elem.W(i)*obj.eval(elem, elem.qp{i})*elem.detJ(elem.qp{i});
             end
         end
         
-        function Ke = integrate_side(obj, elem, id)
+        function Ke = integrateSide(obj, elem, id, direct)
         
             if strcmpi(obj.options.type,'matrix');
                   Ke = zeros(elem.n_dof);

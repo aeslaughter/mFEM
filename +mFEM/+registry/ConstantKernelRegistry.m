@@ -23,8 +23,14 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
                 kern = obj.add_kernel(name, value);
             end  
         end
-    end
-        
+
+        function apply(obj, kern)
+            for i = 1:length(obj.kernels)   
+                obj.kernels(i).apply(kern);
+            end                      
+        end
+    end 
+      
     methods (Access = protected)
         function kern = add_kernel(obj,name,value,varargin)
             

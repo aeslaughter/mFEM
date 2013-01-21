@@ -12,7 +12,7 @@
 %
 % See also EXAMPLE1A EXAMPLE1B
 %
-%----------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  mFEM: An Object-Oriented MATLAB Finite Element Library
 %  Copyright (C) 2012 Andrew E Slaughter
 % 
@@ -30,7 +30,7 @@
 %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %
 %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
-%----------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 %% Initilization
 % Functin declaration

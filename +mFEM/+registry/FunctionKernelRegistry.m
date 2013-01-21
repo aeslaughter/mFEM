@@ -18,7 +18,15 @@ classdef FunctionKernelRegistry < mFEM.registry.base.KernelRegistry
                obj.constReg = obj.options.constants;
             end
         end
-    
+        
+        function output = apply(obj, kern, input, elem, x, t)
+            
+            output = input;
+            for i = 1:length(obj.kernels)   
+                output = obj.kernels(i).apply(kern, output, elem, x, t);
+            end                      
+        end
+        
         function kern = add(obj,name,input,varargin)
            
             opt.constants = obj.constReg;

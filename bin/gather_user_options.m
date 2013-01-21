@@ -1,4 +1,4 @@
-function opt =  gather_user_options(opt,varargin)
+function [opt, unknowns] =  gather_user_options(opt,varargin)
     % Collects property parings input into a function
     %
     % Syntax
@@ -6,6 +6,7 @@ function opt =  gather_user_options(opt,varargin)
     %   opt = gather_user_options(...,-PropertyName,...);
     %   opt = gather_user_options(...,{'-DisableGatherUserOptionsWarning'});
     %   opt = gather_user_options(opt,optUser);
+    %   [opt, unknown] = gatherUserOptions(...);
     %
     % Description
     %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...)
@@ -60,6 +61,8 @@ end
 % Intilize the data
     q = varargin;           % User supplied input
     k = 1;                  % Intilize the counter
+    u = 1;                  % unknown counter
+    unknowns = {};
     N = length(q);      % Number of property inputs
 
 % Convert data input as a structure to a cell array
@@ -93,7 +96,10 @@ while k <= N
             
        % Produce a warning and move on, if the item is not recognized
        else
-            if ~options.disablewarn;
+           unknowns{u} = itm; 
+           unknowns{u+1} = true;
+           u = u + 2;
+             if ~options.disablewarn;
                 mes = ['The option, ',itm,', was not recognized and is being ignored.'];
                 warning('gather_user_options:unknown', mes);
             end
@@ -111,6 +117,9 @@ while k <= N
 
     % Produce a warning if the property is not recongnized    
     elseif ~options.disablewarn;
+        unknowns{u} = itm; 
+        unknowns{u+1} = value;
+        u = u + 2;
         mes = ['The option, ',itm,', was not recognized and is being ignored.'];
         warning('gather_user_options:unknown', mes);
     end

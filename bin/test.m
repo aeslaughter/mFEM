@@ -7,7 +7,7 @@ opt.throw = false;
 opt = gather_user_options(opt,varargin{:});
 
 % Build a list of test functions to run
-func = getTestFunctions(opt.tests{:});
+func = getTestFunctions(opt.tests);
 
 % Perform tests
 T = mFEM.Test();
@@ -33,16 +33,16 @@ for i = 1:length(func);
     end
 end
 
-function func = getTestFunctions(varargin)
+function func = getTestFunctions(input)
 
 % Extract all the available tests
 loc = fullfile(getpref('MFEM_PREF','ROOT_DIR'),'tests','test_*.m');
 x = dir(loc);
 
 % Use all inputs
-if nargin == 0;
+if isempty(input);
     for i = 1:length(x);
-        [~,func{i},~] = fileparts(x(i).name);  
+        [~, func{i}, ~] = fileparts(x(i).name);  
     end
     
 % Search function based on inputs    
@@ -52,7 +52,7 @@ else
         [~,in,~] = fileparts(x(i).name);  
         idx = regexp(in,'(?<=_).*');
         current =  in(idx:end);
-        TF = any(strcmp(current, varargin));
+        TF = any(strcmp(current, input));
         if TF;
             func{k} = in;
             k = k + 1;

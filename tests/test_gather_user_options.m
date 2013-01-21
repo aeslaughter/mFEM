@@ -10,12 +10,14 @@ options.option2 = false;
 var = {'-option2','option1',false,'unknownOption',52};
 
 % Evaluate the results
-opt{1} = gather_user_options(options,var{:}); 
+warning('off','gather_user_options:unknown')
+[opt{1}, unknown] = gather_user_options(options,var{:}); 
 T.compare(opt{1}.option1,false, 'Standard input');
 
-warning('off','gather_user_options:unknown')
 [~, msgid] = lastwarn;
 T.compare(msgid,'gather_user_options:unknown', 'Unknown option warning');
+
+T.compare(unknown{2},52,'Unknown option collected');
 
 opt{2} = gather_user_options(options,'-option2');
 T.compare(opt{1}.option2,true, 'Flag input, multiple inputs');

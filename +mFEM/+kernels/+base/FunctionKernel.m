@@ -34,7 +34,20 @@ classdef FunctionKernel < mFEM.kernels.base.Kernel;
 %                 error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
 %             end
         end        
-
+        
+        function str = apply(obj, str, elem, x, t)
+            
+            if ~ischar(str);
+                error('FunctionKernel:apply', 'The input must be a character string');
+            end    
+            
+            % Apply OBJ's value to KERN
+            expr = ['\<',obj.name,'\>'];
+            repstr = obj.eval(elem, x, t);
+            
+            str = regexprep(str, expr, repstr); 
+        end
+        
         function value = eval(obj,elem,x,varargin)
             if isempty(varargin); 
                 t = [];

@@ -10,7 +10,8 @@ classdef KernelRegistry < handle
     end
     
     methods (Abstract)
-        kern = add(obj,varargin)
+        kern = add(obj, varargin)
+        varargout = apply(obj, varargin)
     end
 
     methods
@@ -18,11 +19,11 @@ classdef KernelRegistry < handle
             obj.options = gather_user_options(obj.options,varargin{:},{'-disablewarn'});
         end
         
-        function apply(obj, kern)
-            for i = 1:length(obj.kernels)   
-                obj.kernels(i).apply(kern);
-            end                      
-        end
+%         function apply(obj, kern)
+%             for i = 1:length(obj.kernels)   
+%                 obj.kernels(i).apply(kern);
+%             end                      
+%         end
 
         function test_name(obj,name)
             if any(strcmp(name,obj.reserved));
@@ -51,22 +52,6 @@ classdef KernelRegistry < handle
                 idx = length(obj.kernels) + 1;
             end
         end
-    end    
-      
-%     methods (Access = protected)
-%         function kern = add_kernel(obj,name,value,varargin)
-%             
-%             obj.test_name(name);
-%             idx = obj.locate(name);
-%    
-%             kern = feval(obj.type, name, value, varargin{:});
-% 
-%             if isa(kern, 'mFEM.kernels.base.ConstantKernel');
-%                 obj.apply(kern);
-%             end
-%             
-%             obj.kernels(idx) = kern;
-%         end  
-%    end
+    end          
 end
 
