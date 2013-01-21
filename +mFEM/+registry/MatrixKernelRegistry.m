@@ -8,7 +8,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
     end
     
     methods %(Access = Public)
-        function obj = MatrixKernelRegistry(mesh,varargin)
+        function obj = MatrixKernelRegistry(mesh, varargin)
             obj = obj@mFEM.registry.base.KernelRegistry(varargin{:},'-AllowDuplicates');
             obj.mesh = mesh;
         end 
@@ -25,9 +25,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.KernelRegistry
             kern.name = name;          
             
             [idx, found] = obj.locate(name);
-            
 
-            
             if found;
                 if any(obj.kernels(idx) == kern);
                     error('MatrixKernelRegistry:add', 'An instance of this kernel already exists in the registry.');

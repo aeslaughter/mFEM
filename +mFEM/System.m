@@ -46,23 +46,13 @@ classdef System < handle
     properties (SetAccess = private, GetAccess = public)
         mesh = mFEM.FEmesh.empty;   % mesh object
         opt = ...                   % struct of default user options
-            struct('time', false, 'direct', false);
+            struct('time', false);
     end
     
     properties(Access = private)
-        reserved = ... % reserved variables, not available for constants
-            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
-
-        mat = ... % matrix storage structure
-            struct('name', char, 'eqn', char, 'matrix', {},  ...
-            'boundary_id', [], 'subdomain', []);
-        
-        vec = ... % vector storage structure
-            struct('name', char, 'eqn' ,char, 'vector',{},...
-            'boundary_id', [],'subdomain', []);
-        
-        func = ... % vector storage structure
-            struct('name', {}, 'handle', {});
+        m_reg;
+        c_reg;
+        f_reg;
     end
 
     methods (Access = public)
@@ -93,12 +83,6 @@ classdef System < handle
             
             % Store the mesh object
             obj.mesh = mesh;
-            
-%             % Check for direct build element type
-%             types = {'Truss'};
-%             if any(strcmpi(obj.mesh.opt.element, types));
-%                 obj.opt.direct = true;
-%             end
         end
           
         function add_constant(obj, varargin)
@@ -106,7 +90,6 @@ classdef System < handle
             %
             % Syntax
             %   add_constant('ConstantName', ConstantValue, ...)
-            %   add_constant('ConstantName', ConstantValue, '-add')
             %
             % Description
             %   add_constant('ConstantName', ConstantValue, ...) adds
@@ -115,99 +98,60 @@ classdef System < handle
             %   may be a numeric (scalar or matrix) or a string that may be
             %   evaluated using MATLAB's eval function.
             %
-            %   add_constant('ConstantName', ConstantValue, '-add') is a
-            %   special case that allows you to add the ConstantValue to an
-            %   existing constant, only one constant at a time may be
-            %   input for this case
-            %
             % Examples
-            %   sys.add_constant('k',10,'r',2);
+            %   sys.add_constant('k', 10, 'r', 2);
             %   sys.add_cosntant('D','k^2');
-            %   sys.add_constant('D',2,'-add');
             
-            obj.registry.add_constant(varargin{:});
+            obj.c_reg.add(varargin{:});
         end
         
-        function add_function(obj, name, fhandle)
+        function add_function(obj, varargin)
             %ADD_CONSTANT Adds constant(s) variables to the system.
             %
             % Syntax
-            %   add_function('FunctionName', FunctionHandle)
+            %   add_function('FunctionName', FunctionHandle, ...)
             %
             % Description
             %   add_function('FunctionName', FunctionHandle) adds
-            %   a single function to the System, the 'FunctionName' may be 
-            %   any string identifier and the FunctionHandle may be any
-            %   valid MATLAB function handle. 
+            %   a functions to the System, the 'FunctionName' may be 
+            %   any string identifier and the FunctionHandle may be a
+            %   valid MATLAB function handle or character string, see
+            %   details below.
             %
-            %   There are two forms that are acceptable:
-            %       FunctionHandle = @(sys,x,t) ...
-            %       FunctionHandle = @(sys,elem, t) ...
-            %   
-            %   In the first case, x is a vector which represents the real
-            %   coordinates in the mesh (computed at the Gauss
-            %   points with GET_POSITION), where x(1) is the x-direction, 
-            %   x(2) is the y-direction, and x(3) is the z-direction.
-            %   t is the time which is stored in the time property of the 
-            %   system itself. If the function is not a function of x or t
-            %   then just do not use the variable in the equation, but it 
-            %   must be present in the @ list of variables.
+            % Description of Function Handle Input
+            %   If the FunctionHandle property is a MATLAB function handle
+            %   it must be in the following form:
             %
-            %   In the second case, elem is an Element class and t is again
-            %   time, this allows for the specification of function that is
-            %   given the element object.
+            %       FunctionHandle = @(elem, x, t) ...
+            %       
+            %   elem = An Element class object.
+            %   x = The current position, where x(1) is the x-direction, 
+            %   x(2) is the y-direction, and x(3) is the z-direction
+            %   t = The current time, which is automatically passed to the
+            %   function from the t variable of the System class itself.
             %
-            %   In both cases, the first input is the System class to which
-            %   the function is added, this allows access to all matrices
-            %   and constants within the function.
+            % Description of Text Input
+            %   It is also possible to specify a function as a text string
+            %   such that the following is valid:
+            %       fhandle = str2func(['@(elem,x,t)', <Text Input Here>]);
             %
             % Examples
-            %   sys.add_function('k',@(x,t) x(1)^2 + x(2)^2);
+            %   sys.add_function('k',@(elem,x,t) x(1)^2 + x(2)^2);
+            %   sys.add_fucntion('p','x(1)^3');
             
-            % Limit the use of name
-            [~,idx] = obj.locate(name); 
-            if ~isempty(idx);
-                error('System:add_function', 'The name, %s, was previously used, function names must be unique.', name);
-            end
-            
-            % Extract input variables, for tiesting the input
-            str = func2str(fhandle);
-            i1 = strfind(str,'(');
-            i2 = strfind(str,')');
-            var = textscan(str(i1(1)+1:i2(1)-1),'%s',3,'delimiter',',');
-            var = var{1};
-            
-            % Perform test
-            if strcmp(var{2},'x') && strcmp(var{3},'t');
-                type = 'x';
-            elseif strcmp(var{2},'elem') && strcmp(var{3},'t');
-                type = 'elem';
-            else
-                error('System:add_function', 'Function handle is invalid.');
-            end
-              
-            % Storate location in function array
-            idx = length(obj.func) + 1;
-            
-            % Add to the matrix structure, this uses cell arrays instead of
-            % an array of structures due to a limitation in MATLAB with
-            % calling function handles from within an indexed structure 
-            % using str2func.
-            obj.func(idx).name = name;
-            obj.func(idx).handle = fhandle;
-            obj.func(idx).type = type;
+            obj.f_reg.add(varargin{:});
         end
 
-        function add_matrix(obj, name, eqn, varargin)  
+        function add_matrix(obj, varargin)  
             %ADD_MATRIX Create a sparse finite element matrix for assembly
             %
             % Syntax
-            %   add_matrix('MatrixName', MatrixEqn)
-            %   add_matrix('MatrixName', MatrixEqn, 'PropertyName', PropertyValue, ...)
+            %   add_matrix('MatrixName', MatrixEqn, ...)
+            %   add_matrix('MatrixName', MatrixEqn, ... 'PropertyName', PropertyValue, ...)
             %
             % Description
-            %   add_matrix('MatrixName', MatrixEqn) adds
-            %   a matrix and the associated equation for finite element
+            %   add_matrix('MatrixName', MatrixEqn) adds a matrix or
+            %   matrices the associated equations for finite element
             %   assembly. The MatrixEqn is a string that is valid MATLAB
             %   (i.e., it works with the eval function) that gives the 
             %   integrands of the finite element equations at the element
@@ -236,26 +180,7 @@ classdef System < handle
             %   sys.add_matrix('M','N''*N');
             %   sys.add_matrix('K','B''*B','Boundary',1);
   
-            % Gather the user options
-            options.subdomain = [];
-            options.boundary = [];
-            options = gather_user_options(options, varargin{:});
-
-            % Limit the use of name
-            [type, x] = obj.locate(name, {'vec','const','func'}); 
-            if ~isempty(x);
-                error('ERROR:ADD_MATRIX', 'The name, %s, was previously used for defining a %s, a matrix and a %s may not share names.', name, type, type);
-            end
-            
-            % Storate location in matrix array
-            idx = length(obj.mat) + 1;
-            
-            % Add to the matrix structure
-            obj.mat(idx).name = name;
-            obj.mat(idx).eqn = eqn;
-            obj.mat(idx).matrix = mFEM.Matrix.empty;
-            obj.mat(idx).boundary_id = options.boundary; 
-            obj.mat(idx).subdomain = options.subdomain;
+            obj.m_reg.add(varargin{:});
         end
 
         function add_vector(obj, name, input, varargin)  

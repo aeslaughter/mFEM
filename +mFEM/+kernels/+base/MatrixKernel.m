@@ -15,12 +15,15 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     	mesh;
         direct = false;
     end
-        
+       
+    
+    
+    
     methods 
         function obj = MatrixKernel(mesh, name, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
 
-            obj.options = gather_user_options(obj.options, varargin{:});
+            [obj.options, unknown] = gather_user_options(obj.options, varargin{:});
             obj.mesh = mesh;
             
             if any(strcmpi(obj.options.type,{'matrix','mat','m'}));
@@ -38,13 +41,17 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
             K = obj.matrix.init();
         end
         
+        function varargout = apply(varargin)
+            error('Not implemented');
+        end
+        
         function varargout = assemble(obj, varargin)
                 
                 opt.zero = false;
                 opt.boundary = [];
                 opt.subdomain = [];
                 opt.component = [];
-                opt.direct = obj.direct;
+                %opt.direct = obj.direct;
                 opt = gather_user_options(opt, varargin{:});
 
                 elem = obj.mesh.get_elements(varargin{:});
@@ -52,9 +59,9 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                for i = 1:length(elem);
                
                     if isempty(opt.boundary);
-                        Ke = obj.evaluateElement(elem(i), opt.direct);
+                        Ke = obj.evaluateElement(elem(i));
                     else
-                        Ke = obj.evaluateSide(elem(i), opt.boundary, opt.direct);
+                        Ke = obj.evaluateSide(elem(i), opt.boundary);
                     end
 
                     dof = elem(i).get_dof();
@@ -72,9 +79,9 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
     end
     
     methods (Access = protected)
-        function Ke = evaluateElement(obj, elem, direct)
+        function Ke = evaluateElement(obj, elem)
               
-            if direct
+            if obj.direct
                 error('Not yet supported');
                 %Ke = obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
                 return;
@@ -92,7 +99,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
             end
         end
         
-        function Ke = integrateSide(obj, elem, id, direct)
+        function Ke = integrateSide(obj, elem, id)
         
             if strcmpi(obj.options.type,'matrix');
                   Ke = zeros(elem.n_dof);
