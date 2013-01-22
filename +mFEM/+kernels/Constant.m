@@ -1,8 +1,14 @@
 classdef Constant < mFEM.kernels.base.Kernel;
  
+    properties (Access = public)%(Access = ?mFEM.registry.base.Registry)
+        value;
+        reserved = {};
+    end
+    
     methods 
         function obj = Constant(name, input)
             obj = obj@mFEM.kernels.base.Kernel(name);
+            obj.testName(name);
             if isnumeric(input) || ischar(input);
                 obj.value = num2str(input);
             else
@@ -10,6 +16,17 @@ classdef Constant < mFEM.kernels.base.Kernel;
             end
         end        
 
+        function str = apply(obj, str)
+            expr = ['\<',obj.name,'\>'];
+            repstr = obj.value;
+
+            if ~ischar(str);
+                error('Kernel:apply', 'The supplied input (str) must be a character string');
+            end 
+
+            str = regexprep(str, expr, repstr); 
+        end
+        
         function value = eval(obj,varargin)
             value = eval(obj.value);
         end  

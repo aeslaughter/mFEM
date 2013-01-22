@@ -8,33 +8,33 @@ T = mFEM.Test(mfilename('fullfile'));
 elem = mFEM.elements.Line2(1,[0;1]);
 
 % Create two constant registry objects
-constReg = mFEM.registry.ConstantKernelRegistry('-disableWarnings');
+constReg = mFEM.registry.ConstantRegistry('-disableWarnings');
 constReg.add('a',5);
-constReg2 = mFEM.registry.ConstantKernelRegistry();
+constReg2 = mFEM.registry.ConstantRegistry();
 constReg2.add('a',10);
 
 % Create a function registry object
-reg = mFEM.registry.FunctionKernelRegistry('Constants',constReg,'-disableWarnings');
+reg = mFEM.registry.FuncRegistry('ConstantRegistry',constReg,'-disableWarnings');
 
 % Perform tests
-reg.add('func1','x(1)^2');
-val = reg.kernels(1).eval(elem,0.5);  % 0.5^2 = 0.25
+reg.add('func1', 'x(1)^2', 'func2', 't*(x(1)+a)');
+val = reg.get('func1', elem, 0.5);  % 0.5^2 = 0.25
 T.compare(val, 0.25, 'String function added to registry');
 
-reg.add('func2', 't*(x(1)+a)');
-val = reg.kernels(2).eval(elem,2,10); % 10*(2+5) = 70    
+%reg.add('func2', 't*(x(1)+a)');
+val = reg.get('func2',elem,2,10); % 10*(2+5) = 70    
 T.compare(val, 70, 'String function using global constant registry');
 
-reg.add('func3', 't*(x(1)+a)', 'constants', constReg2);
-val = reg.kernels(3).eval(elem,2,10); % 10*(2+10) = 120
+reg.add('func3', 't*(x(1)+a)','ConstantRegistry',constReg2);
+val = reg.get('func3',elem,2,10); % 10*(2+10) = 120
 T.compare(val, 120, 'String function with local constant registry');
 
 constReg.add('a',50);
-val = reg.kernels(2).eval(elem,2,10); % 10*(2+50) = 520
+val = reg.get('func2',elem,2,10); % 10*(2+50) = 520
 T.compare(val, 520, 'String function with global constant registry, change value and re-evaluated');
 
 % Evaluate the results
-val = reg.kernels(3).eval(elem,2,10); % 10*(2+10) = 120
+val = reg.get('func3',elem,2,10); % 10*(2+10) = 120
 T.compare(val, 120, 'Validate that nothing changed in local constant registry');
 
 
