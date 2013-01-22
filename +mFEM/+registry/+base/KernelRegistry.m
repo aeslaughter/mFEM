@@ -1,41 +1,41 @@
 classdef KernelRegistry < handle
     properties
-        reserved = ... % reserved variables, not available for constants
-            {'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
+        reserved = {}% reserved variables, not available for constants
+            %{'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
         options = struct('disablewarnings', false, 'allowduplicates',false);
     end
     
-    properties (Abstract)
-        kernels;
-    end
+%     properties (Access = protected)
+%         kernels;
+%     end
     
-    methods (Abstract)
-        kern = add(obj, varargin)
-        varargout = apply(obj, varargin)
-    end
+%    methods (Abstract)
+%          output = findKernel(obj, varargin)
+%         kern = add(obj, varargin)
+%         varargout = apply(obj, varargin)
+%    end
 
     methods
         function obj = KernelRegistry(varargin)
             obj.options = gather_user_options(obj.options,varargin{:},{'-disablewarn'});
         end
 
-        function test_name(obj,name)
+        function testName(obj,name)
             if any(strcmp(name,obj.reserved));
                 error('KernelRegistry:test_name', 'The name %s is reserved and may not be used for naming variables of any type.', name);
             end
         end
   
-        function [idx, found] = locate(obj, name, varargin)
+        function [idx, found] = findKernel(obj, name, kernels, varargin)
 
             opt = obj.options;
             opt.index = false;
             opt = gather_user_options(opt, varargin{:});
-            
-            
+
             idx = [];
             found = false;
-            for i = 1:length(obj.kernels);
-                if strcmp(name, obj.kernels(i).name)
+            for i = 1:length(kernels);
+                if strcmp(name, kernels(i).name)
                     idx = [idx,i];
                     found = true;
                     if ~obj.options.disablewarnings && ~obj.options.allowduplicates;
@@ -49,11 +49,11 @@ classdef KernelRegistry < handle
             
             if ~opt.index;
                 if ~isempty(idx);
-                    idx = obj.kernels(idx);
+                    idx = kernels(idx);
                 end
                 
             elseif isempty(idx);
-                idx = length(obj.kernels) + 1;
+                idx = length(kernels) + 1;
             end
         end
     end          

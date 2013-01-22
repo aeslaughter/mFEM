@@ -3,7 +3,7 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
     %   Detailed explanation goes here
     
     properties
-        kernels = mFEM.kernels.base.ConstantKernel.empty();
+        const = mFEM.kernels.base.ConstantKernel.empty();
     end
     
     methods %(Access = Public)
@@ -11,7 +11,7 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
             obj = obj@mFEM.registry.base.KernelRegistry(varargin{:});
         end
         
-        function kern = add(obj,varargin)
+        function kern = addConstant(obj,varargin)
             
             % Location of last input flag
             n = nargin - 2;
@@ -20,28 +20,47 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
             for i = 1:2:n;
                 name = varargin{i};
                 value = varargin{i+1};
-                kern = obj.add_kernel(name, value);
+                kern = obj.addConstantKernel(name, value);
             end  
         end
 
-        function apply(obj, kern)
-            for i = 1:length(obj.kernels)   
-                obj.kernels(i).apply(kern);
+        function str = applyConstant(obj, str)
+            
+            for i = 1:length(obj.const)   
+                
+                % Apply OBJ's value to str
+                expr = ['\<',obj.const(i).name,'\>'];
+                repstr = obj.const(i).value;
+
+                if ~ischar(str);
+                    error('ConstantKernel:applyConstant', 'The supplied function must be a character string');
+                end 
+
+                str = regexprep(str, expr, repstr); 
+
             end                      
         end
+
+        function idx = findConstant(obj, name, varargin)
+            
+            idx = obj.findKernel(name, obj.const, varargin{:});
+
+        end
+
     end 
       
     methods (Access = protected)
-        function kern = add_kernel(obj,name,value,varargin)
+        
+        function kern = addConstantKernel(obj,name,value,varargin)
             
-            obj.test_name(name);
-            idx = obj.locate(name,'-index');
+            obj.testName(name);
+            idx = obj.findConstant(name,'-index');
    
             kern = mFEM.kernels.base.ConstantKernel(name, value, varargin{:});
 
-            obj.apply(kern);
+            kern.value = obj.applyConstant(kern.value);
 
-            obj.kernels(idx) = kern;
+            obj.const(idx) = kern;
         end
     end
 end

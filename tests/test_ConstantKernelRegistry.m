@@ -7,20 +7,20 @@ T = mFEM.Test(mfilename('fullfile'));
 % Create a registry
 reg = mFEM.registry.ConstantKernelRegistry('-disableWarnings');
 
-reg.add('a','2');
-T.compare(reg.kernels(1).eval(), 2, 'Adding kernel, text input');
+reg.addConstant('a','2');
+T.compare(reg.const(1).eval(), 2, 'Adding kernel, text input');
 
-reg.add('b', 5);
-T.compare(reg.kernels(2).eval(), 5, 'Adding kernel, numeric input');
+reg.addConstant('b', 5);
+T.compare(reg.const(2).eval(), 5, 'Adding kernel, numeric input');
 
-reg.add('c', '2*a'); 
-T.compare(reg.kernels(3).eval(), 4, 'Adding kernel, function of another constant');
+reg.addConstant('c', '2*a'); 
+T.compare(reg.const(3).eval(), 4, 'Adding kernel, function of another constant');
 
-reg.add('b', 10);
-T.compare(reg.kernels(2).eval(), 10, 'Adding kernel, replace existint value');
+reg.addConstant('b', 10);
+T.compare(reg.const(2).eval(), 10, 'Adding kernel, replace existint value');
 
-reg.add('d', 32, 'e', 43');
-T.compare(reg.kernels(4).eval(), 32, 'Adding kernel, first input of multiple inputs');
-T.compare(reg.kernels(5).eval(), 43, 'Adding kernel, second input of multiple inputs');
+reg.addConstant('d', 32, 'e', 43');
+T.compare(reg.const(4).eval(), 32, 'Adding kernel, first input of multiple inputs');
+T.compare(reg.const(5).eval(), 43, 'Adding kernel, second input of multiple inputs');
 
 end
