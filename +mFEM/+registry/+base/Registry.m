@@ -1,4 +1,4 @@
-classdef KernelRegistry < handle
+classdef Registry < handle
     properties
         reserved = {}% reserved variables, not available for constants
             %{'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};
@@ -16,7 +16,7 @@ classdef KernelRegistry < handle
 %    end
 
     methods
-        function obj = KernelRegistry(varargin)
+        function obj = Registry(varargin)
             obj.options = gather_user_options(obj.options,varargin{:},{'-disablewarn'});
         end
 

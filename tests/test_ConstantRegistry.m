@@ -5,7 +5,7 @@ function T = test_ConstantKernelRegistry
 T = mFEM.Test(mfilename('fullfile'));
 
 % Create a registry
-reg = mFEM.registry.ConstantKernelRegistry('-disableWarnings');
+reg = mFEM.registry.ConstantRegistry('-disableWarnings');
 
 reg.addConstant('a','2');
 T.compare(reg.const(1).eval(), 2, 'Adding kernel, text input');

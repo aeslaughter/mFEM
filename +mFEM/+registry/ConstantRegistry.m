@@ -1,14 +1,14 @@
-classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
+classdef ConstantRegistry < mFEM.registry.base.Registry
     %CONSTANTKERNELREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
-        const = mFEM.kernels.base.ConstantKernel.empty();
+        const = mFEM.kernels.Constant.empty();
     end
     
     methods %(Access = Public)
-        function obj = ConstantKernelRegistry(varargin)
-            obj = obj@mFEM.registry.base.KernelRegistry(varargin{:});
+        function obj = ConstantRegistry(varargin)
+            obj = obj@mFEM.registry.base.Registry(varargin{:});
         end
         
         function kern = addConstant(obj,varargin)
@@ -56,7 +56,7 @@ classdef ConstantKernelRegistry < mFEM.registry.base.KernelRegistry
             obj.testName(name);
             idx = obj.findConstant(name,'-index');
    
-            kern = mFEM.kernels.base.ConstantKernel(name, value, varargin{:});
+            kern = mFEM.kernels.Constant(name, value, varargin{:});
 
             kern.value = obj.applyConstant(kern.value);
 
