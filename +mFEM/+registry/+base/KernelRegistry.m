@@ -18,12 +18,6 @@ classdef KernelRegistry < handle
         function obj = KernelRegistry(varargin)
             obj.options = gather_user_options(obj.options,varargin{:},{'-disablewarn'});
         end
-        
-%         function apply(obj, kern)
-%             for i = 1:length(obj.kernels)   
-%                 obj.kernels(i).apply(kern);
-%             end                      
-%         end
 
         function test_name(obj,name)
             if any(strcmp(name,obj.reserved));

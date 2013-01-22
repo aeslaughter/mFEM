@@ -41,7 +41,7 @@ classdef Solver < handle
     
     properties (Access = protected)
         essential = ... % Data structure containing essential boundary info
-            struct('id',{},'value',{},'component',{});
+            struct('boundary',{},'value',{},'component',{});
     end
 
     methods (Access = public)
@@ -73,12 +73,12 @@ classdef Solver < handle
             end
         end
         
-        function add_essential_boundary(obj, varargin)
-            %ADD_ESSENTIAL_BOUNDARY label a boundary as essential
+        function addEssential(obj, varargin)
+            %ADDESSENTIAL label a boundary as essential
             %
             % Syntax
-            %   add_essential_boundary('PropertyName', PropertyValue,...);
-            %   add_essential_boundary(C1,C2,...); 
+            %   addEssential('PropertyName', PropertyValue,...);
+            %   addEssential(C1,C2,...); 
             %
             % Description
             %   add_essential_boundary('PropertyName', PropertyValue,...)
@@ -91,7 +91,7 @@ classdef Solver < handle
             %   together.
             %
             % ADD_ESSENTIAL_BOUNDARY Property Descriptions
-            %   id
+            %   boundary
             %       scalar | row vector
             %       A scalar or row vector of boundary ids (see FEMESH) that are
             %       identify the essential boundary conditions.
@@ -135,7 +135,7 @@ classdef Solver < handle
                 
             % Traditional input case    
             else
-                obj.add_essential_boundary_private(varargin{:});  
+                obj.addEssentialPrivate(varargin{:});  
             end
         end
         
@@ -168,13 +168,6 @@ classdef Solver < handle
            %    vector is given the System.assemble method is called to
            %    build the component. Otherwise whatever is stored in the
            %    obj.opt.(name) structure is returned.
-          
-            % Initilize the output
-%             if strcmp(type,'matrix');
-%                 x = sparse(obj.mesh.n_dof, obj.mesh.n_dof);
-%             elseif strcmp(type,'vector');
-%                 x = zeros(obj.mesh.n_dof,1);
-%             end
            
             % System case, call the assemble function        
             if ~isempty(obj.system) && ischar(obj.options.(name));
@@ -194,22 +187,22 @@ classdef Solver < handle
             end   
         end
          
-        function add_essential_boundary_private(obj, varargin)
-            %ADD_ESSENTIAL_BOUNDARY_PRIVATE label a boundary as essential
+        function addEssentialPrivate(obj, varargin)
+            %ADDESSENTIALPRIVATE label a boundary as essential
             %
             % Syntax
-            %   add_essential_boundary('PropertyName', PropertyValue,...);
+            %   addEssentialPrivate('PropertyName', PropertyValue,...);
             %
             % Description
             %   add_essential_boundary('PropertyName', PropertyValue,...)
             %   adds based on the properties an essential boundary
             %   condition that will be applied to the solution
             %
-            % ADD_ESSENTIAL_BOUNDARY_PRIVATE Property Descriptions
-            %   see ADD_ESSENTIAL_BOUNDARY
+            % ADDESSENTIALPRIVATE Property Descriptions
+            %   see ADDESSENTIAL
 
             % Gather the input
-            opt.id = [];
+            opt.boundary = [];
             opt.value = [];
             opt.component = [];
             opt.clear = false;
@@ -220,13 +213,13 @@ classdef Solver < handle
             end
 
             % Test that id and value are given
-            if isempty(opt.id) || isempty(opt.value);
-                error('Solver:add_essential_boundary_private','Both the id and value properties must be set.');
+            if isempty(opt.boundary) || isempty(opt.value);
+                error('Solver:addEssentialPrivate','Both the id and value properties must be set.');
             end
 
             % Append storage data structure
             idx = length(obj.essential);
-            obj.essential(idx+1).id = opt.id;
+            obj.essential(idx+1).boundary = opt.boundary;
             obj.essential(idx+1).component = opt.component;   
 
             % Apply the value
@@ -237,7 +230,7 @@ classdef Solver < handle
                 obj.essential(idx+1).value = opt.value;
                 
            else
-                error('Solver:add_essential_boundary_private', 'Error extacting value from the System');
+                error('Solver:addEssentialPrivate', 'Error extacting value from the System');
             end
 
         end
@@ -267,7 +260,7 @@ classdef Solver < handle
             % Apply the essential boundary condions
             dof = false(obj.mesh.n_dof, length(obj.essential));
             for i = 1:length(obj.essential);
-               dof(:,i) = logical(obj.mesh.get_dof('Boundary', obj.essential(i).id, 'Component', obj.essential(i).component));
+               dof(:,i) = logical(obj.mesh.get_dof('Boundary', obj.essential(i).boundary, 'Component', obj.essential(i).component));
                
                if isa(obj.essential(i).value, 'function_handle');
                    x = obj.mesh.get_nodes(); 

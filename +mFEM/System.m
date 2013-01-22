@@ -329,18 +329,9 @@ classdef System < handle
            %    [TF, type] = exists(name) same as above but also returns
            %    the type ('mat', 'vec', 'const', or 'func').
             
-           
            kern = obj.get_kernel(name);
            TF = false;
            if ~isempty(kern); TF = true; end
-           
-%            idx = obj.locate(name);
-%            
-%            % Set the value for TF
-%            TF = false;
-%            if ~isempty(idx);
-%                TF = true;
-%            end
            
         end
         

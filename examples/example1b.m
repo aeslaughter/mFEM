@@ -50,7 +50,7 @@ sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
 
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
-solver.add_essential_boundary('id',1,'value',0);
+solver.addEssential('boundary',1,'value',0);
 T = solver.solve();
 
 % Compute the temperature gradients for the elements
