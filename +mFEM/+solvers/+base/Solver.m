@@ -260,7 +260,7 @@ classdef Solver < handle
             % Apply the essential boundary condions
             dof = false(obj.mesh.n_dof, length(obj.essential));
             for i = 1:length(obj.essential);
-               dof(:,i) = logical(obj.mesh.get_dof('Boundary', obj.essential(i).boundary, 'Component', obj.essential(i).component));
+               dof(:,i) = logical(obj.mesh.getDof('Boundary', obj.essential(i).boundary, 'Component', obj.essential(i).component));
                
                if isa(obj.essential(i).value, 'function_handle');
                    x = obj.mesh.get_nodes(); 

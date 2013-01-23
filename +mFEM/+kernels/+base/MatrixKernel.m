@@ -59,7 +59,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                 opt.component = obj.options.component;
                 opt = gatherUserOptions(opt, varargin{:});
 
-                elem = obj.mesh.get_elements('boundary', opt.boundary, ...
+                elem = obj.mesh.getElements('boundary', opt.boundary, ...
                                              'subdomain', opt.subdomain);
                                             %'component', opt.component);
                 
@@ -71,7 +71,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                         Ke = obj.evaluateSide(elem(i), opt.boundary);
                     end
 
-                    dof = elem(i).get_dof();
+                    dof = elem(i).getDof();
                     obj.value.add(Ke, dof); 
                end
 
@@ -117,8 +117,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             if elem.local_n_dim == 1;
                 for s = 1:elem.n_sides; 
                     if any(elem.side(s).boundary_id == id);
-                        side = elem.build_side(s);
-                        dof = elem.get_dof('Side', s, '-local');
+                        side = elem.buildSide(s);
+                        dof = elem.getDof('Side', s, '-local');
                         Ke(dof) = Ke(dof) + obj.eval(side,[]);  
                         delete(side);
                     end

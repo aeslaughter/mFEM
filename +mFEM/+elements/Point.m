@@ -43,9 +43,9 @@ classdef Point < mFEM.elements.base.Element
             N = 1;
         end
 
-        function B = grad_basis(obj, varargin) 
+        function B = gradBasis(obj, varargin) 
             % Gradient of shape functions
-            error('Point:grad_basis', 'Not defined for Point element');
+            error('Point:gradBasis', 'Not defined for Point element');
             B = inv(obj.jacobian()) * obj.local_grad_basis;
         end
              
@@ -54,8 +54,8 @@ classdef Point < mFEM.elements.base.Element
             error('Point:jacobian', 'Not defined for Point element'); 
         end
         
-        function GN = local_grad_basis(obj, varargin)
-            error('Point:local_grad_basis', 'Not defined for Point element');
+        function GN = localGradBasis(obj, varargin)
+            error('Point:localGradBasis', 'Not defined for Point element');
         end
     end
 end

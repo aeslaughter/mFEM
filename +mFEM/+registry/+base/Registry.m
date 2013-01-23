@@ -81,11 +81,11 @@ classdef Registry < handle
                 
             % Found, not adding, and returning the indices (this is
             % default)
-            elseif opt.index && found;
+%             elseif opt.index && found;
                 
             % Not found, not adding    
-            elseif ~found;
-                error('Registry:find', 'The variable %s was not found.', name); 
+%             elseif ~found;
+%                 error('Registry:find', 'The variable %s was not found.', name); 
             end
         end
     end          

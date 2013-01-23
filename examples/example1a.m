@@ -82,7 +82,7 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi) elem.shapeDeriv();
+    B = @(xi) elem.shapeDeriv([]);
     N = @(xi) elem.shape(xi);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
@@ -101,18 +101,15 @@ for e = 1:mesh.n_elements;
         Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ();
     end
     
-    % Re-define the N short-hand function handle for use on sides
-    N = @(id) elem.shape(id);
-    
     % Loop throught the sides of the element, if the side has the boundary
     % id of 2 (right), then add the prescribed flux term to force vector,
     % which for 1D elements is an evaluation at a single point so it
     % requires no integration.
     for s = 1:elem.n_sides; 
-        if elem.side(s).boundary_id == 2;
-            side = elem.build_side(s);
-            dof = elem.get_dof('Side', s, '-local');
-            fe(dof) = fe(dof) + -q_bar*A*side.shape()';  
+        if any(elem.side(s).boundary_id == 2);
+            side = elem.buildSide(s);
+            dof = elem.getDof('Side', s, '-local');
+            fe(dof) = fe(dof) + -q_bar*A*side.shape([])';  
             delete(side);
         end
     end   
@@ -123,6 +120,7 @@ for e = 1:mesh.n_elements;
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
+
 
 %% Define Variables for Essential and Non-essential Degrees-of-freedom
 ess = mesh.getDof('Boundary', 1);  % 1

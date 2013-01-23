@@ -43,14 +43,17 @@ mesh.addBoundary(2,'right');   % q = 20 boundary
 
 % Build Matrix and Vector Equations
 sys = System(mesh);
-sys.addConstant('k',2,'A',0.1,'b',5,'q_bar',5);
+sys.addConstant('k', 2, 'A' ,0.1, 'b', 5, 'q_bar', 5);
 sys.addMatrix('K', 'B''*k*A*B');
 sys.addVector('f', 'N''*b');
 sys.addVector('f', '-q_bar*A*N''', 'Boundary', 2);
 
+
+%f = sys.assemble('f')
+
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
-solver.addEssential('boundary', 1, 'value' ,0);
+solver.addEssential('boundary', 1, 'value' , 0);
 T = solver.solve();
 
 % Compute the temperature gradients for the elements
@@ -64,14 +67,14 @@ for e = 1:mesh.n_elements;
     qp = elem.quad.rules();
     
     % Collect the local values of T
-    d(:,1) = T(elem.get_dof());
+    d(:,1) = T(elem.getDof());
     
     % Compute the temperature gradient at the gauss point, store the value
     % twice for each element for creating graph, TGx is the node locations
     % used for plotting
     for i = 1:length(qp);
-        TG(k) = elem.shape_deriv(qp(i))*d;
-        TGx(k) = elem.get_position(qp(i));
+        TG(k) = elem.shapeDeriv(qp(i))*d;
+        TGx(k) = elem.getPosition(qp(i));
         k = k + 1;
     end
 end    

@@ -272,14 +272,18 @@ classdef System < handle
             
             % Loop through the storage structures and locate the variable
             reg = {obj.const, obj.func, obj.mat};
+            kern = [];
             for i = 1:length(reg);
-                X = reg{i}.get(name);
-                if ~isempty(X); return; end;
+                kern = reg{i}.find(name)
+                %X = reg{i}.get(name);
+                if ~isempty(kern); break; end;
             end
             
             % Throw and error if the name was not found
-            if isempty(X);
+            if isempty(kern);
                 error('System:get', 'The entity with name %s was not found.', name);
+            else
+                X = kern.get();
             end   
         end
         

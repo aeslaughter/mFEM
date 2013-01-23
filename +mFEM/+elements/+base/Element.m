@@ -75,12 +75,12 @@ classdef Element < mFEM.elements.base.ElementCore
             obj = obj@mFEM.elements.base.ElementCore(id, nodes, varargin{:});
         end
         
-        function N = shape(obj, varargin)
+        function N = shape(obj, xi, varargin)
             %SHAPE Returns the shape functions
             %
             % Syntax
             %   shape(xi)
-            %   shape(xi,'-scalar')
+            %   shape(xi, '-scalar')
             %
             % Description
             %   shape(xi) returns the element shape functions evaluated at
@@ -92,13 +92,12 @@ classdef Element < mFEM.elements.base.ElementCore
 
             % Parse options (do not use gatherUserOptions for speed)
             scalar_flag = false;
-            if nargin == 3 && strcmpi(varargin{2},'-scalar');
-                varargin = varargin{1};
+            if nargin == 3 && strcmpi(varargin{1},'-scalar');
                 scalar_flag = true;            
             end                
             
             % Scalar field basis functions
-            N = obj.basis(varargin{:});
+            N = obj.basis(xi);
 
             % Non-scalar fields
             if ~scalar_flag && (obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector'));

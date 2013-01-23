@@ -58,7 +58,7 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
             str = obj.input;
 
             str = regexprep(str,'\<N\>', 'elem.shape(qp)');
-            str = regexprep(str,'\<B\>', 'elem.shape_deriv(qp)');    
+            str = regexprep(str,'\<B\>', 'elem.shapeDeriv(qp)');    
             
             if ~strcmp(str, obj.input)
                 obj.direct = false; 
