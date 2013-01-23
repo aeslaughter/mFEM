@@ -2,7 +2,7 @@ classdef FuncRegistry < mFEM.registry.base.Registry
     %FUNCREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
-    properties (Access = protected)
+    properties (GetAccess = public, SetAccess = protected)
         kernels = mFEM.kernels.Func.empty();
         options = struct('constantregistry', mFEM.registry.ConstantRegistry.empty());
     end
@@ -10,8 +10,8 @@ classdef FuncRegistry < mFEM.registry.base.Registry
     methods %(Access = Public)
         function obj = FuncRegistry(varargin)
             obj = obj@mFEM.registry.base.Registry(varargin{:});
-            
-            obj.options = gather_user_options(obj.options, varargin{:}, {'-disablewarn'});
+
+            obj.options = gatherUserOptions(obj.options, varargin{:}, {'-disablewarn'});
             
         end
           

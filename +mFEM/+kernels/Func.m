@@ -11,7 +11,7 @@ classdef Func < mFEM.kernels.base.Kernel;
             
             opt.constantregistry = mFEM.registry.ConstantRegistry.empty();
             opt.reserved = {};
-            opt = gather_user_options(opt, varargin{:});
+            opt = gatherUserOptions(opt, varargin{:});
             
             obj.const = opt.constantregistry;
             obj.reserved = [obj.reserved, opt.reserved];
@@ -23,7 +23,7 @@ classdef Func < mFEM.kernels.base.Kernel;
                     error('Func:Func:InvalidHandle', 'The input function supplied accepts %d agruments, but it must accept three arguments: elem, x, and t.', n);
                 end
             elseif ~ischar(input);
-                error('Func:Func:InvalideInput', 'The input must be a function handle or a character string convertable to a handle, but a %s was given.', class(input));    
+                error('Func:Func:InvalidInput', 'The input must be a function handle or a character string convertable to a handle, but a %s was given.', class(input));    
             end
 
             obj.input = input;
@@ -60,12 +60,7 @@ classdef Func < mFEM.kernels.base.Kernel;
             else
                 fcn = obj.input;
             end
-%              
-%             n = nargin(fcn);
-%             if n ~= 3;
-%                 error('FunctionKernel:FunctionKernel', 'The function must take three variables (elem, x, t), the supplied function accepts %d.', n);    
-%             end
-%    
+
             value = feval(fcn, elem, x, t);
         end
 

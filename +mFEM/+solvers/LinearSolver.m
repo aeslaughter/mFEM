@@ -76,7 +76,7 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            obj@mFEM.solvers.base.Solver(input)
 
            % Collect the inputs
-           obj.options = gather_user_options(obj.options, varargin{:});
+           obj.options = gatherUserOptions(obj.options, varargin{:});
        end
 
        function u = solve(obj)

@@ -26,4 +26,4 @@ T.compare(Kexact, Kcalc, 'B''*D*B on Tri3, Fish, 2007, p. 194');
 
 % Test the handle and associated matrix are identical for the two kernels
 T.compare(kern1.get(),kern2.get(), 'Matrix numbers are identical');
-T.compare(kern1.matrix, kern2.matrix, 'Matrix handles are identical');
+T.compare(kern1.value, kern2.value, 'Matrix handles are identical');

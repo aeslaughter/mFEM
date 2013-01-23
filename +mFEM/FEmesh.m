@@ -35,7 +35,7 @@ classdef FEmesh < handle
         map = ...                   % structure of node, elem, dof, and boundary maps 
             struct('node', [], 'elem', uint32([]), 'dof', uint32([]),...
             'boundary', uint32([]),'subdomain', uint32([]));       
-        opt = ...                   % struct of default user options
+        options = ...               % struct of default user options
             struct('space', 'scalar', 'type', 'CG', 'time', true,...
                 'element', 'Line2');
     end
@@ -77,10 +77,12 @@ classdef FEmesh < handle
             %       Specifies the type of element that the mesh will be
             %       composed of, the default is the Line2 element. Any
             %       class derivied from the Element class, located in the 
-            %       +element directory may be specified.
+            %       +element directory may be specified. This is only used
+            %       for the grid function and it may be overwritten using
+            %       the grid optoins.
 
             % Parse the user-defined options
-            obj.opt = gather_user_options(obj.opt, varargin{:});
+            obj.options = gatherUserOptions(obj.options, varargin{:});
                      
             % Initialize the element property (the type does not matter)
             obj.element = mFEM.elements.Line2.empty;
@@ -114,6 +116,15 @@ classdef FEmesh < handle
             %       coordinates when creating the elements. Only available
             %       for 2D and 3D grids. The flag style input may also be 
             %       used (i.e., '-pol2car').
+            %
+            %   Element
+            %       char
+            %       Specifies the type of element that the mesh will be
+            %       composed of, the default is the Line2 element. Any
+            %       class derivied from the Element class, located in the 
+            %       +element directory may be specified. This is only used
+            %       for the grid function and it may be overwritten using
+            %       the grid optoins. 
            
             % Display wait message
             if obj.opt.time;
@@ -138,11 +149,11 @@ classdef FEmesh < handle
             end;
         end
         
-        function add_element(obj, nodes)
-            % Add element to FEmesh object (must be reinitialized)
+        function addElement(obj, nodes)
+            % ADDELEMENT to FEmesh object (must be reinitialized)
             %
             % Syntax:
-            %   add_element(nodes);
+            %   addElement(nodes);
             %
             % Input:
             %   The input should take the exact form as the input for the
@@ -150,7 +161,7 @@ classdef FEmesh < handle
             %   created. For example:
             %
             %   >> mesh = FEmesh();
-            %   >> mesh.add_element(1,'Quad4', [0,0; 1,0; 1,1; 0,1]);
+            %   >> mesh.addElement(1,'Quad4', [0,0; 1,0; 1,1; 0,1]);
             %
             %   Note, the optional space string for the element is not
             %   accepted here, as it is defined across the entire mesh
@@ -195,34 +206,34 @@ classdef FEmesh < handle
             obj.n_dof_node = obj.element(1).n_dof_node;
             
             % Computes the global degree-of-freedom map
-            obj.compute_dof_map();
+            obj.computeDofMap();
             
             % Compute the total number of dofs
             obj.n_dof = double(length(unique(obj.map.dof)) * obj.n_dof_node);
             
             % Tag all boundaries as 0
-            obj.id_empty_boundary(0);          
+            obj.idEmptyBoundary(0);          
             
             % Locates the neighbor elements for each element
-            obj.find_neighbors();
+            obj.findNeighbors();
 
             % Set the initilization flag to true
             obj.initialized = true;
         end
                 
-        function add_boundary(obj, id, varargin)
-            %ADD_BOUNDARY Labels elements and sides with numeric tags.
+        function addBoundary(obj, id, varargin)
+            %ADDBOUNDARY Labels elements and sides with numeric tags.
             %
             % Syntax
-            %   add_boundary(id, Limit1,...)
-            %   add_boundary(id)
+            %   addBoundary(id, Limit1,...)
+            %   addBoundary(id)
             %
             % Description
-            %   add_boundary(id) labels all unidentified elements and sides
+            %   addBoundary(id) labels all unidentified elements and sides
             %       with the specified id, which must be an interger
             %       value greater than zero.
             %
-            %   add_boundary(id, Limit1,...) allows 
+            %   addBoundary(id, Limit1,...) allows 
             %       for customization to what boundaries are tagged, see 
             %       the descriptions below. It is possible to
             %       supply multiple limits For example,
@@ -272,7 +283,7 @@ classdef FEmesh < handle
                         
             % Special case, tag all untagged
             if nargin == 2;
-                obj.id_empty_boundary(id);
+                obj.idEmptyBoundary(id);
                 return;
             end
                         
@@ -284,23 +295,23 @@ classdef FEmesh < handle
                 
                 % Apply id base on location flag
                 if ischar(varargin{i}) && any(strcmpi(varargin{i},cstr));
-                    obj.add_boundary_location(id, varargin{i});
+                    obj.addBoundaryLocation(id, varargin{i});
                 
                 % Apply id based on function flag
                 else
-                    obj.add_tag(id, varargin{i},'boundary');
+                    obj.addTag(id, varargin{i},'boundary');
                 end
             end
         end
 
-        function add_subdomain(obj, id, varargin)
-            %ADD_SUBDOMAIN Labels elements with numeric tags.
+        function addSubdomain(obj, id, varargin)
+            %ADD_UBDOMAIN Labels elements with numeric tags.
             %
             % Syntax
-            %   add_subdomain(id, Limit1,...)
+            %   addSudomain(id, Limit1,...)
             %
             % Description
-            %   add_boundary(id, Limit1,...) allows user to seperate the
+            %   addSudomain(id, Limit1,...) allows user to seperate the
             %   domain into subdomains based on a variety of spatial
             %   criteria functions, see the description below.
             %
@@ -328,44 +339,44 @@ classdef FEmesh < handle
                         
             % Apply the subdomain flags
             for i = 1:length(varargin);
-                obj.add_tag(id, varargin{i},'subdomain');
+                obj.addTag(id, varargin{i},'subdomain');
             end
         end
         
-        function dof = get_dof(obj, varargin)
-            %GET_DOF Returns the global degrees of freedom.
+        function dof = getDof(obj, varargin)
+            %GETDOF Returns the global degrees of freedom.
             %
             % Syntax
-            %   dof = get_dof()
-            %   dof = get_dof('PropertyName',PropertyValue,...);
-            %   dof = get_dof(C1,C2,...);
+            %   dof = getDof()
+            %   dof = getDof('PropertyName',PropertyValue,...);
+            %   dof = getDof(C1,C2,...);
             %
             % Description
-            %   dof = get_dof() returns the global degrees of freedom for
+            %   dof = getDof() returns the global degrees of freedom for
             %   the entire finite element mesh.
             %
-            %   dof = get_dof('PropertyName',PropertyValue) returns the
+            %   dof = getDof('PropertyName',PropertyValue) returns the
             %   global degrees of freedom for portions of the mesh
             %   depending on the properties (see descriptions below).
             %
-            %   dof = get_dof(C1,C2,...) operates in the same fashion as
+            %   dof = getDof(C1,C2,...) operates in the same fashion as
             %   above, but allows for multiple criteria to be specified.
             %   C1,C2, etc. are each cell arrays of property pairings which
             %   are looped over, the resulting dof that meet ANY of the
             %   criteria are returned. The following two examples are
             %   identical:
-            %       ess(:,1) = get_dof('Boundary',1,'Component','x');
-            %       ess(:,2) = get_dof('Boundary',2,'Component','y');   
+            %       ess(:,1) = getDof('Boundary',1,'Component','x');
+            %       ess(:,2) = getDof('Boundary',2,'Component','y');   
             %       ess = any(ess,2);
             %
-            %       ess = get_dof({'Boundary',1,'Component','x'},...
+            %       ess = getDof({'Boundary',1,'Component','x'},...
             %           {'Boundary',2,'Component','y'})
             %
             %       Note: This method will not return the dofs in index 
             %       format, that option is disable automtically for each 
             %       input property parring.
             %
-            % GET_DOF Property Descriptions
+            % GETDOF Property Descriptions
             %   Component
             %       scalar | 'x' | 'y' | 'z'
             %       Returns the dof associated with the vector space or
@@ -409,7 +420,7 @@ classdef FEmesh < handle
                     end
                     
                     % Add to the dof
-                    dof(:,i) = obj.get_dof_private(varargin{i}{:},'index',false);  
+                    dof(:,i) = obj.getDofPrivate(varargin{i}{:},'index',false);  
                 end
                 
                 % Reduce the matrix to a column array
@@ -417,39 +428,39 @@ classdef FEmesh < handle
                
             % Traditional input case    
             else
-                dof = obj.get_dof_private(varargin{:});
+                dof = obj.getDofPrivate(varargin{:});
             end
         end
         
-        function e = get_elements(obj, varargin)
-            %GET_ELEMENTS Returns the global degrees of freedom.
+        function e = getElements(obj, varargin)
+            %GETELEMENTS Returns the global degrees of freedom.
             %
             % Syntax
-            %   e = get_elements()
-            %   e = get_elements('PropertyName',PropertyValue,...);
-            %   e = get_elements(C1,C2,...);
+            %   e = getElements()
+            %   e = getElements('PropertyName',PropertyValue,...);
+            %   e = getElements(C1,C2,...);
             %
             % Description
-            %   e = get_elements() returns the complete vector of elements
+            %   e = getElements() returns the complete vector of elements
             % 
-            %   e = get_elements('PropertyName',PropertyValue) returns the
+            %   e = getElements('PropertyName',PropertyValue) returns the
             %   elements for portions of the mesh depending on the 
             %   properties (see descriptions below).
             %
-            %   dof = get_elements(C1,C2,...) operates in the same fashion as
+            %   dof = getElements(C1,C2,...) operates in the same fashion as
             %   above, but allows for multiple criteria to be specified.
             %   C1,C2, etc. are each cell arrays of property pairings which
             %   are looped over, the resulting dof that meet ANY of the
             %   criteria are returned. The following two examples are
             %   identical:
-            %       e(:,1) = get_elements('Boundary',1,'Component','x');
-            %       e(:,2) = get_elements('Boundary',2,'Component','y');   
+            %       e(:,1) = getElements('Boundary',1,'Component','x');
+            %       e(:,2) = getElements('Boundary',2,'Component','y');   
             %       e = any(ess,2);
             %
-            %       e = get_elements({'Boundary',1,'Component','x'},...
+            %       e = getElements({'Boundary',1,'Component','x'},...
             %           {'Boundary',2,'Component','y'})
             %
-            % GET_DOF Property Descriptions
+            % GETELEMENTS Property Descriptions
             %   Boundary
             %       scalar
             %       Extract the dofs for the boundary specified, where the
@@ -485,7 +496,7 @@ classdef FEmesh < handle
                     end
                     
                     % Add to the dof
-                    idx(:,i) = obj.get_element_idx(varargin{i}{:});  
+                    idx(:,i) = obj.getElementIdx(varargin{i}{:});  
                 end
 
                 % Reduce the matrix to a column array
@@ -494,27 +505,27 @@ classdef FEmesh < handle
                 
             % Traditional input case    
             else
-                idx = obj.get_element_idx(varargin{:});
+                idx = obj.getElementIdx(varargin{:});
                 e = obj.element(idx);
             end
         end
                 
-        function varargout = get_nodes(obj,varargin)
-            %GET_NODES Returns spatial position of the nodes for the mesh
+        function varargout = getNodes(obj,varargin)
+            %GETNODES Returns spatial position of the nodes for the mesh
             %
             % Syntax
-            %   x = get_nodes()
-            %   [x,y,z] = get_nodes()
-            %   x = get_nodes(dim)
+            %   x = getNodes()
+            %   [x,y,z] = getNodes()
+            %   x = getNodes(dim)
             %
             % Description
-            %   x = get_nodes() returns the nodal coordinates for the
+            %   x = getNodes() returns the nodal coordinates for the
             %   entire mesh.
             %
-            %   [x,y,z] = get_nodes() returns the nodal coordinates for
+            %   [x,y,z] = getNodes() returns the nodal coordinates for
             %   each spatial dimension as a seperate output.
             %
-            %   x = get_nodes(dim) returns the nodeal coordinates for the
+            %   x = getNodes(dim) returns the nodeal coordinates for the
             %   specified dimension, it may be a string ('x','y', or 'z')
             %   or a numeric value (1,2, or 3).
             
@@ -588,8 +599,8 @@ classdef FEmesh < handle
     end
     
     methods (Hidden = true, Access = private)    
-        function compute_dof_map(obj)
-            %COMPUTE_DOF_MAP Calculates the global degree-of-freedom map
+        function computeDofMap(obj)
+            %COMPUTEDOFMAP Calculates the global degree-of-freedom map
             %
             % Syntax
             %   compute_dof_map()
@@ -597,10 +608,10 @@ classdef FEmesh < handle
             % Description
             %   compute_dof_map() builds a degree of freedom map for the
             %   finite element mesh.
-            
+
             % Display wait message
             if obj.opt.time;
-                ticID = tmessage('Computing the degree-of-freedom map...');
+                ticID = tMessage('Computing the degree-of-freedom map...');
             end
 
             % Place the correct type of map in public property
@@ -614,23 +625,23 @@ classdef FEmesh < handle
             % Update the elements with the global dof
             for e = 1:obj.n_elements;
                 elem = obj.element(e);
-                elem.global_dof = obj.map.dof(obj.map.elem == e,:);
+                elem.globalDof = obj.map.dof(obj.map.elem == e,:);
             end
             
             % Complete message
             if obj.opt.time;
-                tmessage(ticID);
+                tMessage(ticID);
             end;
         end
         
-        function find_neighbors(obj)
+        function findNeighbors(obj)
             % Locates elements that share a side
             %
             % Syntax
-            %   find_neighbors()   
+            %   findNeighbors()   
             %
             % Description
-            %   find_neighbors() locates neighboring elements and
+            %   findNeighbors() locates neighboring elements and
             %   neighboring sides for the finite element mesh, it sets the
             %   various neighbor and side related properties for the
             %   elements in the mesh.
@@ -721,35 +732,35 @@ classdef FEmesh < handle
             
             % Complete message
             if obj.opt.time;
-                tmessage(ticID);
+                tMessage(ticID);
             end;
         end 
          
-        function e = get_element_idx(obj, varargin)
+        function e = getElementIdx(obj, varargin)
             %GET_ELEMENT_IDX returns a set of elements
             %
             % Syntax
-            %   e = get_element_idx()
-            %   e = get_element_idx('PropertyName',PropertyValue);
+            %   e = getElementIdx()
+            %   e = getElementIdx('PropertyName',PropertyValue);
             %
             % Description
-            %   e = get_element_idx() returns all the elements
+            %   e = getElementIdx() returns all the elements
             %
-            %   e = get_element_idx('PropertyName',PropertyValue) returns 
+            %   e = getElementIdx('PropertyName',PropertyValue) returns 
             %   the element for portions of the mesh
             %   depending on the properties (see descriptions below).
             %
-            % GET_ELEMENT_IDX Property Descriptions
-            %   see GET_ELEMENTS
+            % GETELEMENTIDX Property Descriptions
+            %   see GETELEMENTS
             %
             % See Also
-            %   GET_ELEMENTS GET_DOF
+            %   GETELEMENTS GETDOF
             
             % Set the default values for the varius inputs
             options.subdomain = [];
             options.boundary = [];
             options.contains = [];
-            options = gather_user_options(options, varargin{:});
+            options = gatherUserOptions(options, varargin{:});
 
             % Return dofs for the specified boundary id
             if ~isempty(options.boundary);
@@ -801,33 +812,33 @@ classdef FEmesh < handle
             end
         end
         
-        function dof = get_dof_private(obj, varargin)
-            %GET_DOF_PRIVATE Returns the global degrees of freedom.
+        function dof = getDofPrivate(obj, varargin)
+            %GETDOFPRIVATE Returns the global degrees of freedom.
             %
             % Syntax
-            %   dof = get_dof_private()
-            %   dof = get_dof_private('PropertyName',PropertyValue);
+            %   dof = getDofPrivate()
+            %   dof = getDofPrivate('PropertyName',PropertyValue);
             %
             % Description
-            %   dof = get_dof_private() returns the global degrees of 
+            %   dof = getDofPrivate() returns the global degrees of 
             %   freedom for the entire finite element mesh.
             %
-            %   dof = get_dof_private('PropertyName',PropertyValue) returns 
+            %   dof = getDofPrivate('PropertyName',PropertyValue) returns 
             %   the global degrees of freedom for portions of the mesh
             %   depending on the properties (see descriptions below).
             %
-            % GET_DOF_PRIVATE Property Descriptions
-            %   see GET_DOF
+            % GETDOFPRIVATE Property Descriptions
+            %   see GETDOF
             %
             % See Also
-            %   GET_DOF
+            %   GETDOF
 
             % Set the default values for the varius inputs
             options.component = [];
             options.subdomain = [];
             options.boundary = [];
             options.index = false;
-            options = gather_user_options(options, varargin{:});
+            options = gatherUserOptions(options, varargin{:});
 
             % Return dofs for the specified boundary id
             if ~isempty(options.boundary);
@@ -856,7 +867,7 @@ classdef FEmesh < handle
 
             % Vector FE space (uses transform_dof of an element)
             if obj.n_dof_node > 1;
-                dof = transform_dof(dof,obj.n_dof_node);
+                dof = transformDof(dof,obj.n_dof_node);
             end
 
             % Extract boundaries for certain component of vector space
@@ -891,16 +902,35 @@ classdef FEmesh < handle
             end
         end
         
-        function gen1Dgrid(obj, x0, x1, xn)
+        function gen1Dgrid(obj, x0, x1, xn, varargin)
             %GEN1DGRID Generate the 1D mesh (see grid)
             %
             % Syntax
             %   gen1Dgrid(x0, x1, xn)
+            %   gen1Dgrid(...,'PropertyName', PropertyValue, ...)
             %
             % Description
             %   gen1Dgrid(x0, x1, xn) creates a 1D grid ranging from
             %   x0 to x1 with xn number of elements.
-
+            %
+            %   gen1Dgrid(...,'PropertyName', PropertyValue, ...) allows
+            %   user to customize the grid using the property pairs below.
+            %
+            % GEN1DGRID Property Descriptions
+            %   Element
+            %       char
+            %       Specifies the type of element that the mesh will be
+            %       composed of, the default is the Line2 element. Any
+            %       class derivied from the Element class, located in the 
+            %       +element directory may be specified. This is only used
+            %       for the grid function and it may be overwritten using
+            %       the grid optoins.
+            
+            % Collect user options
+            opt.pol2cart = false;
+            opt.element = obj.options.element;
+            opt = gatherUserOptions(opt,varargin{:});
+            
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
 
@@ -911,7 +941,7 @@ classdef FEmesh < handle
                 nodes(2) = x(i+1);
 
                 % Add the element(s)
-                obj.add_element(nodes');
+                obj.addElement(opt.element, nodes');
             end
         end
         
@@ -920,11 +950,15 @@ classdef FEmesh < handle
             %
             % Syntax
             %   gen2Dgrid(x0, x1, y0, y1, xn, yn)
+            %   gen2Dgrid(...,'PropertyName', PropertyValue, ...)
             %
             % Description
             %   gen2Dgrid(x0, x1, y0, y1, xn, yn) creates a 2D grid 
             %   ranging from x0 to x1 with xn number of elements in the
             %   x-direction, similarily in the y direction.
+            %
+            %   gen2Dgrid(...,'PropertyName', PropertyValue, ...) allows
+            %   user to customize the grid using the property pairs below.
             %
             % GRID Property Descriptions
             %   pol2cart
@@ -932,10 +966,20 @@ classdef FEmesh < handle
             %       Converts the inputted polar cordinates to cartesian
             %       coordinates when creating the elements. The flag style 
             %       input may also be used (i.e., '-pol2car').
+            %
+            %   Element
+            %       char
+            %       Specifies the type of element that the mesh will be
+            %       composed of, the default is the Line2 element. Any
+            %       class derivied from the Element class, located in the 
+            %       +element directory may be specified. This is only used
+            %       for the grid function and it may be overwritten using
+            %       the grid optoins.  
             
             % Collect user options
-            options.pol2cart = false;
-            options = gather_user_options(options,varargin{:});
+            opt.pol2cart = false;
+            opt.element = obj.options.element;
+            opt = gatherUserOptions(opt,varargin{:});
             
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
@@ -951,34 +995,38 @@ classdef FEmesh < handle
                     nodes(4,:) = [x(i), y(j+1)];
                     
                     % Adust for polar input
-                    if options.pol2cart;
+                    if opt.pol2cart;
                         [nodes(:,1),nodes(:,2)] = ...
                             pol2cart(nodes([1,4,3,2],1), nodes([1,4,3,2],2));
                     end
                     
                     % Add the element(s)
-                    switch obj.opt.element;
+                    switch opt.element;
                         case {'Quad4'};
-                            obj.add_element( nodes);
+                            obj.addElement(opt.element, nodes);
                             
                         case {'Tri3', 'Tri6'};
-                            obj.add_element(nodes(1:3,:));
-                            obj.add_element(nodes([1,3,4],:));
+                            obj.addElement(opt.element, nodes(1:3,:));
+                            obj.addElement(opt.element, nodes([1,3,4],:));
                     end
                 end
             end
         end
 
         function gen3Dgrid(obj, x0, x1, y0, y1, z0, z1, xn, yn, zn, varargin)
-            %GEN2DGRID Generate the 2D mesh (see grid)
+            %GEN3DGRID Generate the 2D mesh (see grid)
             %
             % Syntax
             %   gen3Dgrid((x0, x1, y0, y1, z0, z1, xn, yn, zn)
+            %   gen3Dgrid(...,'PropertyName', PropertyValue, ...)
             %
             % Description
-            %   gen3Dgrid((x0, x1, y0, y1, z0, z1, xn, yn, zn) creates a 3D 
+            %   gen3Dgrid(x0, x1, y0, y1, z0, z1, xn, yn, zn) creates a 3D 
             %   grid ranging from x0 to x1 with xn number of elements in the
-            %   x-direction, similarily in the y- and x-direction.
+            %   x-direction, similarily in the y- and z-direction.
+            %
+            %   gen3Dgrid(...,'PropertyName', PropertyValue, ...) allows
+            %   user to customize the grid using the property pairs below.
             %
             % GEN3DGRID Property Descriptions
             %   pol2cart
@@ -986,10 +1034,20 @@ classdef FEmesh < handle
             %       Converts the inputted polar cordinates to cartesian
             %       coordinates when creating the elements. The flag style 
             %       input may also be used (i.e., '-pol2car').
+            %
+            %   Element
+            %       char
+            %       Specifies the type of element that the mesh will be
+            %       composed of, the default is the Line2 element. Any
+            %       class derivied from the Element class, located in the 
+            %       +element directory may be specified. This is only used
+            %       for the grid function and it may be overwritten using
+            %       the grid optoins.  
             
             % Collect user options
-            options.pol2cart = false;
-            options = gather_user_options(options,varargin{:});
+            opt.pol2cart = false;
+            opt.element = obj.options.element;
+            opt = gatherUserOptions(opt,varargin{:});
             
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
@@ -1011,16 +1069,16 @@ classdef FEmesh < handle
                         nodes(8,:) = [x(i), y(j+1), z(k+1)];
                         
                         % Adust for polar input
-                        if options.pol2cart;
+                        if opt.pol2cart;
                             idx = [1,4,3,2,5,6,7,8];
                             [nodes(:,1),nodes(:,2),nodes(:,3)] = ...
                                 pol2cart(nodes(idx,1), nodes(idx,2), nodes(idx,3));
                         end
 
                         % Add the element(s)
-                        switch obj.opt.element;
+                        switch opt.element;
                             case {'Hex8'};
-                                obj.add_element(nodes);
+                                obj.addElement(opt.element, nodes);
 
 %                             case {'Tri3', 'Tri6'};
 %                                 obj.add_element(nodes(1:3,:));
@@ -1031,31 +1089,31 @@ classdef FEmesh < handle
             end
         end        
         
-        function add_boundary_location(obj, id, loc)
-           %ADD_BOUNDARY_LOCATION Adds boundary id based on location flag
+        function addBoundaryLocation(obj, id, loc)
+           %ADDBOUNDARYLOCATION Adds boundary id based on location flag
            %
            % Syntax
-           %    add_boundary_location(id, SideString)
+           %    addBoundaryLocation(id, SideString)
            %
            % Description
-           %    add_boundary_location(id, SideString) adds a boundary id
+           %    addBoundaryLocation(id, SideString) adds a boundary id
            %    specified by the SideString value, see the help for
            %    ADD_BOUNDARY for a list of the available strings.
             %
-           % See Also ADD_BOUNDARY
+           % See Also ADDBOUNDARY
            
            % Locate the column in the node positions and the value to
            % search for when applying the id
-           [col, value] = obj.parse_boundary_location_input(loc);
+           [col, value] = obj.parseBoundaryLocationInput(loc);
 
            % Build a string of the condition
            func = [col,'==',num2str(value)];
 
            % Call the function based boundary function
-           obj.add_tag(id, func, 'boundary');
+           obj.addTag(id, func, 'boundary');
         end
         
-        function add_tag(obj, id, func, type)
+        function addTag(obj, id, func, type)
             %ADD_TAG Adds boundary and subdomain tags based on function
             %
             % Syntax
@@ -1179,18 +1237,18 @@ classdef FEmesh < handle
             end
         end
         
-        function [col, value] = parse_boundary_location_input(obj, loc)
-            %PARSE_BOUNDARY_LOCATION_INPUT
+        function [col, value] = parseBoundaryLocationInput(obj, loc)
+            %PARSEBOUNDARYLOCATIONINPUT
             %
             % Syntax
-            %   [col, value] = parse_boundary_location_input(loc)
+            %   [col, value] = parseBoundaryLocationInput(loc)
             %
             % Description
-            %   [col, value] = parse_boundary_location_input(loc) returns
+            %   [col, value] = parseBoundaryLocationInput(loc) returns
             %   the column and value for boundary location strings, see
             %   ADD_BOUNDARY for details.
             %
-            % See Also ADD_BOUNDARY ADD_BOUNDARY_LOCATION
+            % See Also ADDBOUNDARY ADDBOUNDARYLOCATION
 
             switch loc;
                 case {'left', 'right'};
@@ -1229,17 +1287,17 @@ classdef FEmesh < handle
             end  
         end
         
-        function id_empty_boundary(obj, id)
-            %ID_EMPTY_BOUNDARY Mark all unmarked boundaries
+        function idEmptyBoundary(obj, id)
+            %IDEMPTYBOUNDARY Mark all unmarked boundaries
             %
             % Syntax
-            %   id_empty_boundary(id)
+            %   idEmptyBoundary(id)
             %
             % Description
-            %   id_empty_boundary(id) tags all boundaries that are unmarked
+            %   iidEmptyBoundary(id) tags all boundaries that are unmarked
             %   with the specified id, see ADD_BOUNDARY for details.
             %
-            % See Also ADD_BOUNDARY
+            % See Also ADDBOUNDARY
     
             % Location for new row of boundary
             col = size(obj.map.boundary, 2) + 1;

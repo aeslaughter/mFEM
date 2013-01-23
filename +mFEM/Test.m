@@ -22,7 +22,7 @@ classdef Test < handle
             
             opt.tol = 0;
             opt.main = false;
-            opt = gather_user_options(opt,varargin{:});
+            opt = gatherUserOptions(opt,varargin{:});
             
             if ischar(mat1) && ischar(mat2)
                 bool = strcmp(mat1, mat2);

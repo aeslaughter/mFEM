@@ -100,7 +100,7 @@ classdef Element < mFEM.elements.base.ElementCore
             %       ignored. E.g.,
             %           N = shape(0,'-scalar');
 
-            % Parse options (do not use gather_user_options for speed)
+            % Parse options (do not use gatherUserOptions for speed)
             options.scalar = false;
             if nargin > 1 && strcmpi(varargin{end},'-scalar');
                 varargin = varargin(1:end-1);

@@ -2,33 +2,36 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
     %AUTOMATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
+        
     end
     
-    properties (SetAccess = {?mFEM.registry.MatrixKernelRegistry})
-        constReg;
-        funcReg;
+    properties (GetAccess = public, SetAccess = protected) %(SetAccess = {?mFEM.registry.MatrixKernelRegistry})
+        const;
+        func;
+        input;
+        eqn;
     end
    
     methods 
-        function obj = AutoKernel(mesh, name, eqn, varargin)
+        function obj = AutoKernel(mesh, name, eqn_input, varargin)
             obj = obj@mFEM.kernels.base.MatrixKernel(mesh, name, varargin{:});
             obj.mesh = mesh;
-            obj.value = eqn;
+            obj.input = eqn_input;
             
-            obj.options.functions = [];
-            obj.options.constants = [];
-            [obj.options, unknown] = gather_user_options(obj.options, varargin{:});
+            obj.options.funcregistry = [];
+            obj.options.constantregistry = [];
+            [obj.options, unknown] = gatherUserOptions(obj.options, varargin{:});
             
-            if isa(obj.options.constants, 'mFEM.registry.ConstantKernelRegistry');
-               obj.constReg = obj.options.constants;
+            if isa(obj.options.constantregistry, 'mFEM.registry.ConstantRegistry');
+               obj.const = obj.options.constantregistry;
             else
-                obj.constReg = mFEM.registry.ConstantKernelRegistry();
+                obj.const = mFEM.registry.ConstantRegistry();
             end
             
-            if isa(obj.options.functions, 'mFEM.registry.FunctionKernelRegistry');
-               obj.funcReg = obj.options.functions;
+            if isa(obj.options.funcregistry, 'mFEM.registry.FuncRegistry');
+               obj.func = obj.options.funcregistry;
             else
-                obj.funcReg = mFEM.registry.FunctionKernelRegistry();
+                obj.func = mFEM.registry.FuncRegistry();
             end
             
             obj.applyUnknowns(unknown);
@@ -43,31 +46,31 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
                val = unknown{i+1};
                
                if isa(itm, 'function_handle');
-                   obj.funcReg.add(itm, val, 'constants', obj.constReg);
+                   obj.func.add(itm, val, 'ConstantRegistry', obj.const);
                elseif ischar(itm);
-                   obj.constReg.add(itm, val);
+                   obj.const.add(itm, val);
                end
             end
         end               
       
         function parseEquation(obj)
             
-            str = obj.value;
+            str = obj.input;
 
             str = regexprep(str,'\<N\>', 'elem.shape(qp)');
-            str = regexprep(str,'\<B\>', 'elem.shape_deriv(qp)');      
-            if ~strcmp(str, obj.value)
+            str = regexprep(str,'\<B\>', 'elem.shape_deriv(qp)');    
+            
+            if ~strcmp(str, obj.input)
                 obj.direct = false; 
-                obj.value = str;
             else
                 obj.direct = true;
             end
 
             if obj.direct;
-                obj.value = regexprep(obj.value,'\<Ke\>','elem.stiffness()');
+                str = regexprep(str,'\<Ke\>','elem.stiffness()');
             end
 
-            obj.constReg.apply(obj);
+            obj.eqn = obj.const.apply(str);
             
         end
         
@@ -79,10 +82,9 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
                 t = varargin{1};
             end
             
-            func = obj.value;
-            obj.funcReg.apply(func, elem, qp, t);
+            str = obj.func.apply(obj.eqn, elem, qp, t);
 
-            value = eval(func);
+            value = eval(str);
             
         end
     end

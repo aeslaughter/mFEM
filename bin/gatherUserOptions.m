@@ -1,20 +1,22 @@
-function [opt, unknowns] =  gather_user_options(opt,varargin)
+function [opt, unknowns] =  gatherUserOptions(opt, varargin)
     % Collects property parings input into a function
     %
     % Syntax
-    %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...);
-    %   opt = gather_user_options(...,-PropertyName,...);
-    %   opt = gather_user_options(...,{'-DisableGatherUserOptionsWarning'});
-    %   opt = gather_user_options(opt,optUser);
+    %   opt = gatherUserOptions(opt,'PropertyName',PropertyValue,...);
+    %   opt = gatherUserOptions(...,-PropertyName,...);
+    %   opt = gatherUserOptions(...,{'PropName', PropValue,...});
+    %   opt = gatherUserOptions(opt,optUser);
     %   [opt, unknown] = gatherUserOptions(...);
     %
     % Description
-    %   opt = gather_user_options(opt,'PropertyName',<PropertyValue>,...)
+    %   opt = gatherUserOptions(opt,'PropertyName',<PropertyValue>,...)
     %   compares the property names with the default values stored in the
     %   data structure and applies the property value if the field matches
-    %   the property name. The opt input variable is described below.
+    %   the property name. The opt input variable is a data structure 
+    %   containing the default values, 
+    %       e.g. opt = struct('Prop1',true,'Prop2','install','Coeffient',1);
     %
-    %   opt = gather_user_options(...,-PropertyName)
+    %   opt = gatherUserOptions(...,-PropertyName)
     %   adds an alternative method for flipping boolean values without
     %   specifing the value. For example if the options structure is:
     %       opt.flag = true;
@@ -22,17 +24,26 @@ function [opt, unknowns] =  gather_user_options(opt,varargin)
     %       opt = gather_user_options(opt,'-flag');
     %       opt = gather_user_options(opt,'flag',false);
     %
-    %   opt = gather_user_options(opt,optUser) in this case the user suplies a
+    %   opt = gatherUserOptions(..., {'PropName', PropValue,...}) options
+    %   may be passed to this function itself by entering the pairs in a
+    %   cell array that occupys the last input.
+    %
+    %   opt = gatherUserOptions(opt,optUser) in this case the user suplies a
     %   data structure similar to that of opt, which is compared according
     %   to the fieldnames.
     %
-    % Input
-    %   opt = a data structure containing the default values, e.g. opt =
-    %       struct('Prop1',true,'Prop2','install','Coeffient',1);. 
+    %   [opt, unknown] = gatherUserOptions(...) also returns a cell array
+    %   of property pairs for the unknown options, i.e. the options not
+    %   included in the opt input structure.
+    %
+    % gatherUserOptions Property Descriptions
+    %   DisableWarn
+    %       true | {false}
+    %       Toggles the display of the unknown option warning.
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
-    %  Copyright (C) 2012 Andrew E Slaughter
+    %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
     %  it under the terms of the GNU General Public License as published by
@@ -50,15 +61,16 @@ function [opt, unknowns] =  gather_user_options(opt,varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-% Gathe the options for the functin itself
+% Automatically disable warnings if unknowns are output
 options.disablewarn = false;
 if nargout == 2;
     options.disablewarn = true;
 end
 
+% Apply options for this function
 if ~isempty(varargin) && iscell(varargin{end});
     c = varargin{end};
-    options = gather_user_options(options,c{:});
+    options = gatherUserOptions(options,c{:});
     varargin = varargin(1:end-1);
 end
 
@@ -105,7 +117,7 @@ while k <= N
            u = u + 2;
              if ~options.disablewarn;
                 mes = ['The option, ',itm,', was not recognized and is being ignored.'];
-                warning('gather_user_options:unknown', mes);
+                warning('gatherUserOptions:UnknownProperty', mes);
             end
             continue;
        end
@@ -126,7 +138,7 @@ while k <= N
         u = u + 2;
         if ~options.disablewarn;
             mes = ['The option, ',itm,', was not recognized and is being ignored.'];
-            warning('gather_user_options:unknown', mes);
+            warning('gatherUserOptions:UnknownProperty', mes);
         end
     end
 end

@@ -18,7 +18,7 @@ classdef Source < mFEM.kernels.base.MatrixKernel
             opt.b = 1;
             opt.function = false;
             
-            opt = gather_user_options(opt,varargin{:});
+            opt = gatherUserOptions(opt,varargin{:});
             
             if isa(opt.b,'function_handle') || (opt.function && ischar(opt.b));
                 obj.B = mFEM.kernels.base.FunctionKernel('b',opt.b);

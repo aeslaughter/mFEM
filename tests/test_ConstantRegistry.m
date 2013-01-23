@@ -23,11 +23,8 @@ reg.add('d', 32, 'e', 43');
 T.compare(reg.get('d'), 32, 'Adding kernel, first input of multiple inputs');
 T.compare(reg.get('e'), 43, 'Adding kernel, second input of multiple inputs');
 
-try
-    reg.add('q',40,'-add');
-catch err;
-    T.compare('Registry:find', err.identifier, 'Error when adding not existant value');
-end
+reg.add('q', 40, '-add');
+T.compare(reg.get('q'), 40, 'Add flag, not repated value');
 
 reg.add('d',10, '-add'); % 32 + 10 = 42
 T.compare(reg.get('d'),42, 'Added numeric value to existing constant');

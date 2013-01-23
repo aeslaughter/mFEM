@@ -13,16 +13,16 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
     
     methods
         function obj = Diffusion(mesh, varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion','Type','Matrix');
+            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion', 'Type', 'Matrix');
 
             opt.d = 1;
             opt.function = false;
-            opt = gather_user_options(opt,varargin{:});
+            opt = gatherUserOptions(opt,varargin{:});
             
             if isa(opt.d,'function_handle') || (opt.function && ischar(opt.d));
-                obj.D = mFEM.kernels.base.FunctionKernel('D',opt.d);
+                obj.D = mFEM.kernels.Func('D',opt.d);
             else
-                obj.D = mFEM.kernels.base.ConstantKernel('D',opt.d);
+                obj.D = mFEM.kernels.Constant('D',opt.d);
             end
         end
         

@@ -192,7 +192,7 @@ function opt = parse_input(obj, varargin)
     end
     
     % Collect options supplied by the user
-    opt = gather_user_options(opt, varargin{start_idx:end}); 
+    opt = gatherUserOptions(opt, varargin{start_idx:end}); 
 
     % Set/Create the figure handle
     if opt.new;

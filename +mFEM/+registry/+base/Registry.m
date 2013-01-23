@@ -5,7 +5,7 @@ classdef Registry < handle
         core_options = struct('disablewarnings', false, 'allowduplicates', false);
     end
     
-    properties (Abstract, Access = protected)
+    properties (Abstract, GetAccess = public, SetAccess = protected)
         options;
         kernels;
     end
@@ -16,13 +16,12 @@ classdef Registry < handle
 
    methods (Abstract)
         output = get(obj, name);
-       % varargout = apply(obj, varargin)
    end
 
     methods
                
         function obj = Registry(varargin)
-            obj.core_options = gather_user_options(obj.core_options, varargin{:},{'-disablewarn'});
+            obj.core_options = gatherUserOptions(obj.core_options, varargin{:},{'-disablewarn'});
         end
 
         function str = apply(obj, str, varargin)        
@@ -33,7 +32,7 @@ classdef Registry < handle
         
         function kern = add(obj, varargin)
             
-            [opt, input] = gather_user_options(obj.options, varargin{:});
+            [opt, input] = gatherUserOptions(obj.options, varargin{:});
             
             % Location of last input flag
             n = length(input) - 1;
@@ -46,14 +45,12 @@ classdef Registry < handle
             end  
         end
         
-        
-        
         function [idx, found] = find(obj, name, varargin)
 
             %opt = obj.reg_options;
             opt.index = false;
             opt.add  = false;
-            opt = gather_user_options(opt, varargin{:});
+            opt = gatherUserOptions(opt, varargin{:});
             
             % Locate the kernel
             idx = [];
@@ -84,7 +81,7 @@ classdef Registry < handle
                 
             % Found, not adding, and returning the indices (this is
             % default)
-            %elseif opt.index && found;
+            elseif opt.index && found;
                 
             % Not found, not adding    
             elseif ~found;

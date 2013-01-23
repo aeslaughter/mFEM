@@ -1,14 +1,14 @@
-classdef MatrixKernel < mFEM.kernels.base.Kernel ...
-                      & matlab.mixin.Heterogeneous
+classdef MatrixKernel < mFEM.kernels.base.Kernel                     
     %MATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
        options = struct(...
            'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
+       reserved = {'N','B','Ke'};
     end
     
-    properties (SetAccess = {?mFEM.registry.MatrixKernelRegistry})
-        matrix;
+    properties (SetAccess = {?mFEM.registry.base.Registry})
+        value;
     end
    
     properties (Access = protected)
@@ -16,32 +16,40 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
         direct = false;
     end
        
-    
-    
-    
     methods 
         function obj = MatrixKernel(mesh, name, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
 
-            [obj.options, unknown] = gather_user_options(obj.options, varargin{:});
+            [obj.options, unknown] = gatherUserOptions(obj.options, varargin{:});
             obj.mesh = mesh;
             
             if any(strcmpi(obj.options.type,{'matrix','mat','m'}));
-                obj.matrix = mFEM.Matrix(mesh);
+                obj.value = mFEM.Matrix(mesh);
                 obj.options.type = 'matrix';
             elseif any(strcmpi(obj.options.type,{'vector','vec','v'}));
-                obj.matrix = mFEM.Vector(mesh);
+                obj.value = mFEM.Vector(mesh);
                 obj.options.type = 'vector';
             else
                 error('MatrixKernel:MatrixKernel', 'Unknown type %s.', obj.options.type);
             end
         end
 
-        function K = get(obj)
-            K = obj.matrix.init();
+        function str = apply(obj, str, elem, qp, t)
+            error('MatrixKernel:apply', 'Not implemented');
+%             if ~ischar(str);
+%                 error('Func:apply', 'The input (str) must be a character string');
+%             end    
+%             
+%             % Apply OBJ's value to KERN
+%             expr = ['\<',obj.name,'\>'];
+%             repstr = obj.eval(elem, qp, t);
+%             
+%             str = regexprep(str, expr, repstr); 
         end
         
-
+        function K = get(obj)
+            K = obj.value.init();
+        end
         
         function varargout = assemble(obj, varargin)
                 
@@ -49,9 +57,11 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                 opt.boundary = obj.options.boundary;
                 opt.subdomain = obj.options.subdomain;
                 opt.component = obj.options.component;
-                opt = gather_user_options(opt, varargin{:});
+                opt = gatherUserOptions(opt, varargin{:});
 
-                elem = obj.mesh.get_elements(varargin{:});
+                elem = obj.mesh.get_elements('boundary', opt.boundary, ...
+                                             'subdomain', opt.subdomain);
+                                            %'component', opt.component);
                 
                for i = 1:length(elem);
                
@@ -62,13 +72,13 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
                     end
 
                     dof = elem(i).get_dof();
-                    obj.matrix.add(Ke, dof); 
+                    obj.value.add(Ke, dof); 
                end
 
                if nargout == 1;
-                    varargout{1} = obj.matrix.init(); 
+                    varargout{1} = obj.value.init(); 
                     if opt.zero;
-                        obj.matrix.zero();
+                        obj.value.zero();
                     end
                end
         end   
@@ -116,15 +126,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel ...
             else
                 error('2D side not working yet');
             end
-            
-            
-            
-            
+
         end
-        
-        
-        
-        
     end
 
 end

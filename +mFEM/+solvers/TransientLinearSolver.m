@@ -134,7 +134,7 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
            obj@mFEM.base.Solver(input)
            
            % Collect the inputs
-           obj.opt = gather_user_options(obj.opt, varargin{:});
+           obj.opt = gatherUserOptions(obj.opt, varargin{:});
        end
 
        function u = init(obj, u)

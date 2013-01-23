@@ -149,7 +149,7 @@ classdef Solver < handle
            %    set('PropertyName', PropertyValue, ...) allows user to 
            %    change the values of the options for the Solver class.
            
-           obj.opt = gather_user_options(obj.opt, varargin{:});
+           obj.opt = gatherUserOptions(obj.opt, varargin{:});
         end
     end
     
@@ -206,7 +206,7 @@ classdef Solver < handle
             opt.value = [];
             opt.component = [];
             opt.clear = false;
-            opt = gather_user_options(opt, varargin{:});
+            opt = gatherUserOptions(opt, varargin{:});
 
             if opt.clear
                 obj.essential = struct('id',{},'value',{},'component',{});

@@ -1,5 +1,5 @@
-function T = test_DiffusionKernel
-%TEST_MATRIXKERNEL Tests the ConstantKernel class
+function T = test_Diffusion
+%TEST_Diffusion Tests the Diffusion kernel
 
 % Call the Test class for this file
 T = mFEM.Test(mfilename('fullfile'));

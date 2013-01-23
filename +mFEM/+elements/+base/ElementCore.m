@@ -253,7 +253,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             for i = 1:length(varargin);
                 TF = ischar(varargin{i});
                 if TF;
-                    options = gather_user_options(options,varargin{i:end});
+                    options = gatherUserOptions(options,varargin{i:end});
                     varargin = varargin(1:i-1);
                     break;  
                 end  
@@ -390,7 +390,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             options.side = [];
             options.local = false;
             options.component = [];
-            options = gather_user_options(options, varargin{:});
+            options = gatherUserOptions(options, varargin{:});
             
             % Extract ALL of the degrees of freedom
             if isempty(options.side)

@@ -4,7 +4,7 @@ function err = test(varargin)
 % User options
 opt.tests = {};
 opt.throw = false;
-opt = gather_user_options(opt,varargin{:});
+opt = gatherUserOptions(opt,varargin{:});
 
 % Build a list of test functions to run
 func = getTestFunctions(opt.tests);

@@ -63,7 +63,7 @@ classdef Gauss < handle
             %   'tri'                   1,3,4,7
 
             % Gather/set the options
-            obj.opt = gather_user_options(obj.opt, varargin{:});   
+            obj.opt = gatherUserOptions(obj.opt, varargin{:});   
         end
         
         function [qp, w] = rules(obj, varargin)
@@ -121,7 +121,7 @@ classdef Gauss < handle
             
             % Gather the options
             options.cell = false;
-            options = gather_user_options(options, varargin{:});
+            options = gatherUserOptions(options, varargin{:});
 
             % Call the appropriate methods to build the quadrature rules
             switch lower(obj.opt.type)
