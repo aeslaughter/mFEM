@@ -34,8 +34,8 @@ classdef Element < mFEM.elements.base.ElementCore
     % (the user must redfine these in subclasse, e.g. Line2)
     methods (Abstract, Access = protected)
         N = basis(obj, varargin)            % basis functions
-        B = grad_basis(obj, varargin)       % basis function derivatives (dN/dx, ...)
-        G = local_grad_basis(obj, varargin) % basis function derivatives (dN/dxi, ...)
+        B = gradBasis(obj, varargin)       % basis function derivatives (dN/dx, ...)
+        G = localGradBasis(obj, varargin) % basis function derivatives (dN/dxi, ...)
         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
 
@@ -80,41 +80,28 @@ classdef Element < mFEM.elements.base.ElementCore
             %
             % Syntax
             %   shape(xi)
-            %   shape(xi,eta)
-            %   shape(xi,eta,zeta)
-            %   shape(...,'PropertyName',PropertyValue)
+            %   shape(xi,'-scalar')
             %
             % Description
-            %   shape(...) returns the element shape functions evaluated at
-            %   the locations specified in the inputs, the number of which
-            %   varies with the number of space dimensions.
+            %   shape(xi) returns the element shape functions evaluated at
+            %   the locations specified by xi.
             %
-            %   shape(...,'PropertyName',PropertyValue) allows user to
+            %   shape(...,'-scalar') allows user to
             %   override the vectorized output using the scalar flag, this
-            %   is used by GET_POSITION
-            %
-            % SHAPE Property Descriptions
-            %   scalar
-            %       true | {false}
-            %       If this is set to true the vectorized output is
-            %       ignored. E.g.,
-            %           N = shape(0,'-scalar');
+            %   is used by GETPOSITION
 
             % Parse options (do not use gatherUserOptions for speed)
-            options.scalar = false;
-            if nargin > 1 && strcmpi(varargin{end},'-scalar');
-                varargin = varargin(1:end-1);
-                options.scalar = true;
-            elseif nargin > 2 && ischar(varargin{end-1});
-                options.scalar = varargin{end};
-                varargin = varargin(1:end-2);             
+            scalar_flag = false;
+            if nargin == 3 && strcmpi(varargin{2},'-scalar');
+                varargin = varargin{1};
+                scalar_flag = true;            
             end                
             
             % Scalar field basis functions
             N = obj.basis(varargin{:});
 
             % Non-scalar fields
-            if ~options.scalar && (obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector'));
+            if ~scalar_flag && (obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector'));
                 n = N;                          % re-assign scalar basis
                 r = obj.n_dof_node;             % no. of rows
                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
@@ -127,25 +114,21 @@ classdef Element < mFEM.elements.base.ElementCore
             end      
         end
         
-        function B = shape_deriv(obj, varargin)
-            %SHAPE_DERIV Returns shape function derivatives in global x,y system
+        function B = shapeDeriv(obj, varargin)
+            %SHAPEDERIV Returns shape function derivatives in global x,y system
             %
             % Syntax
-            %   shape_deriv(xi)
-            %   shape_deriv(xi,eta)
-            %   shape_deriv(xi,eta,zeta)
+            %   shapeDeriv(xi)
             %
             % Description
-            %   shape_deriv(...) returns the element shape function 
-            %   derivatives evaluated at the locations specified in the 
-            %   inputs, the number of which varies with the number of space 
-            %   dimensions.
+            %   shapeDeriv(xi) returns the element shape function 
+            %   derivatives evaluated at the locations specified in xi.
 
             % Scalar field basis functin derivatives
-            B = obj.grad_basis(varargin{:});
+            B = obj.gradBasis(varargin{:});
                         
             % Non-scalar fields
-            if obj.n_dof_node > 1 && strcmpi(obj.opt.space,'vector');
+            if obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector');
                 b = B;                      % Re-assign scalar basis
                 r = obj.n_dof_node;         % no. of rows
                 c = r*size(b,2);            % no. of cols

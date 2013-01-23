@@ -52,8 +52,8 @@ mesh.grid(0,4,nel);
 mesh.init();
 
 %% Label The Boundaries
-mesh.add_boundary(1,'left');    % T = 0 boundary (essential)    
-mesh.add_boundary(2,'right');   % q = 20 boundary   
+mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
+mesh.addBoundary(2,'right');   % q = 20 boundary   
 
 %% Create Gauss Objects 
 % Initilizes an object for performing integration on the element and
@@ -82,7 +82,7 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi) elem.shape_deriv();
+    B = @(xi) elem.shapeDeriv();
     N = @(xi) elem.shape(xi);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
@@ -119,13 +119,13 @@ for e = 1:mesh.n_elements;
     
     % Add the local stiffness and force to the global 
     % (this method is slow, see example5 for faster method)
-    dof = elem.get_dof();   
+    dof = elem.getDof();   
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
 
 %% Define Variables for Essential and Non-essential Degrees-of-freedom
-ess = mesh.get_dof('Boundary', 1);  % 1
+ess = mesh.getDof('Boundary', 1);  % 1
 non = ~ess;                         % 2,3
 
 %% Solve for the Temperatures
@@ -141,7 +141,7 @@ for e = 1:mesh.n_elements;
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = T(elem.get_dof());
+    d(:,1) = T(elem.getDof());
     
     % Compute the temperature gradient at the gauss point, store the value
     % twice for each element for creating graph, TGx is the node locations

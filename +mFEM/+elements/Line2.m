@@ -67,9 +67,9 @@ classdef Line2 < mFEM.elements.base.Element
             N(2) = 1/2*(1 + xi);
         end
 
-        function B = grad_basis(obj, varargin) 
+        function B = gradBasis(obj, varargin) 
             % Gradient of shape functions
-            B = inv(obj.jacobian()) * obj.local_grad_basis();
+            B = inv(obj.jacobian()) * obj.localGradBasis();
         end
              
         function J = jacobian(obj, varargin)
@@ -77,7 +77,7 @@ classdef Line2 < mFEM.elements.base.Element
             J = 1/2 * obj.size();                 
         end
         
-        function GN = local_grad_basis(obj, varargin)
+        function GN = localGradBasis(obj, varargin)
             % Returns shape function derivatives in terms of xi
             GN = [-1/2, 1/2];
         end

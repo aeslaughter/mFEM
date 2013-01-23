@@ -242,7 +242,7 @@ function h = plot1D_scalar(obj, opt)
    
         % Gather y-axis data
         if ~isempty(opt.data);        
-            dof = elem.get_dof();
+            dof = elem.getDof();
             y = opt.data(dof);
         else
             y = zeros(size(x));

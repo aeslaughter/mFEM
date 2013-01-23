@@ -175,7 +175,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             error('Element:stiffness','The stiffness method is not defined for the %s element type',class(obj));
         end
         
-        function L = hmax(obj)
+        function L = hMax(obj)
             %HMAX Return maximum length between ANY two points
             %
             % Syntax
@@ -187,7 +187,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             L = max(obj.distance());
         end
         
-        function L = hmin(obj)
+        function L = hMin(obj)
             %HMIN Return inimum length between ANY two points
             %
             % Syntax
@@ -199,30 +199,30 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             L = min(obj.distance());
         end
                   
-        function varargout = get_position(obj, varargin)
-            %GET_POSITION Returns the real coordinates given xi, eta, ...
+        function varargout = getPosition(obj, varargin)
+            %GETPOSITION Returns the real coordinates given xi, eta, ...
             %
             % Syntax
-            %   x = get_position(xi)
-            %   [x,y] = get_position(xi,eta)
-            %   [x,y,z] = get_position(xi,eta,zeta)
-            %   [...] = get_position(..., 'PropertyName', PropertyValue)
-            %   xyz = get_position(...)
+            %   x = ggetPosition(xi)
+            %   [x,y] = getPosition(xi,eta)
+            %   [x,y,z] = getPosition(xi,eta,zeta)
+            %   [...] = getPosition(..., 'PropertyName', PropertyValue)
+            %   xyz = getPosition(...)
             %
             % Description
-            %   [...] = get_position(...) returns the position in global
+            %   [...] = getPosition(...) returns the position in global
             %   system given a value(s) for the local position, the number 
             %   of outputs varies according the number of spatial 
             %   dimensions.
             %
-            %   [...] = get_position(..., 'PropertyName', PropertyValue)
+            %   [...] = getPosition(..., 'PropertyName', PropertyValue)
             %   allow the limiting of which shape functions are used for
             %   the mapping, see EXAMPLE14b for an example.
             %
-            %   xyz = get_position(...) same as above but it returns the
+            %   xyz = getPosition(...) same as above but it returns the
             %   positions as a single array.
             %
-            % GET_POSITION Property Descriptions
+            % GETPOSITION Property Descriptions
             %   index
             %       logical array | numeric array
             %       An array that limits what shape functions are used for
@@ -292,15 +292,15 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             end
         end
         
-        function n = get_normal(obj, varargin)
-            %GET_NORMAL Returns the normal vector at a location
+        function n = getNormal(obj, varargin)
+            %GETNORMAL Returns the normal vector at a location
             %
             % Syntax
-            %   n = get_normal(xi)
-            %   n = get_normal(xi,eta)
+            %   n = getNormal(xi)
+            %   n = getNormal(xi,eta)
             %
             % Description
-            %   n = get_normal(...) returns the normal vector for a given
+            %   n = getNormal(...) returns the normal vector for a given
             %   local location. The number of inputs depends on the number 
             %   of space dimensions of the element. 
             %  
@@ -313,7 +313,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             % 2D: Side is defined by a line
             if n == 2;
                 % Compute the tangent at the point
-                n = obj.local_grad_basis(varargin{:}) * obj.nodes;
+                n = obj.localGradBasis(varargin{:}) * obj.nodes;
                 
                 % Re-arrange tangent to give the normal (outward from
                 % element face is positive)
@@ -329,14 +329,14 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             end 
         end
                 
-        function side = build_side(obj, id)
-            %BUILD_SIDE Build an element for the side
+        function side = buildSide(obj, id)
+            %BUILDSIDE Build an element for the side
             %
             % Syntax
-            %   side = build_side(id)
+            %   side = buildSide(id)
             % 
             % Description
-            %   side = build_side(id) creates an element for the specified
+            %   side = buildSide(id) creates an element for the specified
             %   side, the type of element is specified in the side_type
             %   property.
 
@@ -352,17 +352,17 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             side.global_dof = obj.global_dof(dof);
         end
                
-        function dof = get_dof(obj, varargin)
-            %GET_DOF The global degrees of freedom, account for type of space
+        function dof = getDof(obj, varargin)
+            %GETDOF The global degrees of freedom, account for type of space
             %
             % Syntax
-            %   dof = get_dof()
-            %   dof = get_dof('PropertyName', PropertyValue,...)
+            %   dof = getDof()
+            %   dof = getDof('PropertyName', PropertyValue,...)
             % 
             % Description           
-            %   dof = get_dof() returns all of the global dofs for element
+            %   dof = getDof() returns all of the global dofs for element
             %
-            %   dof = get_dof('PropertyName', PropertyValue) returns the
+            %   dof = getDof('PropertyName', PropertyValue) returns the
             %   dofs for the element subject to the restrictions specified
             %   by the properties, see the descriptions below for details.  
             %
@@ -439,24 +439,24 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             
             % Non-scalar FE space
             if obj.n_dof_node > 1;
-                dof = obj.transform_dof(dof);
+                dof = obj.transformDof(dof);
             end
         end  
     end
     
     methods (Hidden = true, Access = {?mFEM.FEmesh})        
-        function D = transform_dof(obj, d)
-            %TRANSFROM_DOF Converts the dofs for vector element space
+        function D = transformDof(obj, d)
+            %TRANSFROMDOF Converts the dofs for vector element space
             %
             % Syntax
-            %   D = transform_dof(d)
+            %   D = transformDof(d)
             %   
             % Description
-            %   D = transform_dof(d) converts the scalar degrees of freedom
+            %   D = transformDof(d) converts the scalar degrees of freedom
             %   for to vector based degrees of freedom. For example,
             %   inputing d = [1,3] returns D = [1,2,5,6].
             
-            D = transform_dof(d,obj.n_dof_node); % call func in bin
+            D = transformDof(d,obj.n_dof_node); % call func in bin
         end
         
         function d = distance(obj, varargin)

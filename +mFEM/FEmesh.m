@@ -127,29 +127,32 @@ classdef FEmesh < handle
             %       the grid optoins. 
            
             % Display wait message
-            if obj.opt.time;
-                ticID = tmessage('Generating mesh...');
+            if obj.options.time;
+                ticID = tMessage('Generating mesh...');
             end
             
             % Check the current element type is supported
-            switch obj.opt.element;
-                case {'Line2', 'Line3', 'Truss', 'Beam'};
-                    obj.gen1Dgrid(varargin{:});
-                case {'Quad4', 'Tri3', 'Tri6'};
-                    obj.gen2Dgrid(varargin{:});
-                case {'Hex8'};
-                    obj.gen3Dgrid(varargin{:});
-                otherwise
-                    error('FEmesh:grid','Grid generation is not supported for the %s elem', obj.opt.element);
+            n = length(varargin);
+            if n == 3 || (n > 3 && ischar(varargin{4}))
+            	obj.gen1Dgrid(varargin{:});
+                
+            elseif n == 6 || (n > 6 && ischar(varargin{7}))
+                obj.gen2Dgrid(varargin{:});
+                
+            elseif n == 9 || (n > 9 && ischar(varargin{10}))
+                obj.gen3Dgrid(varargin{:});
+                
+            else
+                error('FEmesh:grid:InputError', 'The type of grid desired was not understood, check that the proper number of inputs were supplied.');
             end
             
             % Complete message
-            if obj.opt.time;
-                tmessage(ticID);
+            if obj.options.time;
+                tMessage(ticID);
             end;
         end
         
-        function addElement(obj, nodes)
+        function addElement(obj, elem_type, nodes)
             % ADDELEMENT to FEmesh object (must be reinitialized)
             %
             % Syntax:
@@ -172,8 +175,8 @@ classdef FEmesh < handle
                         
             % Create the element
             id = length(obj.element) + 1;
-            obj.element(id) = feval(['mFEM.elements.', obj.opt.element],...
-                id, nodes, 'Space', obj.opt.space);
+            obj.element(id) = feval(['mFEM.elements.', elem_type],...
+                id, nodes, 'Space', obj.options.space);
         end
 
         function init(obj)
@@ -610,12 +613,12 @@ classdef FEmesh < handle
             %   finite element mesh.
 
             % Display wait message
-            if obj.opt.time;
+            if obj.options.time;
                 ticID = tMessage('Computing the degree-of-freedom map...');
             end
 
             % Place the correct type of map in public property
-            switch obj.opt.type;
+            switch obj.options.type;
                 case 'CG'; 
                     [~,~,obj.map.dof] = unique(obj.map.node, 'rows','stable');
                 case 'DG'; 
@@ -625,11 +628,11 @@ classdef FEmesh < handle
             % Update the elements with the global dof
             for e = 1:obj.n_elements;
                 elem = obj.element(e);
-                elem.globalDof = obj.map.dof(obj.map.elem == e,:);
+                elem.global_dof = obj.map.dof(obj.map.elem == e,:);
             end
             
             % Complete message
-            if obj.opt.time;
+            if obj.options.time;
                 tMessage(ticID);
             end;
         end
@@ -647,8 +650,8 @@ classdef FEmesh < handle
             %   elements in the mesh.
 
             % Display wait message
-            if obj.opt.time;
-                ticID = tmessage('Locating neighbor elements...');
+            if obj.options.time;
+                ticID = tMessage('Locating neighbor elements...');
             end
 
             % Create a dof map for searching out neighbors
@@ -668,7 +671,7 @@ classdef FEmesh < handle
                 d = max(obj.map.node - repmat(cntr,length(obj.map.node),1),[],2);
                 
                 % Create a local set of nodes to search
-                L = elem.hmax();                % max distance
+                L = elem.hMax();                % max distance
                 cmap = obj.map.elem(d < L);     % elemnts closer than L
                 cidx = cmap ~= e;               % exclude current element
                 cmap = cmap(cidx);              % update cmap
@@ -731,7 +734,7 @@ classdef FEmesh < handle
             end
             
             % Complete message
-            if obj.opt.time;
+            if obj.options.time;
                 tMessage(ticID);
             end;
         end 
@@ -1330,7 +1333,7 @@ classdef FEmesh < handle
                             elem.side(s).boundary_id = id;
                             
                             % Update the mesh boundary_id map
-                            dof = elem.get_dof('Side', s); % global
+                            dof = elem.getDof('Side', s); % global
                             for i = 1:length(dof);
                                 idx = obj.map.dof == dof(i);  
                                 obj.map.boundary(idx, col) = true;

@@ -30,7 +30,7 @@ import mFEM.*
 % Set the default options and apply the user defined options
 opt.n = 2;
 opt.element = 'Line2';
-opt = gather_user_options(opt,varargin{:});
+opt = gatherUserOptions(opt,varargin{:});
     
 % Create Mesh
 mesh = FEmesh('Element', opt.element);
@@ -38,19 +38,19 @@ mesh.grid(0,4,opt.n);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1,'left');    % T = 0 boundary (essential)    
-mesh.add_boundary(2,'right');   % q = 20 boundary 
+mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
+mesh.addBoundary(2,'right');   % q = 20 boundary 
 
 % Build Matrix and Vector Equations
 sys = System(mesh);
-sys.add_constant('k',2,'A',0.1,'b',5,'q_bar',5);
-sys.add_matrix('K', 'B''*k*A*B');
-sys.add_vector('f', 'N''*b');
-sys.add_vector('f', '-q_bar*A*N''', 'Boundary', 2);
+sys.addConstant('k',2,'A',0.1,'b',5,'q_bar',5);
+sys.addMatrix('K', 'B''*k*A*B');
+sys.addVector('f', 'N''*b');
+sys.addVector('f', '-q_bar*A*N''', 'Boundary', 2);
 
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
-solver.addEssential('boundary',1,'value',0);
+solver.addEssential('boundary', 1, 'value' ,0);
 T = solver.solve();
 
 % Compute the temperature gradients for the elements
