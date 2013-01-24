@@ -1,6 +1,5 @@
 %% Example 1c: Reproduces Example 5.1 of Fish & Belytschko (2007)
-% This example uses manually assembly of the finite element stiffness
-% matrix and force vector for a 1D problem.
+% This example uses kernels directly.
 % 
 % Syntax
 %   example1c
@@ -34,7 +33,7 @@
 
 %% Initilization
 % Functin declaration
-function example1c(varargin)
+function T = example1c(varargin)
 
 % Import the mFEM libraries
 import mFEM.* mFEM.kernels.*;
@@ -52,8 +51,8 @@ mesh.grid(0,4,nel);
 mesh.init();
 
 %% Label The Boundaries
-mesh.add_boundary(1,'left');    % T = 0 boundary (essential)    
-mesh.add_boundary(2,'right');   % q = 20 boundary   
+mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
+mesh.addBoundary(2,'right');   % q = 20 boundary   
 
 %% Create Gauss Objects 
 % Initilizes an object for performing integration on the element and
@@ -69,16 +68,19 @@ q_bar = 5;      % right boundary prescribed heat flux
 T_bar = 0;      % known temperatures
 
 %% Define Kernels
-diffusion = Diffusion(mesh,'D', k*A);
+diffusion = Diffusion(mesh, 'D', k*A);
 source = Source(mesh, 'b', b);
+% flux = Source(mesh, 'b', -q_bar*A, 'boundary', 2);
 flux = Source(mesh, 'b', -q_bar*A);
+
 
 %% Assemble Stiffness Matrix and Force Vector
 K = diffusion.assemble();
+% f = source.assemble() + flux.assemble();
 f = source.assemble() + flux.assemble('boundary', 2);
 
 %% Define Variables for Essential and Non-essential Degrees-of-freedom
-ess = mesh.get_dof('Boundary', 1);  % 1
+ess = mesh.getDof('Boundary', 1);  % 1
 non = ~ess;                         % 2,3
 
 %% Solve for the Temperatures
@@ -94,12 +96,12 @@ for e = 1:mesh.n_elements;
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = T(elem.get_dof());
+    d(:,1) = T(elem.getDof());
     
     % Compute the temperature gradient at the gauss point, store the value
     % twice for each element for creating graph, TGx is the node locations
     % used for plotting
-    TG(1:2,e) = elem.shape_deriv(qp(1))*d;
+    TG(1:2,e) = elem.shapeDeriv(qp(1))*d;
     TGx(1:2,e) = elem.nodes;
 
 end    

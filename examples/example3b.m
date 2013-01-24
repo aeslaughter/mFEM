@@ -11,27 +11,27 @@ function example3b
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element','Quad4');
-mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
+mesh = FEmesh();
+mesh.addElement('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'top');     % q = 20 boundary
-mesh.add_boundary(2, 'right');   % q = 0 boundary
-mesh.add_boundary(3);       % essential boundaries (all others)
+mesh.addBoundary(1, 'top');     % q = 20 boundary
+mesh.addBoundary(2, 'right');   % q = 0 boundary
+mesh.addBoundary(3);       % essential boundaries (all others)
 
 % Create the System
 sys = System(mesh);
-sys.add_constant('k', 5*eye(2), 'b', 6, 'q_top', 20);
+sys.addConstant('k', 5*eye(2), 'b', 6, 'q_top', 20);
 
 % Create matrices
-sys.add_matrix('K', 'B''*k*B');
-sys.add_vector('f', 'N''*b');
-sys.add_vector('f', 'N''*-q_top', 'Boundary', 1);
+sys.addMatrix('K', 'B''*k*B');
+sys.addVector('f', 'N''*b');
+sys.addVector('f', 'N''*-q_top', 'Boundary', 1);
 
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
-solver.add_essential_boundary('id',3,'value',0);
+solver.addEssential('boundary',3,'value',0);
 T = solver.solve()
 
 % Loop through the elements
@@ -41,16 +41,11 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = T(elem.get_dof());
+    d(:,1) = T(elem.getDof());
     
     % Compute the flux at the Gauss points
-    qp = elem.quad.rules();
-    k = 1;
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            q(:,k) = -sys.get('k')*elem.shape_deriv(qp(i),qp(j))*d;
-            k = k + 1;
-        end
+    for i = 1:length(elem.qp);
+        q(:,i) = -sys.get('k')*elem.shapeDeriv(elem.qp{i})*d;
     end
 end    
 

@@ -1,38 +1,30 @@
 % Example 8.1 of Fish & Belytschko (2007).
 %
 % Syntax:
-%   example2
+%   example2a
 %
 % Description:
-%   example2 solves a simple two element heat conduction problem.
-function example2a
+%   example2a solves a simple two element heat conduction problem.
+function T = example2a
    
 % Import the mFEM library
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element','Tri3');
-mesh.add_element([0,0; 2,0.5; 0,1]);
-mesh.add_element([2,0.5; 2,1; 0,1]);
+mesh = FEmesh();
+mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
+mesh.addElement('Tri3',[2,0.5; 2,1; 0,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'top');     % q = 20 boundary
-mesh.add_boundary(2, 'right');   % q = 0 boundary
-mesh.add_boundary(3);       % essential boundaries (all others)
+mesh.addBoundary(1, 'top');     % q = 20 boundary
+mesh.addBoundary(2, 'right');   % q = 0 boundary
+mesh.addBoundary(3);       % essential boundaries (all others)
 
-% Create Gauss objects for performing integration on the element and
-% elements sides.
-q_elem = Gauss('Order',3,'Type','tri');
-[qp, W] = q_elem.rules();
-
-q_face = Gauss('Order', 1, 'Type', 'line');
-[qp_side, W_side] = q_face.rules();
-
-% Definethe constants for the problem
+% Define the constants for the problem
 D = 5*eye(2);   % thermal conductivity matrix
 b = 6;          % heat source (defined over entire domain)
-q_top = 20;     % top boundary prescribed heat flux
+q_top = -20;    % top boundary prescribed heat flux
 T_bar = 0;      % known temperatures
 
 % Create an empty sparse matrix
@@ -48,8 +40,8 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    N = @(xi1,xi2) elem.shape(xi1, xi2);    
-    B = @() elem.shape_deriv();
+    N = @(xi) elem.shape(xi);    
+    B = @() elem.shapeDeriv([]);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
@@ -57,39 +49,38 @@ for e = 1:mesh.n_elements;
     fe = zeros(elem.n_dof,1);
     
     % Loop over the quadrature points to perform the numeric integration
-    qp
-    for i = 1:size(qp,1);
-        fe = fe + W(i)*b*N(qp(i,1),qp(i,2))'*elem.detJ();
-        Ke = Ke + W(i)*B()'*D*B()*elem.detJ();
+    for i = 1:size(elem.qp);
+        fe = fe + elem.W(i)*b*N(elem.qp{i})'*elem.detJ(elem.qp{i});
+        Ke = Ke + elem.W(i)*B()'*D*B()*elem.detJ(elem.qp{i});
     end
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
-        if elem.side(s).boundary_id == 1;
+        if any(elem.side(s).boundary_id == 1);
+            
             % Local dofs for the current side
-            dof = elem.get_dof('Side',s,'-local'); 
+            dof = elem.getDof('Side',s,'-local'); 
            
             % Build the side element
-            side = elem.build_side(s);
+            side = elem.buildSide(s);
             
             % Perform Guass quadrature
-            for i = 1:length(qp_side);
-                fe(dof) = fe(dof) + -q_top*W_side(i)*side.shape(qp_side(i))'*side.detJ(qp_side(i));              
+            for i = 1:length(side.qp);
+                fe(dof) = fe(dof) + q_top*side.W(i)*side.shape(side.qp{i})'*side.detJ(side.qp{i});              
             end
             delete(side)
         end
     end  
     
     % Add the local stiffness and force to the global (this method is slow)
-    dof = elem.get_dof();   
+    dof = elem.getDof();   
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
-
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',3); % 4
+ess = mesh.getDof('Boundary',3); 
 non = ~ess;
 
 % Solve for the temperatures
@@ -111,7 +102,7 @@ for e = 1:mesh.n_elements;
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = T(elem.get_dof());
+    d(:,1) = T(elem.getDof());
     
     % Compute the flux at the Gauss points
     q(:,e) = -D*B()*d;

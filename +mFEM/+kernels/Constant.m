@@ -9,8 +9,10 @@ classdef Constant < mFEM.kernels.base.Kernel;
         function obj = Constant(name, input)
             obj = obj@mFEM.kernels.base.Kernel(name);
             obj.testName(name);
-            if isnumeric(input) || ischar(input);
-                obj.value = num2str(input);
+            if isnumeric(input);
+                obj.value = mat2str(input);
+            elseif ischar(input)
+                obj.value = input;
             else
                 error('Constant:Constant', 'The input must be a numeric or character, but a %s was given.', class(input));    
             end
@@ -25,6 +27,10 @@ classdef Constant < mFEM.kernels.base.Kernel;
             end 
 
             str = regexprep(str, expr, repstr); 
+        end
+        
+        function value = get(obj)
+            value = obj.eval();
         end
         
         function value = eval(obj,varargin)

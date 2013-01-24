@@ -31,7 +31,4 @@ T.compare(reg.get('d'),42, 'Added numeric value to existing constant');
 
 reg.add('d','2*b + c','-add'); % 42 + 2*10 + 2*2 = 66
 T.compare(reg.get('d'),66, 'Added string function to existing constant');
-
-
-
 end

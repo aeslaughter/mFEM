@@ -116,7 +116,7 @@ while k <= N
            unknowns{u+1} = true;
            u = u + 2;
              if ~options.disablewarn;
-                mes = ['The option, ',itm,', was not recognized and is being ignored.'];
+                mes = ['The option, ', itm,', was not recognized and is being ignored.'];
                 warning('gatherUserOptions:UnknownProperty', mes);
             end
             continue;

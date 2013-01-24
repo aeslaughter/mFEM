@@ -36,9 +36,9 @@ classdef Test < handle
             end
                
             if ~opt.main && opt.tol ~= 0;
-                msg = ['  ', msg, ' (Tol = ', num2str(opt.tol),')'];
+                msg = ['  ', msg, ' (Tol = ', num2str(opt.tol, '%3.2e\n'),')'];
             elseif ~opt.main
-                msg = ['  ', msg, ' (Tol = ', num2str(opt.tol),')'];
+                msg = ['  ', msg, ' (Tol = ', num2str(opt.tol, '%3.2e\n'),')'];
             end
             obj.print_result(msg,all(bool));
         end

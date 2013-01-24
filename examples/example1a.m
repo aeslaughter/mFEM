@@ -34,7 +34,7 @@
 
 %% Initilization
 % Functin declaration
-function example1a(varargin)
+function T = example1a(varargin)
 
 % Import the mFEM libraries
 import mFEM.* elements.*;
@@ -47,8 +47,8 @@ end
     
 %% Create a FEmesh Object 
 % Build mesh of 2-node linear elemnts from 0 to 4
-mesh = FEmesh('Element', 'Line2');
-mesh.grid(0,4,nel); 
+mesh = FEmesh();
+mesh.grid(0,4,nel, 'Element', 'Line2'); 
 mesh.init();
 
 %% Label The Boundaries

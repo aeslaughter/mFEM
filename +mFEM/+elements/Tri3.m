@@ -38,7 +38,7 @@ classdef Tri3 < mFEM.elements.base.Element
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
         side_type = 'Line2';        % 2-node Truss element for side
         quad = ...                  % 3-point triangular quadrature 
-            mFEM.Gauss('order',3,'type','tri'); 
+            mFEM.Gauss('order', 3, 'type', 'tri'); 
     end
     
     % Define the Quad4 constructor
@@ -59,7 +59,7 @@ classdef Tri3 < mFEM.elements.base.Element
     % Define the inherited abstract methods (protected)
     methods (Access = protected)    
         
-        function J = jacobian(obj, varargin)
+        function J = jacobian(obj, ~)
             %JACOBIAN Define the Jacobain (see Fish p. 180)
             %  Note, the Jacobian is a constant.
            
@@ -74,17 +74,14 @@ classdef Tri3 < mFEM.elements.base.Element
         function N = basis(~, x)
             %BASIS Returns a row vector of local shape functions
             
-            % Redefine inputs 
-            xi1 = x(1); xi2 = x(2);
-            
             % Shape function vector
-            N(1) = xi1;
-            N(2) = xi2;
-            N(3) = 1 - xi2 - xi1;
+            N(1) = x(1);
+            N(2) = x(2);
+            N(3) = 1 - sum(x);
           end
 
-        function B = grad_basis(obj, varargin) 
-            %GRAD_BASIS Gradient of shape functions (Fish, p. 174)
+        function B = gradBasis(obj, ~) 
+            %GRADBASIS Gradient of shape functions (Fish, p. 174)
             %   Note, the gradient of N is constant.
 
             % Define short-hand for difference between two points
@@ -99,7 +96,7 @@ classdef Tri3 < mFEM.elements.base.Element
                           x(3,2), x(1,3), x(2,1)];
         end
         
-        function GN = local_grad_basis(obj, varargin)
+        function GN = localGradBasis(obj, ~)
             error('Tri3:local_grad_basis', 'Function not defined for the %s element, the B matrix is computed directly.', class(obj));
         end
     end

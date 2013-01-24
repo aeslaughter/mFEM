@@ -19,3 +19,5 @@ sys.addMatrix('K', 'B''*D*B');
 Kcalc = sys.assemble('K');
 Kexact = [5.3125,-0.625,-4.6875; -0.625, 1.25, -0.625; -4.6875, -0.625, 5.3125];
 T.compare(Kexact, Kcalc, 'B''*D*B on Tri3, Fish, 2007, p. 194');
+
+

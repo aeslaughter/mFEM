@@ -2,9 +2,10 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
     %MATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
+       t = 0;
        options = struct(...
            'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
-       reserved = {'N','B','Ke'};
+       reserved = {'N','B','Ke','elem','qp','x','t'};
     end
     
     properties (SetAccess = {?mFEM.registry.base.Registry})
@@ -57,18 +58,19 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                 opt.boundary = obj.options.boundary;
                 opt.subdomain = obj.options.subdomain;
                 opt.component = obj.options.component;
+                opt.time = obj.t;
                 opt = gatherUserOptions(opt, varargin{:});
+                obj.t = opt.time;
 
                 elem = obj.mesh.getElements('boundary', opt.boundary, ...
                                              'subdomain', opt.subdomain);
                                             %'component', opt.component);
-                
                for i = 1:length(elem);
                
                     if isempty(opt.boundary);
-                        Ke = obj.evaluateElement(elem(i));
+                        Ke = obj.evaluateElement(elem(i),obj.t);
                     else
-                        Ke = obj.evaluateSide(elem(i), opt.boundary);
+                        Ke = obj.evaluateSide(elem(i), opt.boundary, obj.t);
                     end
 
                     dof = elem(i).getDof();
@@ -86,7 +88,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
     end
     
     methods (Access = protected)
-        function Ke = evaluateElement(obj, elem)
+        function Ke = evaluateElement(obj, elem, t)
               
             if obj.direct
                 error('Not yet supported');
@@ -102,31 +104,61 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 
             % Loop over the quadrature points
             for i = 1:length(elem.qp);
-                Ke = Ke + elem.W(i)*obj.eval(elem, elem.qp{i})*elem.detJ(elem.qp{i});
+                Ke = Ke + elem.W(i)*obj.eval(elem, elem.qp{i}, t)*elem.detJ(elem.qp{i});
             end
         end
         
-        function Ke = evaluateSide(obj, elem, id)
+        function Ke = evaluateSide(obj, elem, id, t)
         
             if strcmpi(obj.options.type,'matrix');
-                  Ke = zeros(elem.n_dof);
+                  Ke = obj.evaluateSideMatrix(elem,id,t);
             else
-                  Ke = zeros(elem.n_dof,1);         
+                  Ke = obj.evaluateSideVector(elem,id,t);         
             end
             
-            if elem.local_n_dim == 1;
-                for s = 1:elem.n_sides; 
-                    if any(elem.side(s).boundary_id == id);
-                        side = elem.buildSide(s);
-                        dof = elem.getDof('Side', s, '-local');
-                        Ke(dof) = Ke(dof) + obj.eval(side,[]);  
-                        delete(side);
-                    end
-                end     
-            else
-                error('2D side not working yet');
-            end
+ 
+        end
+        
+        function Ke = evaluateSideMatrix(obj, elem, id, t)
+            
+            Ke = zeros(elem.n_dof);         
 
+            for s = 1:elem.n_sides; 
+                if any(elem.side(s).boundary_id == id);
+                    side = elem.buildSide(s);
+                    dof = elem.getDof('Side', s, '-local');
+
+                    if elem.local_n_dim == 1;
+                        Ke(dof,dof) = Ke(dof,dof) + obj.eval(side,[],t); 
+                    else
+                        for i = 1:length(side.qp);
+                            Ke(dof,dof) = Ke(dof,dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(i);              
+                        end
+                    end
+                    delete(side);
+                end
+            end  
+        end
+        
+        function Ke = evaluateSideVector(obj, elem, id, t)
+
+            Ke = zeros(elem.n_dof,1);         
+            
+            for s = 1:elem.n_sides; 
+                if any(elem.side(s).boundary_id == id);
+                    side = elem.buildSide(s);
+                    dof = elem.getDof('Side', s, '-local');
+
+                    if elem.local_n_dim == 1;
+                        Ke(dof) = Ke(dof) + obj.eval(side,[],t); 
+                    else
+                        for i = 1:length(side.qp);
+                            Ke(dof) = Ke(dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(i);              
+                        end
+                    end
+                    delete(side);
+                end
+            end  
         end
     end
 

@@ -22,6 +22,7 @@ classdef Kernel < handle
     methods (Abstract)
         value = eval(obj,elem,qp,t);
         str = apply(obj, str, varargin);
+        value = get(obj);
     end
 
 end

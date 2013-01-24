@@ -27,8 +27,8 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
         end
         
         function value = eval(obj,elem,qp,varargin)
-            B = @(qp) elem.shape_deriv(qp);
-            x = elem.get_position(qp);
+            B = @(qp) elem.shapeDeriv(qp);
+            x = elem.getPosition(qp);
             D = obj.D.eval(elem,x,varargin{:});
             value = B(qp)'*D*B(qp);
         end

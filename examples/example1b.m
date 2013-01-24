@@ -22,7 +22,7 @@
 %   Specifies the type of element for the mesh
 %
 % See also EXAMPLE1B
-function example1b(varargin)
+function T = example1b(varargin)
 
 % Setup
 import mFEM.*

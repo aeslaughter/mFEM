@@ -273,9 +273,9 @@ classdef Gauss < handle
             
             % These types only require conversion to a cell array
             if any(strcmpi(obj.opt.type,{'line','tet','tri'}));
-            	qp_cell = cell(size(qp,1),1);
+            	qp_cell = cell(size(qp,2),1);
                 for i = 1:size(qp,1);
-                    qp_cell{i} = qp(:,1);
+                    qp_cell{i} = qp(i,:);
                 end
             
             % The 'quad' and 'hex' must be repeated to build a complete set

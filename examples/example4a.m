@@ -1,23 +1,21 @@
 % Example 9.2 of Fish & Belytschko (2007)
-function example4a
+function [stress, strain] = example4a(varargin)
+
+% Gather options
+opt.display = true;
+opt = gatherUserOptions(opt, varargin{:});
 
 % Import the mFEM library
 import mFEM.*;
   
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element','Quad4','Space','vector');
-mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
+mesh = FEmesh('Space','vector');
+mesh.addElement('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'left');    % essential boundaries
-mesh.add_boundary(2, 'top');     % distributed load (t = -20)
-
-% Create Gauss objects for performing integration on the element and sides
-q_elem = Gauss('order',2,'type','quad');
-[qp, W] = q_elem.rules();
-q_face = Gauss('order',1,'type','line');
-[qp_side, W_side] = q_face.rules();
+mesh.addBoundary(1, 'left');    % essential boundaries
+mesh.addBoundary(2, 'top');     % distributed load (t = -20)
 
 % Definethe constants for the problem
 E = 3e7;            % modolus of elasticity
@@ -34,8 +32,8 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and determinate of the Jacobian
-    B = @(xi,eta) elem.shape_deriv(xi,eta);
-    J = @(xi,eta) elem.detJ(xi,eta);
+    B = @(xi) elem.shapeDeriv(xi);
+    J = @(xi) elem.detJ(xi);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
@@ -44,22 +42,20 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            K = K + W(j)*W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*J(qp(i),qp(j));
-        end
+    for i = 1:length(elem.qp);
+        K = K + elem.W(i)*B(elem.qp{i})'*D*B(elem.qp{i})*J(elem.qp{i});
     end
     
     % Loop through the sides of the element, if the side has the boundary
     % id of 1 (top), then add the distributed load to the force vector
     % using numeric integration via the quadrature points for element side.
     for s = 1:elem.n_sides;
-        if elem.side(s).boundary_id == 2;
-            dof = elem.get_dof('side',s,'-local'); % local dof for side
-            side = elem.build_side(s);             % create side element
+        if any(elem.side(s).boundary_id == 2);
+            dof = elem.getDof('side',s,'-local'); % local dof for side
+            side = elem.buildSide(s);             % create side element
 
-            for i = 1:length(qp_side);  
-                f(dof) = f(dof) + W_side(i)*side.shape(qp_side(i))'*t_top*side.detJ();
+            for i = 1:length(side.qp);  
+                f(dof) = f(dof) + side.W(i)*side.shape(side.qp{i})'*t_top*side.detJ(side.qp{i});
             end
             delete(side); % delete the side element
         end
@@ -67,7 +63,7 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary', 1); % 5-8   
+ess = mesh.getDof('Boundary', 1); % 5-8   
 non = ~ess; % 1-4       
 
 % Solve for the temperatures
@@ -79,7 +75,9 @@ u(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 r = K*u - f;
 
 % Display the results
-u, r
+if opt.display;
+    u, r
+end
 
 % Compute the stress and strain at the Gauss points
 % Loop through the elements
@@ -89,18 +87,16 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     elem = mesh.element(e);
     
     % Collect the local values of T
-    d(:,1) = u(elem.get_dof());
+    d(:,1) = u(elem.getDof());
     
     % Compute the stress and strain at the Gauss points
-    k = 1;
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            strain(:,k) = B(qp(i),qp(j))*d;
-            stress(:,k) = D*strain(:,k);
-            k = k + 1;
-        end
+    for i = 1:length(elem.qp);
+        strain(:,i) = B(elem.qp{i})*d;
+        stress(:,i) = D*strain(:,i);
     end
 end    
 
 % Display the stress and strain vectors
-strain, stress
+if opt.display;
+    strain, stress
+end

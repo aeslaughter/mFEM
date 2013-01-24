@@ -74,18 +74,9 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
             
         end
         
-        function value = eval(obj, elem, qp, varargin)
-            
-            if isempty(varargin); 
-                t = [];
-            else
-                t = varargin{1};
-            end
-            
-            str = obj.func.apply(obj.eqn, elem, qp, t);
-
+        function value = eval(obj, elem, qp, t)
+            str = obj.func.apply(obj.eqn, elem, qp, t);            
             value = eval(str);
-            
         end
     end
 
