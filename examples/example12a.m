@@ -7,9 +7,9 @@ import mFEM.*
 
 % Create the truss structure
 mesh = FEmesh('Element','Truss');
-mesh.add_element([-1,1; 0,0]);
-mesh.add_element([0,1; 0,0]);
-mesh.add_element([1,1; 0,0]);
+mesh.addElement([-1,1; 0,0]);
+mesh.addElement([0,1; 0,0]);
+mesh.addElement([1,1; 0,0]);
 mesh.init();
 
 % Label the various boundaries

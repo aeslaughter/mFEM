@@ -88,6 +88,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
     end
     
     methods (Access = protected)
+        
         function Ke = evaluateElement(obj, elem, t)
               
             if obj.direct

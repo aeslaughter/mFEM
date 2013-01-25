@@ -274,7 +274,7 @@ classdef System < handle
             reg = {obj.const, obj.func, obj.mat};
             kern = [];
             for i = 1:length(reg);
-                kern = reg{i}.find(name)
+                kern = reg{i}.find(name);
                 %X = reg{i}.get(name);
                 if ~isempty(kern); break; end;
             end

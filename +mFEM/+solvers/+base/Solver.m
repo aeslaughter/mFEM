@@ -126,11 +126,11 @@ classdef Solver < handle
                     
                     % Give an error if the input is not a cell
                     if ~iscell(varargin{i});
-                        error('Solver:add_essential_boundary', 'Expected a cell, but recieved a %s', class(varargin{i}));
+                        error('Solver:addEssentialBoundary', 'Expected a cell, but recieved a %s', class(varargin{i}));
                     end
                     
                     % Add to the dof
-                    obj.add_essential_boundary_private(varargin{i}{:});  
+                    obj.addEssentialPrivate(varargin{i}{:});  
                 end
                 
             % Traditional input case    
@@ -183,7 +183,7 @@ classdef Solver < handle
 
             % Generic case, the user supplied the actual matrix or vector    
             else
-                x = obj.opt.(name);
+                x = obj.options.(name);
             end   
         end
          

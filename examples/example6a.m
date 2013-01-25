@@ -40,7 +40,7 @@ import mFEM.*;
 opt.n = 32;
 opt.element = 'Quad4';
 opt.method = 'normal';
-opt = gather_user_options(opt,varargin{:});
+opt = gatherUserOptions(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Element',opt.element);
@@ -48,12 +48,7 @@ mesh.grid(0,1,0,1,opt.n,opt.n);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1); % essential boundaries (all)
-
-% Create Gauss objects for performing integration on the element and
-% elements sides.
-q_elem = Gauss('Order',2,'Type','quad');
-[qp, W] = q_elem.rules();
+mesh.addBoundary(1); % essential boundaries (all)
 
 % Problem specifics
 D = 1 / (2*pi^2);           % thermal conductivity
@@ -61,8 +56,7 @@ theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
 
 % Initialize storage
-
-ticID = tmessage('Matrix assembly...');
+ticID = tMessage('Matrix assembly...');
 if strcmpi(opt.method,'alt');
     I = NaN(mesh.n_elements * mesh.n_dim^2,1); % (guess)
     J = I;
@@ -81,8 +75,8 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi,eta) elem.shape_deriv(xi, eta);
-    N = @(xi,eta) elem.shape(xi,eta);
+    B = @(i) elem.shapeDeriv(elem.qp{i});
+    N = @(i) elem.shape(elem.qp{i});
 
     % Initialize the local matrices and vector
     Me = zeros(elem.n_dof);     % mass matrix
@@ -90,11 +84,9 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
-    for i = 1:length(qp);
-        for j = 1:length(qp);
-            Me = Me + W(i)*N(qp(i),qp(j))'*N(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
-            Ke = Ke + W(i)*B(qp(i),qp(j))'*D*B(qp(i),qp(j))*elem.detJ(qp(i),qp(j));
-        end
+    for i = 1:length(elem.qp);
+        Me = Me + elem.W(i)*N(i)'*N(i)*elem.detJ(elem.qp{i});
+        Ke = Ke + elem.W(i)*B(i)'*D*B(i)*elem.detJ(elem.qp{i});
     end
 
     % Insert current values into global matrix using one of two methods
@@ -120,7 +112,7 @@ for e = 1:mesh.n_elements;
          Kij(idx) = reshape(Ke, numel(Ke), 1);
     else
         % Add local mass, stiffness, and force to global (this method is slow)
-        dof = elem.get_dof();
+        dof = elem.getDof();
         M(dof,dof) = M(dof,dof) + Me;
         K(dof,dof) = K(dof,dof) + Ke;
     end
@@ -133,15 +125,15 @@ if strcmpi(opt.method,'alt');
     M = sparse(I,J,Mij);
     K = sparse(I,J,Kij);
 end
-tmessage(ticID);
+tMessage(ticID);
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',1);   
+ess = mesh.getDof('Boundary',1);   
 non = ~ess;
 
 % Initialize the temperatures
 T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
-nodes = mesh.get_nodes();
+nodes = mesh.getNodes();
 T = T_exact(nodes(:,1),nodes(:,2),0);
 
 % Collect the node positions for applying the essential boundary conditions

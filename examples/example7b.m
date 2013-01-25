@@ -12,40 +12,39 @@ mesh.grid(0,L,-c,c,30,20);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'right'); 
-mesh.add_boundary(2, 'left');
+mesh.addBoundary(1, 'right'); 
+mesh.addBoundary(2, 'left');
 
 % Create system and add matrix components
 sys = System(mesh);
-sys.add_constant('c', c, 'l', L, 'E', 1e7, 'v', 0.3, 'P', [0;100]);
-sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
-sys.add_matrix('K', 'B''*D*B');
-sys.add_vector('f', 'N''*P', 'Boundary', 2);
+sys.addConstant('c', c, 'l', L, 'E', 1e7, 'v', 0.3, 'P', [0;100]);
+sys.addConstant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
+sys.addMatrix('K', 'B''*D*B');
+sys.addVector('f', 'N''*P', 'Boundary', 2);
 
 % Assemble the matrix and vector
 solver = solvers.LinearSolver(sys);
-solver.add_essential_boundary('id',1,'value',0);
+solver.addEssential('boundary',1,'value',0);
 u = solver.solve();
 
 % Display the displacement results
-%subplot(2,1,1);
+subplot(2,1,1);
 mesh.plot(u,'-deform','Patch',{'EdgeColor','k'},...
     'Colorbar','y-disp. (m)','Component', 2);
-%title('FEM Solution');
+title('FEM Solution');
 xlabel('x (m)'); 
 set(gca,'Ytick',[]);
-return;
 xlim([-0.1,10]);
 
 % Display the exact solution
 subplot(2,1,2);
-u_exact = exact_soln(sys);
+u_exact = exactSoln(sys);
 mesh.plot(u_exact,'-deform','Colorbar','y-disp. (m)','Component',2);
 title('Exact Solution');
 xlabel('x'); ylabel('y');
 xlim([-0.1,10]);
 
-function u = exact_soln(sys)
+function u = exactSoln(sys)
 %EXACT_SOLN Specifies the analytical solution displacements
 
 % Extract constants from System object
@@ -64,7 +63,7 @@ u_x = @(x) -P*x(1)^2*x(2)/(2*E*I) - nu*P*x(2)^3/(6*E*I) + P*x(2)^3/(6*I*G) + (P*
 u_y = @(x) nu*P*x(1)*x(2)^2/(2*E*I) + P*x(1)^3/(6*E*I) - P*l^2*x(1)/(2*E*I) + P *l^3/(3*E*I);
 
 % Compute the exact solution
-x = sys.mesh.get_nodes;
+x = sys.mesh.getNodes;
 u = zeros(2*length(x));
 k = 1;
 for i = 1:length(x);

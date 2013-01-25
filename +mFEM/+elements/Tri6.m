@@ -1,4 +1,4 @@
-classdef Tri6 < mFEM.base.Element
+classdef Tri6 < mFEM.elements.base.Element
     %Tri6 6-node triangle element
     % 
     %        xi2  
@@ -75,10 +75,11 @@ classdef Tri6 < mFEM.base.Element
     % Define the inherited abstract methods (protected)
     methods (Access = protected)    
         
-        function J = jacobian(obj, xi1, xi2)
+        function J = jacobian(obj, in)
             % Define the Jacobain
             x = obj.nodes(:,1);
             y = obj.nodes(:,2);
+            xi1 = in(1); xi2 = in(2);
             xi3 = 1 - xi1 - xi2;
             
             Jx1 = x(1)*(4*xi1-1) + 4*(x(4)*xi2 + x(6)*xi3);
@@ -91,8 +92,9 @@ classdef Tri6 < mFEM.base.Element
             J = [1,1,1; Jx1, Jx2, Jx3; Jy1, Jy2, Jy3];
         end
         
-        function N = basis(~, xi1, xi2)
-            % Returns a row vector of local shape functions     
+        function N = basis(~, in)
+            % Returns a row vector of local shape functions    
+            xi1 = in(1); xi2 = in(2);
             xi3 = 1 - xi1 - xi2;
             
             N(1) = xi3*(2*xi3-1);
@@ -103,8 +105,9 @@ classdef Tri6 < mFEM.base.Element
             N(6) = 4*xi3*xi2;
           end
 
-        function B = grad_basis(obj, xi1, xi2) 
-            % Gradient of shape functions    
+        function B = gradBasis(obj, in) 
+            % Gradient of shape functions
+            xi1 = in(1); xi2 = in(2);
             xi3 = 1 - xi1 - xi2;
             x = obj.nodes(:,1);
             y = obj.nodes(:,2);
@@ -126,7 +129,7 @@ classdef Tri6 < mFEM.base.Element
             Jy23 = yy(2,3) + 4*(Dy5*(xi3-xi2) + (Dy4-Dy6)*xi1);
             Jy31 = yy(3,1) + 4*(Dy6*(xi1-xi3) + (Dy5-Dy4)*xi2);  
             
-             J = 1/2*obj.detJ(xi1, xi2);
+             J = 1/2*obj.detJ(in);
             
             B(:,1) = [(4*xi1-1)*Jy23, (4*xi1-1)*Jx32];
             B(:,2) = [(4*xi2-1)*Jy31, (4*xi2-1)*Jx13];   
@@ -138,8 +141,8 @@ classdef Tri6 < mFEM.base.Element
             B = 1/(2*J)*B;
         end
         
-        function GN = local_grad_basis(~, varargin)
-            error('Tri6:local_grad_basis', 'Function not defined for the %s element, the B matrix is computed directly.', class(obj));
+        function GN = localGradBasis(~, varargin)
+            error('Tri6:localGradBasis', 'Function not defined for the %s element, the B matrix is computed directly.', class(obj));
         end
     end
 end

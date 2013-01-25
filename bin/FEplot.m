@@ -359,7 +359,7 @@ function h = plot2D_scalar(obj, opt)
         if isempty(opt.data);
             h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2), 'w');
         else
-            dof = elem.get_dof();
+            dof = elem.getDof();
             h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2),...
                 opt.data(dof(idx)), 'EdgeColor','k');
         end
@@ -385,7 +385,7 @@ function h = plot2D_vector(obj, opt)
         % Gather y-axis data
         z = [];
         if ~isempty(opt.data)
-            dof = elem.get_dof();
+            dof = elem.getDof();
             z = opt.data(dof);
             zz(:,1) = z(1:2:end);
             zz(:,2) = z(2:2:end);           

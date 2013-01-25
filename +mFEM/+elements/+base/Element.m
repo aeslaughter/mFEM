@@ -75,12 +75,12 @@ classdef Element < mFEM.elements.base.ElementCore
             obj = obj@mFEM.elements.base.ElementCore(id, nodes, varargin{:});
         end
         
-        function N = shape(obj, xi, varargin)
+        function N = shape(obj, x, varargin)
             %SHAPE Returns the shape functions
             %
             % Syntax
-            %   shape(xi)
-            %   shape(xi, '-scalar')
+            %   shape(x)
+            %   shape(x, '-scalar')
             %
             % Description
             %   shape(xi) returns the element shape functions evaluated at
@@ -97,7 +97,7 @@ classdef Element < mFEM.elements.base.ElementCore
             end                
             
             % Scalar field basis functions
-            N = obj.basis(xi);
+            N = obj.basis(x);
 
             % Non-scalar fields
             if ~scalar_flag && (obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector'));
@@ -113,18 +113,18 @@ classdef Element < mFEM.elements.base.ElementCore
             end      
         end
         
-        function B = shapeDeriv(obj, varargin)
+        function B = shapeDeriv(obj, x)
             %SHAPEDERIV Returns shape function derivatives in global x,y system
             %
             % Syntax
-            %   shapeDeriv(xi)
+            %   shapeDeriv(x)
             %
             % Description
-            %   shapeDeriv(xi) returns the element shape function 
+            %   shapeDeriv(x) returns the element shape function 
             %   derivatives evaluated at the locations specified in xi.
 
             % Scalar field basis functin derivatives
-            B = obj.gradBasis(varargin{:});
+            B = obj.gradBasis(x);
                         
             % Non-scalar fields
             if obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector');
@@ -141,19 +141,17 @@ classdef Element < mFEM.elements.base.ElementCore
             end
         end
             
-        function J = detJ(obj, varargin)
+        function J = detJ(obj, x)
             %DETJ Returns the determinate of the jacobian matrix
             %
             % Syntax
-            %   detJ(xi)
-            %   detJ(xi,eta)
-            %   detJ(xi,eta,zeta)
+            %   detJ(x)
             %
             % Description
             %   detJ(...) returns the determinante of the jacobian 
             %   evaluated at the locations specified in the inputs, the 
             %   number of which varies with the number of space dimensions.
-            J = det(obj.jacobian(varargin{:}));
+            J = det(obj.jacobian(x));
         end 
 
     end
