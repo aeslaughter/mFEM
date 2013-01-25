@@ -5,8 +5,12 @@
 %
 % Description
 %   example2b solves a simple two element heat conduction problem.
-function T = example2b
-   
+function varargout = example2b(varargin)
+
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -33,7 +37,12 @@ sys.addVector('f', 'N''*-q_top', 'Boundary', 1);
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
 solver.addEssential('Boundary', 3, 'Value', 0);
-T = solver.solve()
+T = solver.solve();
+
+% Display the results
+if ~opt.debug;
+    T
+end
 
 % Compute the flux values for each element
 % Loop through the elements
@@ -46,9 +55,13 @@ for e = 1:mesh.n_elements;
     d(:,1) = T(elem.getDof());
     
     % Compute the flux at the Gauss points
-    q(:,e) = -sys.get('k')*elem.shapeDeriv()*d;
+    q(:,e) = -sys.get('k')*elem.shapeDeriv([])*d;
 
 end    
 
 % Display the flux vectors
-q
+if ~opt.debug
+    q
+else
+    varargout = {T,q};
+end

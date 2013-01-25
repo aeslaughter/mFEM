@@ -5,8 +5,12 @@
 %
 % Description:
 %   example5a solves a simple transient heat conduction problem.
-function example5a
+function varargout = example5a(varargin)
    
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -17,9 +21,9 @@ mesh.addElement('Tri3', 1/100*[0,0; 2,4; 0,2]);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1,'left','right'); % insulated
+mesh.addBoundary(1,'left', 'right');  % insulated
 mesh.addBoundary(2, 'bottom');        % convective
-mesh.addBoundary(3);                             % essential
+mesh.addBoundary(3);                  % essential
 
 % Problem specifics
 D = 3 * eye(2);         % thermal conductivity (W/(mC))
@@ -66,7 +70,7 @@ for e = 1:mesh.n_elements;
     % matrix and force vector using numeric integration via the quadrature 
     % points for element side.
     for s = 1:elem.n_sides;
-        if any(elem.side(s).boundary_id) == 2;
+        if any(elem.side(s).boundary_id == 2);
             side = elem.buildSide(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(side.qp);
@@ -84,14 +88,8 @@ for e = 1:mesh.n_elements;
     f(dof) = f(dof) + fe;
 end
 
-% Print the full M,K, and f matrices (re-order to match book)
-ix = [1,4,2,3];
-% full(M(ix,ix))
-% full(K(ix,ix))
-% f(ix)
-
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.getDof('Boundary',3); % 3,4
+ess = mesh.getDof('Boundary', 3); % 3,4
 non = ~ess;
 
 % Solve for the temperatures
@@ -120,4 +118,9 @@ for t = 1:10;
 end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
-T(ix,:)'
+if opt.debug; % debug, return M,K,f,T
+    varargout = {M,K,f,T};
+else
+    ix = [1,4,2,3];
+    T(ix,:)'
+end

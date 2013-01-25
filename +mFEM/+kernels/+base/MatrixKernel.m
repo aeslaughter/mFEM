@@ -6,6 +6,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
        options = struct(...
            'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
        reserved = {'N','B','Ke','elem','qp','x','t'};
+
     end
     
     properties (SetAccess = {?mFEM.registry.base.Registry})
@@ -14,7 +15,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
    
     properties (Access = protected)
     	mesh;
-        direct = false;
+        direct = false;       
     end
        
     methods 
@@ -49,11 +50,18 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         end
         
         function K = get(obj)
+            if isempty(obj.value);
+                error('MatrixKernel:get', 'Matrix not assembled.');
+            end
             K = obj.value.init();
         end
         
         function varargout = assemble(obj, varargin)
-                
+            
+%                 if obj.assembled
+%                     warning('MatrixKernel:assemble', 'The kernel named %s was previously assembled.', obj.name);
+%                 end
+               
                 opt.zero = false;
                 opt.boundary = obj.options.boundary;
                 opt.subdomain = obj.options.subdomain;
@@ -76,13 +84,16 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                     dof = elem(i).getDof();
                     obj.value.add(Ke, dof); 
                end
-
-               if nargout == 1;
+               
+              
+                if nargout == 1;
                     varargout{1} = obj.value.init(); 
                     if opt.zero;
                         obj.value.zero();
                     end
                end
+               
+               
         end   
         
     end

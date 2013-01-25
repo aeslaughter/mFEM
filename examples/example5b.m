@@ -5,8 +5,12 @@
 %
 % Description:
 %   example5b solves a simple transient heat conduction problem.
-function example5b
-   
+function varargout = example5b(varargin)
+
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -39,6 +43,10 @@ sys.addMatrix('K', 'B''*D*B');
 sys.addMatrix('K', 'h*N''*N', 'Boundary', 2);
 sys.addVector('f','h*T_inf*N''', 'Boundary', 2);
 
+M = full(sys.assemble('M','-zero'));
+K = full(sys.assemble('K','-zero'));
+f = full(sys.assemble('f','-zero'));
+
 % Create solver
 solver = solvers.TransientLinearSolver(sys, 'dt', 30);
 
@@ -55,5 +63,9 @@ for t = 1:10;
 end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
-ix = [1,4,2,3];
-T(ix,:)'
+if opt.debug; % debug, return M,K,f,T
+    varargout = {M,K,f,T};
+else
+    ix = [1,4,2,3];
+    T(ix,:)'
+end

@@ -176,7 +176,7 @@ classdef Solver < handle
                 TF = obj.system.exists(obj.options.(name));
                 
                 if TF;% && strcmp(sys_type);
-                    x = obj.system.assemble(obj.options.(name)); 
+                    x = obj.system.assemble(obj.options.(name),'-zero'); 
                 else
                     error('Solver:getComponent', 'The %s was not found in the system when attempting to assemble.', obj.opt.(name));
                 end

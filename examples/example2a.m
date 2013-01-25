@@ -5,8 +5,12 @@
 %
 % Description:
 %   example2a solves a simple two element heat conduction problem.
-function T = example2a
-   
+function varargout = example2a(varargin)
+
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -92,8 +96,9 @@ T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 r = K*T - f;
 
 % Display the results
-T,r
-
+if ~opt.debug;
+    T,r
+end
 % Compute the flux values for each element
 % Loop through the elements
 for e = 1:mesh.n_elements; 
@@ -110,4 +115,8 @@ for e = 1:mesh.n_elements;
 end    
 
 % Display the flux vectors
-q
+if ~opt.debug
+    q
+else
+    varargout = {T,q};
+end
