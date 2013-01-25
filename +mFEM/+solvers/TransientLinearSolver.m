@@ -26,7 +26,7 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
    properties (Access = protected)
-       opt = ...        % Solver options
+       options = ...        % Solver options
            struct('mass', 'M', 'stiffness', 'K', 'force', 'f', ...
            'theta', 0.5, 'dt', [], 'assemblemass', false, ...
            'assemblestiffness', false, 'assembleforce', false, ...
@@ -131,10 +131,10 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
            %        above components.
 
            % Call the base class constructor
-           obj@mFEM.base.Solver(input)
+           obj@mFEM.solvers.base.Solver(input)
            
            % Collect the inputs
-           obj.opt = gatherUserOptions(obj.opt, varargin{:});
+           obj.options = gatherUserOptions(obj.options, varargin{:});
        end
 
        function u = init(obj, u)
@@ -165,10 +165,10 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
            obj.u_old = u; 
            
            % Apply the boundary constraints
-           obj.u_old = obj.apply_constraints(obj.u_old);
+           obj.u_old = obj.applyConstraints(obj.u_old);
 
            % Get the initial force vector
-           obj.f_old = obj.get_component('force', 'vector');
+           obj.f_old = obj.getComponent('force');
           
            % Set the initlized flag
            obj.initialized = true;
@@ -190,31 +190,31 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
             end
             
             % Produce error if numerical integration value is out of range
-            if obj.opt.theta < 0 || obj.opt.theta > 1;
+            if obj.options.theta < 0 || obj.options.theta > 1;
                 error('TransientLinearSolver:solve','The value of theta must be between 0 and 1.');
             end
             
             % Extract/assemble the stiffness matrix
-            if isempty(obj.K) || obj.opt.assemblestiffness || obj.opt.assembleall;
-                obj.K = obj.get_component('stiffness', 'matrix');
+            if isempty(obj.K) || obj.options.assemblestiffness || obj.options.assembleall;
+                obj.K = obj.getComponent('stiffness');
             end
 
             % Extract/assemble the force vector
-            if isempty(obj.f) || obj.opt.assembleforce || obj.opt.assembleall;
-                obj.f = obj.get_component('force', 'vector');
+            if isempty(obj.f) || obj.options.assembleforce || obj.options.assembleall;
+                obj.f = obj.getComponent('force');
             end
 
             % Extract/assemble the mass matrix
-            if isempty(obj.M) || obj.opt.assemblemass || obj.opt.assembleall;
-               obj.M = obj.get_component('mass', 'matrix');
+            if isempty(obj.M) || obj.options.assemblemass || obj.options.assembleall;
+               obj.M = obj.getComponent('mass');
             end
 
             % Apply boundary conditions to old and new solution
-            [u,ess] = obj.apply_constraints();
+            [u,ess] = obj.applyConstraints();
 
             % Numerical constants
-            theta = obj.opt.theta; % numerical intergration parameter
-            dt = obj.opt.dt;       % time-step
+            theta = obj.options.theta; % numerical intergration parameter
+            dt = obj.options.dt;       % time-step
 
             % Use a general time integration scheme
             K_hat = obj.M + theta*dt*obj.K;

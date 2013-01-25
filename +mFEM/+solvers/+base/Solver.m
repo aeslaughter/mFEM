@@ -154,14 +154,14 @@ classdef Solver < handle
     end
     
     methods (Hidden = true, Access = protected)
-        function x = get_component(obj, name)
-           %GET_COMPONENT returns the matrix or vector ready for solving
+        function x = getComponent(obj, name)
+           %GETCOMPONENT returns the matrix or vector ready for solving
            %
            % Syntax
-           %    x = get_component(name, type)
+           %    x = getComponent(name)
            %
            % Description
-           %    x = get_component(name, type) returns the matrix or vector
+           %    x = getComponent(name) returns the matrix or vector
            %    associated with the name (i.e., obj.opt.(name)), in the
            %    case when a System is passed to the constructor of the
            %    Solver class and the actual text name of the matrix or
@@ -175,10 +175,10 @@ classdef Solver < handle
                 % correct type, if both tests pass call the assemble method
                 TF = obj.system.exists(obj.options.(name));
                 
-                if TF;% && strcmp(sys_type, type);
+                if TF;% && strcmp(sys_type);
                     x = obj.system.assemble(obj.options.(name)); 
                 else
-                   warning('Solver:get_component', 'The %s %s was not found in the system when attempting to assemble, a zero %s was used.', obj.opt.(name), type, type);
+                    error('Solver:getComponent', 'The %s was not found in the system when attempting to assemble.', obj.opt.(name));
                 end
 
             % Generic case, the user supplied the actual matrix or vector    
@@ -235,19 +235,19 @@ classdef Solver < handle
 
         end
 
-        function [u,ess] = apply_constraints(obj, varargin)
-            %APPLY_CONSTRAINTS Cretes solution and applies essential boundaries
+        function [u,ess] = applyConstraints(obj, varargin)
+            %APPLYCONSTRAINTS Cretes solution and applies essential boundaries
             %
             % Syntax
-            %   [u,ess] = solution_init(obj)
-            %   [u,ess] = solution_init(obj,u)
+            %   [u,ess] = applyConstraints(obj)
+            %   [u,ess] = applyConstraints(obj,u)
             %
             % Description
-            %   [u,ess] = solution_init(obj) return the solution (u) with
+            %   [u,ess] = applyConstraints(obj) return the solution (u) with
             %   essential boundaries applied and logcal vector of the
             %   essential boundaries (ess) as extracted from mesh.get_dof
             %
-            %   [u,ess] = solution_init(obj,u) sames as above but uses an
+            %   [u,ess] = applyConstraints(obj,u) sames as above but uses an
             %   existing solution vector
 
             % Initlize the solution

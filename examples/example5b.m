@@ -11,39 +11,39 @@ function example5b
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element','Tri3');
-mesh.add_element(1/100*[0,0; 2,0; 2,4]);
-mesh.add_element(1/100*[0,0; 2,4; 0,2]);
+mesh = FEmesh();
+mesh.addElement('Tri3',1/100*[0,0; 2,0; 2,4]);
+mesh.addElement('Tri3',1/100*[0,0; 2,4; 0,2]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1, 'left','right');   % insulated (q = 0)
-mesh.add_boundary(2, 'bottom');         % convective (q = h(T - Tinf))
-mesh.add_boundary(3);                   % essential boundaries (all others)
+mesh.addBoundary(1, 'left','right');   % insulated (q = 0)
+mesh.addBoundary(2, 'bottom');         % convective (q = h(T - Tinf))
+mesh.addBoundary(3);                   % essential boundaries (all others)
 
 % Create system
 sys = System(mesh);
 
 % Problem specifics
-sys.add_constant('D', 3 * eye(2));      % thermal conductivity (W/(mC))
-sys.add_constant('rho', 1600);          % density (kg/m^3)
-sys.add_constant('c_p', 800);           % specific heat (J/kg)
-sys.add_constant('h', 200);             % convective heat transfer coefficient (W/m^2)
-sys.add_constant('T_s', 300);           % prescribed temperature on top (C)
-sys.add_constant('T_inf', 50);          % ambient temperature (C)
-sys.add_constant('T_0', 50);            % initial temperature (C)
+sys.addConstant('D', 3 * eye(2));      % thermal conductivity (W/(mC))
+sys.addConstant('rho', 1600);          % density (kg/m^3)
+sys.addConstant('c_p', 800);           % specific heat (J/kg)
+sys.addConstant('h', 200);             % convective heat transfer coefficient (W/m^2)
+sys.addConstant('T_s', 300);           % prescribed temperature on top (C)
+sys.addConstant('T_inf', 50);          % ambient temperature (C)
+sys.addConstant('T_0', 50);            % initial temperature (C)
 
 % Add matrices
-sys.add_matrix('M', 'rho*c_p*N''*N');
-sys.add_matrix('K', 'B''*D*B');
-sys.add_matrix('K', 'h*N''*N', 'Boundary', 2);
-sys.add_vector('f','h*T_inf*N''', 'Boundary', 2);
+sys.addMatrix('M', 'rho*c_p*N''*N');
+sys.addMatrix('K', 'B''*D*B');
+sys.addMatrix('K', 'h*N''*N', 'Boundary', 2);
+sys.addVector('f','h*T_inf*N''', 'Boundary', 2);
 
 % Create solver
 solver = solvers.TransientLinearSolver(sys, 'dt', 30);
 
 % Add essential boundary
-solver.add_essential_boundary('id',3,'value','T_s');
+solver.addEssential('boundary', 3, 'value', 'T_s');
 
 % Initialize the temperatures
 T(:,1) = solver.init('T_0');

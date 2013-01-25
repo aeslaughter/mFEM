@@ -11,23 +11,15 @@ function example5a
 import mFEM.*;
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element','Tri3');
-mesh.add_element(1/100*[0,0; 2,0; 2,4]);
-mesh.add_element(1/100*[0,0; 2,4; 0,2]);
+mesh = FEmesh();
+mesh.addElement('Tri3', 1/100*[0,0; 2,0; 2,4]);
+mesh.addElement('Tri3', 1/100*[0,0; 2,4; 0,2]);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1,'left','right'); % insulated
-mesh.add_boundary(2, 'bottom');        % convective
-mesh.add_boundary(3);                             % essential
-
-% Create Gauss objects for performing integration on the element and
-% elements sides.
-q_elem = Gauss('Order',3,'Type','tri');
-[qp, W] = q_elem.rules();
-
-q_face = Gauss('Order',1,'Type','line');
-[qp_side, W_side] = q_face.rules();
+mesh.addBoundary(1,'left','right'); % insulated
+mesh.addBoundary(2, 'bottom');        % convective
+mesh.addBoundary(3);                             % essential
 
 % Problem specifics
 D = 3 * eye(2);         % thermal conductivity (W/(mC))
@@ -54,8 +46,8 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = elem.shape_deriv();
-    N = @(xi,eta) elem.shape(xi,eta);
+    B = elem.shapeDeriv([]);
+    N = @(xi) elem.shape(xi);
 
     % Initialize the local matrices and vector
     Me = zeros(elem.n_dof);     % mass matrix
@@ -64,9 +56,9 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
-    for i = 1:length(qp);
-        Me = Me + W(i)*rho*c_p*N(qp(i,1),qp(i,2))'*N(qp(i,1),qp(i,2))*elem.detJ();
-        Ke = Ke + W(i)*B'*D*B*elem.detJ();
+    for i = 1:length(elem.qp);
+        Me = Me + elem.W(i)*rho*c_p*N(elem.qp{i})'*N(elem.qp{i})*elem.detJ(elem.qp{i});
+        Ke = Ke + elem.W(i)*B'*D*B*elem.detJ(elem.qp{i});
     end
 
     % Loop through the sides of the element, if the side has the boundary
@@ -74,20 +66,19 @@ for e = 1:mesh.n_elements;
     % matrix and force vector using numeric integration via the quadrature 
     % points for element side.
     for s = 1:elem.n_sides;
-        if elem.side(s).boundary_id == 2;
-            side = elem.build_side(s);
+        if any(elem.side(s).boundary_id) == 2;
+            side = elem.buildSide(s);
             N = @(xi) side.shape(xi);
-            for i = 1:length(qp_side);
-                d = elem.get_dof('side',s,'-local'); % local dofs for side
-                side.detJ(qp_side(i))
-                Ke(d,d) = Ke(d,d) + W_side(i) * h * N(qp_side(i))'*N(qp_side(i))*side.detJ(qp_side(i));
-                fe(d) = fe(d) + h*T_inf*W_side(i)*N(qp_side(i))'*side.detJ(qp_side(i));              
+            for i = 1:length(side.qp);
+                d = elem.getDof('side',s,'-local'); % local dofs for side
+                Ke(d,d) = Ke(d,d) + side.W(i) * h * N(side.qp{i})'*N(side.qp{i})*side.detJ(side.qp{i});
+                fe(d) = fe(d) + h*T_inf*side.W(i)*N(side.qp{i})'*side.detJ(side.qp{i});              
             end
         end
     end      
     
     % Add local mass, stiffness, and force to global (this method is slow)
-    dof = elem.get_dof();
+    dof = elem.getDof();
     M(dof,dof) = M(dof,dof) + Me;
     K(dof,dof) = K(dof,dof) + Ke;
     f(dof) = f(dof) + fe;
@@ -100,7 +91,7 @@ ix = [1,4,2,3];
 % f(ix)
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.get_dof('Boundary',3); % 3,4
+ess = mesh.getDof('Boundary',3); % 3,4
 non = ~ess;
 
 % Solve for the temperatures
@@ -116,11 +107,11 @@ K_hat = M(non,non) + theta*dt*K(non,non);
 f_K   = M(non,non) - (1-theta)*dt*K(non,non);
 
 % Perform 10 time-steps
-for t = 1%:10;
+for t = 1:10;
 
     % Compute the force componenet using previous time step T
     f_hat = dt*R + f_K*T(non,t);
-dt*R
+
     % Solve for non-essential boundaries
     T(non, t+1) = K_hat\f_hat;
     

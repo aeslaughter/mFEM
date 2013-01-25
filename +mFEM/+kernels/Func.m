@@ -30,6 +30,14 @@ classdef Func < mFEM.kernels.base.Kernel;
                     
         end        
         
+        function fhandle = get(obj)
+            if ishcar(obj.input)
+                fhandle = str2func(obj.input);
+            else
+                fhandle = obj.input;
+            end
+        end
+        
         function str = apply(obj, str, elem, x, t)
             
             if ~ischar(str);
