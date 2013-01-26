@@ -5,8 +5,12 @@
 %
 % Description:
 %   example3 solves a simple single element heat conduction problem.
-function example3b
-   
+function varargout = example3b(varargin)
+
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -32,7 +36,11 @@ sys.addVector('f', 'N''*-q_top', 'Boundary', 1);
 % Assemble and solve
 solver = solvers.LinearSolver(sys);
 solver.addEssential('boundary',3,'value',0);
-T = solver.solve()
+T = solver.solve();
+
+if ~opt.debug; 
+    T
+end
 
 % Loop through the elements
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)
@@ -50,4 +58,8 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
 end    
 
 % Display the flux vectors
-q
+if ~opt.debug;
+    q
+else
+    varargout = {T,q};
+end

@@ -1,4 +1,4 @@
-function test_example1
+function T = test_example1
 
 % Create Test class
 T = mFEM.Test();

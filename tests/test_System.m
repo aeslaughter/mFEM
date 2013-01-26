@@ -5,8 +5,8 @@ function T = test_System
 T = mFEM.Test(mfilename('fullfile'));
 
 % Define a single element mesh (Tri3)
-mesh = mFEM.FEmesh('Element', 'Tri3', 'time', false);
-mesh.add_element([0,0; 2,0.5; 0,1]);
+mesh = mFEM.FEmesh('time', false);
+mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
 mesh.init();
 
 % K(1) from Fish (2007), p. 194 (Example 8.1)

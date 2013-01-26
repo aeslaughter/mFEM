@@ -1,4 +1,4 @@
-function test_example4
+function T = test_example4
 
 T = mFEM.Test();
 
@@ -7,7 +7,7 @@ strain_exact = [8.82024842022898e-07 -3.61335341871653e-07 6.6511117087177e-07 -
 stress_exact = [28.4570697006973 -12.5328264716505 18.5063113259335 -42.020480575244;6.65441480003452 -5.64255405166983 -4.82341266739851 -22.9814502377518;-46.4547270277004 -45.4655638067932 1.09229447799903 2.55291970565063];
 
 [stress, strain] = example4a('-display');
-tol = 10*eps;
+tol = 10^-12;
 T.compare(stress, stress_exact, 'Example4a: Stress', 'Tol', tol);
 T.compare(strain, strain_exact, 'Example4a: Strain', 'Tol', tol);
 

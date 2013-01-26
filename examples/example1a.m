@@ -95,10 +95,10 @@ for e = 1:mesh.n_elements;
     for i = 1:length(qp);
 
         % Account for the source term
-        fe = fe + W(i)*N(qp(i))'*b*elem.detJ();
+        fe = fe + W(i)*N(qp(i))'*b*elem.detJ([]);
         
         % Build stiffness matrix
-        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ();
+        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ([]);
     end
     
     % Loop throught the sides of the element, if the side has the boundary

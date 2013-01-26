@@ -1,15 +1,15 @@
-function test_example5
+function T = test_example5
 
 % Initilize testing class
-x = mFEM.Test();
+T = mFEM.Test();
 
 
 % Run example 5a
 [Ma,Ka,fa,Ta] = example5a('-debug');
-performTests(x, 'Example5a', Ma, Ka, fa, Ta);
+performTests(T, 'Example5a', Ma, Ka, fa, Ta);
 
 [Mb,Kb,fb,Tb] = example5b('-debug');
-performTests(x, 'Example5b', Mb, Kb, fb, Tb);
+performTests(T, 'Example5b', Mb, Kb, fb, Tb);
 
 function performTests(x, name, M, K, f, T)
 

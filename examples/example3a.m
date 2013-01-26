@@ -5,8 +5,12 @@
 %
 % Description:
 %   example3a solves a simple single element heat conduction problem.
-function example3a
-   
+function varargout = example3a(varargin)
+
+% Gather options
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
+
 % Import the mFEM library
 import mFEM.*;
 
@@ -79,8 +83,9 @@ T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 r = K*T - f;
 
 % Display the results
-T,r
-
+if ~opt.debug;
+    T,r
+end
 % Compute the flux values at the Gauss points
 % Loop through the elements
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)
@@ -98,4 +103,8 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
 end    
 
 % Display the flux vectors
-q
+if ~opt.debug;
+    q
+else
+    varargout = {T,q};
+end

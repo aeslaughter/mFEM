@@ -5,8 +5,8 @@ function T = test_MatrixKernelRegistry
 T = mFEM.Test(mfilename('fullfile'));
 
 % Create a mesh (single Tri3 element);
-mesh = mFEM.FEmesh('Element','Tri3','time',false);
-mesh.add_element([0,0; 2,0.5; 0,1]);
+mesh = mFEM.FEmesh('time',false);
+mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
 mesh.init();
 
 % Create two Diffusion kernels (each 1/2 of what a single should be) for

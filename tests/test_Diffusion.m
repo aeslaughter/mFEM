@@ -5,8 +5,8 @@ function T = test_Diffusion
 T = mFEM.Test(mfilename('fullfile'));
 
 % Define a single element mesh (Tri3)
-mesh = mFEM.FEmesh('Element','Tri3','time',false);
-mesh.add_element([0,0; 2,0.5; 0,1]);
+mesh = mFEM.FEmesh('time',false);
+mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
 mesh.init();
 
 % K(1) from Fish (2007), p. 194 (Example 8.1)
@@ -16,8 +16,8 @@ Kcalc = kern.eval(mesh.element(1),[0.5,0.5]);
 T.compare(Kexact, Kcalc, 'B''*D*B on Tri3, Fish, 2007, p. 194');
 
 % Define a single element mesh (Quad4)
-mesh = mFEM.FEmesh('Element','Quad4','time',false);
-mesh.add_element([0,1; 0,0; 2,0.5; 2,1]);
+mesh = mFEM.FEmesh('time',false);
+mesh.addElement('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
 mesh.init();
 
 % K from Fish (2007), p. 199 (Example 8.2)

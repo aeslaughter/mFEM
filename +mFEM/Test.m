@@ -46,7 +46,7 @@ classdef Test < handle
     
     methods (Access = private)
         function print_result(obj, msg, TF)
-            len = 96;
+            len = 128;
             str(1:len) = '.';
             if length(msg) > len - 6;
                 error('Test:buildstr', 'Messages must be limited to %d characters.', len-8);
