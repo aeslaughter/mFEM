@@ -28,6 +28,8 @@ classdef LinearSolver < mFEM.solvers.base.Solver
    properties (Access = protected)
        options = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
+       K;
+       f;
    end
    
    methods
@@ -77,6 +79,9 @@ classdef LinearSolver < mFEM.solvers.base.Solver
 
            % Collect the inputs
            obj.options = gatherUserOptions(obj.options, varargin{:});
+           
+           % Initilize K and f
+           
        end
 
        function u = solve(obj)

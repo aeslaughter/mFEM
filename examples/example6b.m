@@ -21,12 +21,13 @@
 %   {'Quad4'} | 'Tri3' | 'Tri6'
 %   Specifies the type of element for the mesh
 
-function example6b(varargin)
+function varargout = example6b(varargin)
 
 % Import the mFEM library
 import mFEM.* mFEM.solvers.*;
 
 % Set the default options and apply the user defined options
+opt.debug = false;
 opt.n = 16;
 opt.element = 'Quad4';
 opt = gatherUserOptions(opt,varargin{:});
@@ -55,11 +56,13 @@ T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
 T = T_exact(x,y,0);
 
 % Plot the initial condition
-figure; hold on;
-mesh.plot(T,'colorbar','Temperature');
-title('t = 0');
-xlabel('x');
-ylabel('y');
+if ~opt.debug;
+    figure; hold on;
+    mesh.plot(T,'colorbar','Temperature');
+    title('t = 0');
+    xlabel('x');
+    ylabel('y');
+end
 
 % Create and initilize the transient solver
 dt = 0.1;
@@ -74,7 +77,13 @@ for t = dt:dt:1;
     T = solver.solve();
 
     % Plot the results
-    pause(0.25);
-    mesh.plot(T);
-    title(['t = ', num2str(t)]);
+    if ~opt.debug;
+        pause(0.25);
+        mesh.plot(T);
+        title(['t = ', num2str(t)]);
+    end
+end
+
+if opt.debug;
+    varargout = {x,y,t,T};
 end

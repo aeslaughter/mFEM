@@ -141,7 +141,7 @@ classdef Tri6 < mFEM.elements.base.Element
             B = 1/(2*J)*B;
         end
         
-        function GN = localGradBasis(~, varargin)
+        function GN = localGradBasis(~, ~)
             error('Tri6:localGradBasis', 'Function not defined for the %s element, the B matrix is computed directly.', class(obj));
         end
     end

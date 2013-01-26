@@ -36,8 +36,8 @@ classdef Line3 < mFEM.elements.base.Element
            % LINE3 Class constructor; calls base class constructor
            
            % Special case
-           if ~all(size(nodes) == [2,1]) && ~all(size(nodes) == [3,1]);
-                error('Line3:Line3','Nodes not specified correctly; expected a [2x1] or [3x1] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
+           if ~all(size(nodes) == [2,1]) && ~all(size(nodes) == [3,1]) && ~all(size(nodes) == [3,2]);;
+                error('Line3:Line3','Nodes not specified correctly; expected a [2x1], [3x1], or [3x2] array, but recieved a [%dx%d] array.', size(nodes,1), size(nodes,2));
            end
            
            % Test that nodes is sized correctly
@@ -68,17 +68,17 @@ classdef Line3 < mFEM.elements.base.Element
             N(2) = 1/2*xi*(1 + xi);
         end
 
-        function B = grad_basis(obj, xi) 
+        function B = gradBasis(obj, xi) 
             % Gradient of shape functions
-            B = inv(obj.jacobian(xi)) * obj.local_grad_basis(xi);
+            B = inv(obj.jacobian(xi)) * obj.localGradBasis(xi);
         end
              
         function J = jacobian(obj, xi)
             % Returns the jacobian matrix
-            J = obj.local_grad_basis(xi)*obj.nodes;                 
+            J = obj.localGradBasis(xi)*obj.nodes;                 
         end
         
-        function GN = local_grad_basis(~, xi)
+        function GN = localGradBasis(~, xi)
             GN = [xi-1/2, xi+1/2, -2*xi];
         end
     end

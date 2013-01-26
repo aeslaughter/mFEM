@@ -4,7 +4,7 @@ function [opt, unknowns] =  gatherUserOptions(opt, varargin)
     % Syntax
     %   opt = gatherUserOptions(opt,'PropertyName',PropertyValue,...);
     %   opt = gatherUserOptions(...,-PropertyName,...);
-    %   opt = gatherUserOptions(...,{'PropName', PropValue,...});
+    %   opt = gatherUserOptions(...,'GatherUserOptions',{'PropName', PropValue,...});
     %   opt = gatherUserOptions(opt,optUser);
     %   [opt, unknown] = gatherUserOptions(...);
     %
@@ -21,12 +21,12 @@ function [opt, unknowns] =  gatherUserOptions(opt, varargin)
     %   specifing the value. For example if the options structure is:
     %       opt.flag = true;
     %   The the following two commands are equivalent.
-    %       opt = gather_user_options(opt,'-flag');
-    %       opt = gather_user_options(opt,'flag',false);
+    %       opt = gatherUserOptions(opt,'-flag');
+    %       opt = gatherUserOptions(opt,'flag',false);
     %
-    %   opt = gatherUserOptions(..., {'PropName', PropValue,...}) options
+    %   opt = gatherUserOptions(..., 'GatherUserOptions',{'PropName', PropValue,...}) options
     %   may be passed to this function itself by entering the pairs in a
-    %   cell array that occupys the last input.
+    %   cell array that occupys the last input. 
     %
     %   opt = gatherUserOptions(opt,optUser) in this case the user suplies a
     %   data structure similar to that of opt, which is compared according
@@ -68,18 +68,21 @@ if nargout == 2;
 end
 
 % Apply options for this function
-if ~isempty(varargin) && iscell(varargin{end});
-    c = varargin{end};
-    options = gatherUserOptions(options,c{:});
-    varargin = varargin(1:end-1);
+for i = 1:length(varargin)
+    if ischar(varargin{i}) && strcmpi(varargin{i},'GatherUserOptions');
+        input = varargin{i+1};
+        options = gatherUserOptions(options, input{:});
+        varargin = varargin(1:i-1);
+        break;
+    end
 end
 
 % Intilize the data
-    q = varargin;           % User supplied input
-    k = 1;                  % Intilize the counter
-    u = 1;                  % unknown counter
-    unknowns = {};
-    N = length(q);      % Number of property inputs
+q = varargin;           % User supplied input
+k = 1;                  % Intilize the counter
+u = 1;                  % unknown counter
+unknowns = {};          % unknown output cell array
+N = length(q);          % Number of property inputs
 
 % Convert data input as a structure to a cell array
 if length(q) == 1 && isstruct(q{1});

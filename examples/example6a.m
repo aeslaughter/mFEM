@@ -31,12 +31,13 @@
 %   example, for a 100 x 100 grid the normal assembly took 25.6 sec. and the
 %   alternative method 23.8 sec.
 
-function example6a(varargin)
+function varargout = example6a(varargin)
 
 % Import the mFEM library
 import mFEM.*;
 
 % Set the default options and apply the user defined options
+opt.debug = false;
 opt.n = 32;
 opt.element = 'Quad4';
 opt.method = 'normal';
@@ -56,7 +57,6 @@ theta = 0.5;                % numerical intergration parameter
 dt = 0.1;                   % time-step
 
 % Initialize storage
-ticID = tMessage('Matrix assembly...');
 if strcmpi(opt.method,'alt');
     I = NaN(mesh.n_elements * mesh.n_dim^2,1); % (guess)
     J = I;
@@ -125,7 +125,6 @@ if strcmpi(opt.method,'alt');
     M = sparse(I,J,Mij);
     K = sparse(I,J,Kij);
 end
-tMessage(ticID);
 
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.getDof('Boundary',1);   
@@ -141,13 +140,15 @@ x = nodes(:,1);
 y = nodes(:,2);
 
 % Plot the initial condition
-figure; hold on;
-mesh.plot(T);
-title('t = 0');
-xlabel('x');
-ylabel('y');
-cbar = colorbar;
-set(get(cbar,'YLabel'),'String','Temperature');
+if ~opt.debug;
+    figure; hold on;
+    mesh.plot(T);
+    title('t = 0');
+    xlabel('x');
+    ylabel('y');
+    cbar = colorbar;
+    set(get(cbar,'YLabel'),'String','Temperature');
+end
 
 % Compute residual for non-essential boundaries, the mass matrix does not
 % contribute because the dT/dt = 0 on the essential boundaries. This
@@ -172,6 +173,13 @@ for t = dt:dt:1;
 
     % Plot the results
     pause(0.25);
-    mesh.plot(T);
-    title(['t = ', num2str(t)]);
+    if ~opt.debug;
+        mesh.plot(T);
+        title(['t = ', num2str(t)]);
+    end
 end
+
+if opt.debug;
+    varargout = {x,y,t,T};
+end
+

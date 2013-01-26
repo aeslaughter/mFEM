@@ -27,7 +27,7 @@ sys.addConstant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.addMatrix('K', 'B''*D*B');
 
 % Assemble and Solve
-solver = solvers.LinearSolver(sys,'force',0);
+solver = solvers.LinearSolver(sys, 'force', zeros(mesh.n_dof,1));
 solver.addEssential({'boundary', 1, 'Component', 'x', 'value', u0},...
     {'boundary', 2, 'Component', 'x', 'value', 0},{'boundary', 3, 'value', 0});
 u = solver.solve();

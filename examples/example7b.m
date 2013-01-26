@@ -1,5 +1,9 @@
 % MAE4700/5700 HW8, Ex. Prob.
-function example7b
+function varargout = example7b(varargin)
+
+% Gather inputs
+opt.debug = false;
+opt = gatherUserOptions(opt, varargin{:});
 
 % Import the mFEM library
 import mFEM.*;
@@ -26,6 +30,12 @@ sys.addVector('f', 'N''*P', 'Boundary', 2);
 solver = solvers.LinearSolver(sys);
 solver.addEssential('boundary',1,'value',0);
 u = solver.solve();
+
+% Debug: no plot, return solution
+if opt.debug;
+    varargout = {u, exactSoln(sys)};
+    return;
+end
 
 % Display the displacement results
 subplot(2,1,1);
@@ -64,7 +74,7 @@ u_y = @(x) nu*P*x(1)*x(2)^2/(2*E*I) + P*x(1)^3/(6*E*I) - P*l^2*x(1)/(2*E*I) + P 
 
 % Compute the exact solution
 x = sys.mesh.getNodes;
-u = zeros(2*length(x));
+u = zeros(2*length(x),1);
 k = 1;
 for i = 1:length(x);
     u(k) = u_x(x(i,:));

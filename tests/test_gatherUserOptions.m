@@ -23,8 +23,8 @@ T.compare(msgid,'gatherUserOptions:UnknownProperty', 'Unknown option warning');
 opt{2} = gatherUserOptions(options,'-option2');
 T.compare(opt{1}.option2,true, 'Flag input, multiple inputs');
 
-gatherUserOptions(opt,var{:},{'-disablewarn'}); 
-T.compare(opt{2}.option2,true, 'Flag input, single input');
+gatherUserOptions(opt,var{:},'GatherUserOptions',{'-disablewarn'}); 
+T.compare(opt{2}.option2,true, 'Flag input, single input, disable warning');
 
 
 

@@ -107,7 +107,7 @@ classdef Vector < handle
             obj.f(dof) = obj.f(dof) + fe;
        end
        
-       function out = get_local(obj, dof)
+       function out = getLocal(obj, dof)
            %GET_LOCAL extract a local vector given the dof
            %
            % Syntax

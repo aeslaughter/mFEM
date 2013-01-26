@@ -11,7 +11,7 @@ classdef FuncRegistry < mFEM.registry.base.Registry
         function obj = FuncRegistry(varargin)
             obj = obj@mFEM.registry.base.Registry(varargin{:});
 
-            obj.options = gatherUserOptions(obj.options, varargin{:}, {'-disablewarn'});
+            obj.options = gatherUserOptions(obj.options, varargin{:}, 'GatherUserOptoins', {'-disablewarn'});
             
         end
           

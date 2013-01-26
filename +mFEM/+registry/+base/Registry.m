@@ -21,7 +21,7 @@ classdef Registry < handle
     methods
                
         function obj = Registry(varargin)
-            obj.core_options = gatherUserOptions(obj.core_options, varargin{:},{'-disablewarn'});
+            obj.core_options = gatherUserOptions(obj.core_options, varargin{:},'GatherUserOptions',{'-disablewarn'});
         end
 
         function str = apply(obj, str, varargin)        

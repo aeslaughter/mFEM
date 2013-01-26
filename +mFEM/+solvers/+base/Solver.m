@@ -153,7 +153,7 @@ classdef Solver < handle
         end
     end
     
-    methods (Hidden = true, Access = protected)
+    methods (Hidden = true, Access = protected)          
         function x = getComponent(obj, name)
            %GETCOMPONENT returns the matrix or vector ready for solving
            %
@@ -183,8 +183,8 @@ classdef Solver < handle
 
             % Generic case, the user supplied the actual matrix or vector    
             else
-                x = obj.options.(name);
-            end   
+                x = obj.options.(name);                    
+            end               
         end
          
         function addEssentialPrivate(obj, varargin)

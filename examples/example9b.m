@@ -45,9 +45,9 @@ for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     d(:,1) = u(elem.getDof());
     
     % Compute the stress and strain at the Gauss points
-    for i = 1:length(qp);
+    for i = 1:length(elem.qp);
         strain(:,i) = elem.shapeDeriv(elem.qp{i})*d;
-        stress(:,i) = sys.get('D')*strain(:,k);
+        stress(:,i) = sys.get('D')*strain(:,i);
     end
 end    
 

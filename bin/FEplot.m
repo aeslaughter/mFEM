@@ -1,12 +1,12 @@
 % FEPLOT Creates graphs for finite element data derived from FEMESH.
 %
 % Syntax
-%  FEplot(obj)
+%  FEplot(obj, [])
 %  FEplot(obj, data)
 %  FEplot(...,'PropertyName',<PropertyValue>)
 %
 % Descrtiption
-%   FEplot(obj) creates a plot of the mesh object (obj) and includes that
+%   FEplot(obj, []) creates a plot of the mesh object (obj) and includes that
 %   includes the element and degree of freedom labels.
 %
 %   FEplot(obj, data) creates a plot for the mesh object (obj) and the data 
@@ -109,7 +109,7 @@
 %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
 %----------------------------------------------------------------------
 
-function FEplot(obj, varargin)
+function FEplot(obj, data, varargin)
 
     % Check that mesh is initialized
     if (~obj.initialized)
@@ -117,7 +117,7 @@ function FEplot(obj, varargin)
     end
    
     % Collect the input 
-    opt = parse_input(obj, varargin{:});
+    opt = parse_input(obj, data, varargin{:});
 
     % Plot the data according the spacial dimensions
     if obj.n_dim == 1 && obj.n_dof_node == 1;
@@ -149,13 +149,13 @@ function FEplot(obj, varargin)
     box on;
 end 
 
-function opt = parse_input(obj, varargin)
+function opt = parse_input(obj, data, varargin)
     %PARSE_INPUT Function for parsing input data to plot function
     %
     % See FEPLOT
 
     % Define user properties
-    opt.data = []; 
+    opt.data = data; 
     opt.deform = false;
     opt.scale = 'auto';
     opt.component = [];
@@ -170,19 +170,6 @@ function opt = parse_input(obj, varargin)
     opt.patch = {};
     opt.hold = true;
     
-    % Account for first input containing the data
-    if nargin > 1 && isnumeric(varargin{1});
-        opt.data =  varargin{1};
-        start_idx = 2;
-        
-        % Check that the data is sized correctly
-        if ~isempty(opt.data) && length(opt.data) ~= obj.n_dof;
-            error('FEmesh:plot', 'Data not formated correctly, it must be a vector of numbers of length %d.', obj.n_dof);
-        end
-    else
-        start_idx = 1;
-    end
-
     % When using data, disable the labels by default and do not
     % create a new figure with each call
     if ~isempty(opt.data);
@@ -192,7 +179,7 @@ function opt = parse_input(obj, varargin)
     end
     
     % Collect options supplied by the user
-    opt = gatherUserOptions(opt, varargin{start_idx:end}); 
+    opt = gatherUserOptions(opt, varargin{:}); 
 
     % Set/Create the figure handle
     if opt.new;

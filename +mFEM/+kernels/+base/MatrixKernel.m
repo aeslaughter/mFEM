@@ -144,7 +144,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                         Ke(dof,dof) = Ke(dof,dof) + obj.eval(side,[],t); 
                     else
                         for i = 1:length(side.qp);
-                            Ke(dof,dof) = Ke(dof,dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(i);              
+                            Ke(dof,dof) = Ke(dof,dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(side.qp{i});              
                         end
                     end
                     delete(side);
@@ -165,7 +165,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                         Ke(dof) = Ke(dof) + obj.eval(side,[],t); 
                     else
                         for i = 1:length(side.qp);
-                            Ke(dof) = Ke(dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(i);              
+                            Ke(dof) = Ke(dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(side.qp{i});              
                         end
                     end
                     delete(side);
