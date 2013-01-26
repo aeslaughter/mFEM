@@ -527,7 +527,7 @@ function add_node_labels(obj, opt)
     end
 
     % The node labels are placed differently for CG and DG meshes
-    switch obj.opt.type;
+    switch obj.options.type;
         
         % Continous finite element labels
         case 'CG'; 

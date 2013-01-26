@@ -30,7 +30,7 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             %       scalar is the numeric tag added using ADD_SUBDOMAIN.
             obj = obj@mFEM.kernels.base.Kernel(name);
             obj.testName(name);
-            
+            obj.name = name;
             obj.value = mFEM.Vector(mesh);
             
             dof = mesh.getDof(varargin{:},'-index');
@@ -38,7 +38,7 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
                 input = ones(length(dof),1)*input;
             end
 
-            obj.value.add(input,dof);
+            obj.value.add(input, dof);
         end        
 
         function str = apply(obj, str, elem, x)

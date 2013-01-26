@@ -339,48 +339,7 @@ classdef System < handle
 
             X = obj.mat.assemble(name, varargin{:});
         end
-%         
-%         function output = point_value(obj, name, elem, x)
-%             %POINT_VALUE extract the value for a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             N = elem.shape(x{:});
-% 
-%             % Output the value
-%             output = N*u;
-%         end
-%         
-%         function output = point_gradient(obj, name, elem, x)
-%             %POINT_GRADIENT extract the gradient of a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             B = elem.shape_deriv(x{:});
-% 
-%             % Output the value
-%             output = B*u;
-%         end
+
     end 
     
     methods (Hidden = true, Access = private)    
