@@ -35,17 +35,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             end
         end
 
-        function str = apply(obj, str, elem, qp, t)
-            error('MatrixKernel:apply', 'Not implemented');
-%             if ~ischar(str);
-%                 error('Func:apply', 'The input (str) must be a character string');
-%             end    
-%             
-%             % Apply OBJ's value to KERN
-%             expr = ['\<',obj.name,'\>'];
-%             repstr = obj.eval(elem, qp, t);
-%             
-%             str = regexprep(str, expr, repstr); 
+        function apply(~,varargin)
+            error('MatrixKernel:apply', 'Not implemented.');
         end
         
         function K = get(obj)

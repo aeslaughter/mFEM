@@ -52,8 +52,12 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             end 
             
             expr = ['\<',obj.name,'\>'];
-            repstr = mat2str(obj.valu.getLocal(dof));
+            repstr = mat2str(obj.pointValue(elem,x));
             str = regexprep(str, expr, repstr); 
+            
+            expr = ['\<grad(',obj.name,')\>'];
+            repstr = mat2str(obj.pointGradient(elem,x));
+            str = regexprep(str, expr, repstr);        
         end
         
         function output = pointValue(obj, elem, x)

@@ -14,9 +14,9 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
             obj.mesh = mesh;
         end 
         
-        function apply(~, varargin)
-           error('Not implmented'); 
-        end
+%         function apply(~, varargin)
+%            error('Not implmented'); 
+%         end
         
         function value = get(obj, name)      
             kern = obj.find(name);
