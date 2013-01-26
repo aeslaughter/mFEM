@@ -107,14 +107,14 @@ classdef Vector < handle
             obj.f(dof) = obj.f(dof) + fe;
        end
        
-       function out = get_local(obj, dof)
-           %GET_LOCAL extract a local vector given the dof
+       function out = getLocal(obj, dof)
+           %GETLOCAL extract a local vector given the dof
            %
            % Syntax
-           %    out = get_local(dof)
+           %    out = getLocal(dof)
            %
            % Description
-           %    out = get_local(dof) returns a subvector, where dof are the
+           %    out = getLocal(dof) returns a subvector, where dof are the
            %    indices of the subvector
            
            out = obj.f(dof);

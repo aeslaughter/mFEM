@@ -30,4 +30,13 @@ kern = mFEM.kernels.ConstantVector('f', mesh, fin, 'Boundary', 1);
 f = kern.get();
 T.compare(f.init(), 8*fex, 'Partial dof, vector input');
 
+input = [0,0,0,0,0,0.5,0,0.5,0,1,0,1,0,0,0,0.5,0,1];
+kern = mFEM.kernels.ConstantVector('f', mesh, input);
+elem = mesh.element(1);
+pv = kern.pointValue(elem, [0.25,0.25]);
+T.compare(pv,[0;0.3125],'Point value');
+
+pg = kern.pointGradient(elem, [0.25,0.25]);
+T.compare(pg,[0,0;0,1],'Point gradient');
+
 

@@ -38,6 +38,7 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
                 input = ones(length(dof),1)*input;
             end
 
+            if ~iscolumn(input); input = input'; end
             obj.value.add(input, dof);
         end        
 
@@ -54,48 +55,46 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             repstr = mat2str(obj.valu.getLocal(dof));
             str = regexprep(str, expr, repstr); 
         end
-%         
-%         function output = point_value(obj, name, elem, x)
-%             %POINT_VALUE extract the value for a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             N = elem.shape(x{:});
-% 
-%             % Output the value
-%             output = N*u;
-%         end
-%         
-%         function output = point_gradient(obj, name, elem, x)
-%             %POINT_GRADIENT extract the gradient of a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             B = elem.shape_deriv(x{:});
-% 
-%             % Output the value
-%             output = B*u;
-%         end
+        
+        function output = pointValue(obj, elem, x)
+            %POINTVALUE extract the value for a vector at a point x
+            
+            % Degrees of freedom
+            dof = elem.getDof();
+
+            % Extract local vector
+            u = obj.value.getLocal(dof);
+
+            % Output the value
+            output = elem.shape(x)*u;
+        end
+        
+        function M = pointGradient(obj, elem, x)
+            %POINTGRADIENT extract the gradient of a vector at a point x
+            
+            % Degrees of freedom
+            dof = elem.getDof();
+
+            % Extract local vector
+            u = obj.value.getLocal(dof);
+
+            % Output the value
+            p = elem.shapeDeriv(x)*u;
+            
+            % Build proper matrix output
+            M = ones(elem.n_dim);
+            if elem.n_dim == 1;
+                M = p;
+            elseif elem.n_dim == 2;
+                M(1,1) = p(1);  M(1,2) = p(3);
+                M(2,1) = p(3);  M(2,2) = p(2);
+            elseif elem.n_dim == 3;
+                M(1,1) = p(1);  M(1,2) = p(4); M(1,3) = p(6);
+                M(2,1) = p(4);  M(2,2) = p(2); M(2,3) = p(5);
+                M(3,1) = p(6);  M(3,2) = p(5); M(3,3) = p(3);
+            end           
+        end
+        
         function value = get(obj)
             value = obj.value();
         end
@@ -103,6 +102,8 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
         function eval(~, varargin)
             error('ConstantVector:eval', 'The eval function is not implmented for the ConstantVector kernel.');
             %value = eval(obj.value);
-        end  
+        end 
+        
     end
+
 end
