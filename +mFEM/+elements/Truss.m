@@ -64,8 +64,7 @@ classdef Truss < mFEM.elements.base.ElementCore
             T = zeros(4,4);
             T(1:2,1:2) = [c,s;-s,c];
             T(3:4,3:4) = [c,s;-s,c];
-            
-            
+
             Ke = T'*(N'*N)*T;
         end
         

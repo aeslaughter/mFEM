@@ -5,7 +5,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
        t = 0;
        options = struct(...
            'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
-       reserved = {'N','B','Ke','elem','qp','x','t'};
+       reserved = {'N','B','Ke','elem','qp','x','t','L'};
 
     end
     
@@ -36,17 +36,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             end
         end
 
-        function str = apply(obj, str, elem, qp, t)
-            error('MatrixKernel:apply', 'Not implemented');
-%             if ~ischar(str);
-%                 error('Func:apply', 'The input (str) must be a character string');
-%             end    
-%             
-%             % Apply OBJ's value to KERN
-%             expr = ['\<',obj.name,'\>'];
-%             repstr = obj.eval(elem, qp, t);
-%             
-%             str = regexprep(str, expr, repstr); 
+        function apply(~,varargin)
+            error('MatrixKernel:apply', 'Not implemented.');
         end
         
         function K = get(obj)
@@ -102,10 +93,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         
         function Ke = evaluateElement(obj, elem, t)
               
-            if obj.direct
-                error('Not yet supported');
-                %Ke = obj.eval(elem,elem.qp{i})*elem.detJ(elem.qp{i});
-                return;
+            if obj.direct            
+                Ke = obj.eval(elem, [], t);
             end
             
             if strcmpi(obj.options.type,'matrix');

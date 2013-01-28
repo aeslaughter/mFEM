@@ -49,7 +49,7 @@ classdef System < handle
     
     properties (Access = private)
         mat;
-        %vec;
+        vec;
         const;
         func;
     end
@@ -86,6 +86,7 @@ classdef System < handle
             obj.mat = mFEM.registry.MatrixKernelRegistry(mesh);
             obj.const = mFEM.registry.ConstantRegistry();
             obj.func = mFEM.registry.FuncRegistry();
+            obj.vec = mFEM.registry.ConstantVectorRegistry(mesh);
         end
           
         function addConstant(obj, varargin)
@@ -271,7 +272,7 @@ classdef System < handle
             %       matrix = mFEM.Matrix object
             
             % Loop through the storage structures and locate the variable
-            reg = {obj.const, obj.func, obj.mat};
+            reg = {obj.const, obj.func, obj.mat, obj.vec};
             kern = [];
             for i = 1:length(reg);
                 kern = reg{i}.find(name);
@@ -339,48 +340,7 @@ classdef System < handle
 
             X = obj.mat.assemble(name, varargin{:});
         end
-%         
-%         function output = point_value(obj, name, elem, x)
-%             %POINT_VALUE extract the value for a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             N = elem.shape(x{:});
-% 
-%             % Output the value
-%             output = N*u;
-%         end
-%         
-%         function output = point_gradient(obj, name, elem, x)
-%             %POINT_GRADIENT extract the gradient of a vector at a point x
-%             
-%             [type,idx] = obj.locate(name);
-%             if ~strcmp(type,'vector');
-%                 error('System:point_value', 'This method only works with vectors');
-%             end
-%             
-%             % Degrees of freedom
-%             dof = elem.get_dof();
-% 
-%             % Extract local vector
-%             u = obj.vec(idx).vector.get_local(dof);
-% 
-%             % Shape functions at point x
-%             B = elem.shape_deriv(x{:});
-% 
-%             % Output the value
-%             output = B*u;
-%         end
+
     end 
     
     methods (Hidden = true, Access = private)    
@@ -416,11 +376,16 @@ classdef System < handle
                     kern = mFEM.kernels.AutoKernel(obj.mesh, name, kern,...
                         'ConstantRegistry', obj.const,...
                         'FuncRegistry', obj.func,...
+                        'ConstantVectorRegistry', obj.vec,...
                         'boundary', opt.boundary,...
                         'subdomain', opt.subdomain,...
                         'component', opt.component,...
                         'type', type);
                     obj.mat.add(name, kern);
+                elseif isnumeric(kern)
+                    obj.vec.add(name, kern, 'boundary', opt.boundary,...
+                        'subdomain', opt.subdomain,...
+                        'component', opt.component);
                 else
                     error('System:addMatrixPrivate', 'Input of type %s is not allowed, you must supply a valid character string or a MatrixKernel object', class(kern));
                 end

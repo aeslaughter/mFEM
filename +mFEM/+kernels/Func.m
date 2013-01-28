@@ -46,7 +46,7 @@ classdef Func < mFEM.kernels.base.Kernel;
             
             % Apply OBJ's value to KERN
             expr = ['\<',obj.name,'\>'];
-            repstr = obj.eval(elem, x, t);
+            repstr = mat2str(obj.eval(elem, x, t));
             
             str = regexprep(str, expr, repstr); 
         end

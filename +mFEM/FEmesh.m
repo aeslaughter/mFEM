@@ -623,6 +623,8 @@ classdef FEmesh < handle
                     [~,~,obj.map.dof] = unique(obj.map.node, 'rows','stable');
                 case 'DG'; 
                     obj.map.dof = (1:size(obj.map.node,1))';
+                otherwise
+                    error('FEmesh:computeDofMap', 'Invalid type %s, must be CG or DG.', obj.options.type);
             end
 
             % Update the elements with the global dof

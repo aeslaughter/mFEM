@@ -31,7 +31,6 @@ classdef Registry < handle
         end
         
         function kern = add(obj, varargin)
-            
             [opt, input] = gatherUserOptions(obj.options, varargin{:});
             
             % Location of last input flag
@@ -64,18 +63,18 @@ classdef Registry < handle
             
             % Found and adding a new kernel
             if opt.add && found;
-                if ~obj.core_options.disablewarnings && ~obj.core_options.allowduplicates;
-                    warning('The variable %s was previously defined, the new value will replace the existing.', name);
-                end
-                if ~obj.core_options.allowduplicates;
-                    return;
-                end
+%                 if ~obj.core_options.disablewarnings && ~obj.core_options.allowduplicates;
+%                     warning('The variable %s was previously defined, the new value will replace the existing.', name);
+% %                 end
+%                 if ~obj.core_options.allowduplicates;
+%                     return;
+%                 end
                 
             % Not found and adding a new kernel    
             elseif opt.add && ~found;
                 idx = length(obj.kernels) + 1;
                 
-            % Found, not adding, and returning the actual kerels    
+            % Found, not adding, and returning the actual kerenls    
             elseif ~opt.add && ~opt.index && found;
                 idx = obj.kernels(idx); 
                 

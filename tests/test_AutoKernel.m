@@ -36,3 +36,14 @@ const.add('D', 5);
 kern = mFEM.kernels.AutoKernel(mesh,'K', 'B''*D*B', 'ConstantRegistry', const);
 Kcalc = kern.eval(mesh.element(1), [0.5,0.5],[]);
 T.compare(Kexact, Kcalc, 'ConstantRegistry linking correctly');
+
+% Test direct assemble
+mesh = mFEM.FEmesh();
+mesh.addElement('Truss',[0,0; 1,1]);
+mesh.init();
+kern = mFEM.kernels.AutoKernel(mesh,'K','Ke');
+Kexact = 1/2*[1,1,-1,-1; 1,1,-1,-1; -1,-1,1,1; -1,-1,1,1];
+Kcalc = kern.eval(mesh.element(1), [], []);
+T.compare(Kexact, Kcalc, 'Direct stiffness assembly', 'Tol', 10^-14);
+
+

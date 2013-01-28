@@ -91,30 +91,39 @@ classdef Vector < handle
            varargout{1} = obj.m;
        end
        
-       function add(obj, fe, dof)
+       function add(obj, fe, varargin)
             %ADD Adds a sub-vector to the global vector
             %
             % Syntax
+            %    add(f)
             %    add(fe, dof)
             %
             % Description
+            %    add(f) adds a the complete vector, f, to the existing
+            %
             %    add(fe, dof) adds the local vector fe to the 
             %    locations specified in dof, this is equivelent to the 
             %    following:
             %        f(dof) = f(dof) + fe,
             %    where f is the global vector.
 
+            if nargin == 3;
+                dof = varargin{1};
+            else
+                dof = 1:obj.m;
+            end
+            
             obj.f(dof) = obj.f(dof) + fe;
        end
        
        function out = getLocal(obj, dof)
-           %GET_LOCAL extract a local vector given the dof
+           %GETLOCAL extract a local vector given the dof
            %
            % Syntax
-           %    out = get_local(dof)
+           %    out = getLocal(dof)
            %
            % Description
-           %    out = get_local(dof) returns a subvector, where dof are the
+           %    out = getLocal(dof) returns a subvector, where dof are the
            %    indices of the subvector
            
            out = obj.f(dof);
