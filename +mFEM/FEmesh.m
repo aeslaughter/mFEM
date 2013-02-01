@@ -660,7 +660,7 @@ classdef FEmesh < handle
             [~, ~, CGdof] = unique(obj.map.node, 'rows','stable');
             
             % Loop through elements and store ids of neighboring elements
-            parfor e = 1:obj.n_elements;
+            for e = 1:obj.n_elements;
                 
                 % The current element
                 elem = obj.element(e);      % current element

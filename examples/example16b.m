@@ -18,13 +18,11 @@ import mFEM.* mFEM.solvers.*
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Element','Quad4','Type','CG');
-N = 16;
+N = 10;
 mesh.grid(0,1,0,1,N,N);
-% mesh.grid(-1,0,0,1,N,N);
-% mesh.grid(0,1,0,1,N,N);
-% mesh.grid(-1,0,-1,0,N,N);
+mesh.grid(-1,0,0,1,N,N);
+mesh.grid(-1,0,-1,0,N,N);
 mesh.init();
-% mesh.plot();1
 
 mesh.addBoundary(1);
 
@@ -41,6 +39,7 @@ mesh.plot(u,'-new');
 
 x = mesh.getNodes();
 ue = u_e(x);
+mesh.plot(u_e(x),'-new');
 mesh.plot(ue-u,'-new');
 
 
