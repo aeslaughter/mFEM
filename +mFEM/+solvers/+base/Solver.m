@@ -171,19 +171,33 @@ classdef Solver < handle
                      
             % System case, call the assemble function        
             if ~isempty(obj.system) && ischar(obj.options.(name));
-                % Test if the component exists in the system and is the
-                % correct type, if both tests pass call the assemble method
-                [TF,type] = obj.system.exists(obj.options.(name));
-
-                if TF && strcmp(type, 'mFEM.registry.MatrixKernelRegistry');
-                    x = obj.system.assemble(obj.options.(name),'-zero'); 
-                elseif TF && strcmp(type, 'mFEM.registry.ConstantVectorRegistry'); 
-                    x = obj.system.get(obj.options.(name));
-                    x = x.init();
-                else
+                
+                % Test if the component exists in the system
+                [TF,type] = obj.system.exists(obj.options.(name)); 
+                
+                % Return an error if the variable is not located
+                if ~any(TF);
                     error('Solver:getComponent', 'The %s was not found in the system when attempting to assemble.', obj.options.(name));
                 end
                 
+                % Build a cell array for looping
+                if ~iscell(type); type = {type}; end
+                
+                % Loop through the types, this accounts for the ability of
+                % addConstantVector calls to have the same name as the addVector 
+                % calls.
+                for i = 1:length(type);
+                    % Assembly
+                    if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry');
+                        x = obj.system.assemble(obj.options.(name),'-zero'); 
+                
+                    % Do nothing for ConstantVector (inclusion is handled
+                    % in assembly function), throw an error if something
+                    % else is found.
+                    elseif ~strcmp(type{i}, 'mFEM.registry.ConstantVectorRegistry'); 
+                        error('Solver:getComponent:InvalidName', 'The %s was not found in the system when attempting to assemble the %s component of the problem. A type of mFEM.registry.MatrixKernelRegistry was expected but a %s was given', obj.options.(name), name, type{i});
+                    end
+                end
             % Generic case, the user supplied the actual matrix or vector    
             else
                 x = obj.options.(name);                    
@@ -266,7 +280,7 @@ classdef Solver < handle
                dof(:,i) = logical(obj.mesh.getDof('Boundary', obj.essential(i).boundary, 'Component', obj.essential(i).component));
                
                if isa(obj.essential(i).value, 'function_handle');
-                   x = obj.mesh.get_nodes(); 
+                   x = obj.mesh.getNodes(); 
                    u(dof(:,i)) = obj.essential(i).value(x(dof(:,i),:));
                else
                    u(dof(:,i)) = obj.essential(i).value;

@@ -14,9 +14,9 @@ classdef ConstantVectorRegistry < mFEM.registry.base.Registry
             obj.mesh = mesh;
         end
         
-         function value = get(obj, name)
-                kern = obj.find(name);
-                value = kern.value;
+         function value = get(obj, name, varargin)
+            kern = obj.find(name);
+            value = kern.get(varargin{:});
          end
     end 
       

@@ -40,11 +40,16 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             error('MatrixKernel:apply', 'Not implemented.');
         end
         
-        function K = get(obj)
-            if isempty(obj.value);
-                error('MatrixKernel:get', 'Matrix not assembled.');
+        function K = get(obj,varargin)
+            
+            opt.init = false;
+            opt = gatherUserOptions(opt, varargin{:});
+            
+            if opt.init;
+                K = obj.value.init();
+            else
+                K = obj.value;
             end
-            K = obj.value.init();
         end
         
         function varargout = assemble(obj, varargin)
@@ -98,7 +103,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                 return;
             end
             
-            if strcmpi(obj.options.type,'matrix');
+            if strcmpi(obj.options.type, 'matrix');
                 Ke = zeros(elem.n_dof);
             else
                 Ke = zeros(elem.n_dof,1);         

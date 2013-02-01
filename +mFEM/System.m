@@ -52,7 +52,7 @@ classdef System < handle
         vec;
         const;
         func;
-        list;% = {obj.mat, obj.vec, obj.const, obj.func};
+        list;
     end
 
     methods (Access = public)
@@ -115,7 +115,6 @@ classdef System < handle
             %   sys.addConstant('k', 10, 'r', 2);
             %   sys.addCosntant('D', 'k^2');
             %   sys.addConstant('D', 10, '-add');
-            
             obj.const.add(varargin{:});
         end
         
@@ -300,7 +299,7 @@ classdef System < handle
             obj.vec.add(varargin{:});
         end
         
-        function X = get(obj, name)
+        function X = get(obj, name, varargin)
             %GET Returns the value for the specified name.
             %
             % Syntax
@@ -316,18 +315,27 @@ classdef System < handle
             %       matrix = mFEM.Matrix object
             
             % Loop through the storage structures and locate the variable
-            kern = [];
+            kern = {};
+            k = 1;
             for i = 1:length(obj.list);
-                kern = obj.list{i}.find(name);
-                %X = reg{i}.get(name);
-                if ~isempty(kern); break; end;
+                tmp = obj.list{i}.find(name);
+                if ~isempty(tmp); 
+                    kern{k} = tmp;
+                    k = k + 1;
+                end;
             end
             
             % Throw and error if the name was not found
             if isempty(kern);
                 error('System:get', 'The entity with name %s was not found.', name);
             else
-                X = kern.get();
+                if length(kern) == 1;
+                    X = kern{1}.get(varargin{:});
+                else
+                    for i = 1:length(kern);
+                        X{i} = kern{i}.get(varargin{:});
+                    end
+                end
             end   
         end
         
@@ -346,17 +354,18 @@ classdef System < handle
            %    [TF, type] = exists(name) same as above, but also returns
            %    the class type for registry containing the variable.
 
-            
             % Loop through the storage structures and locate the variable
-            TF = false;
+            TF = false(size(obj.list));
+            k = 1;
             for i = 1:length(obj.list);
                 idx = obj.list{i}.find(name, '-index');
                 if ~isempty(idx); 
-                    TF = true;
-                    if nargout == 2; 
-                        varargout{1} = class(obj.list{i});
+                    TF(i) = true;
+                    if nargout == 2 && TF(i); 
+                        varargout{1}{k} = class(obj.list{i});
+                        k = k + 1;
                     end
-                    return; 
+                    %return; 
                 end;
             end
         end
@@ -390,12 +399,27 @@ classdef System < handle
             %       numeric
             %       Limits the application of the supplied equation to the
             %       specified component for vector unknowns.
+            
+            % Extract the types with the given name
             [~, type] = obj.exists(name);
-            if ~strcmp(type, 'mFEM.registry.MatrixKernelRegistry');
-                error('System:assemble', 'Only variables added with addMatrix or addVector may be assembled');
-            else
-                X = obj.mat.assemble(name, varargin{:});      
-            end
+            
+            for i = 1:length(type);
+                if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry');
+                    if i == 1;
+                        X = obj.mat.assemble(name, varargin{:});         
+                    else
+                        X = X + obj.mat.assemble(name, varargin{:});      
+                    end
+                elseif strcmp(type{i}, 'mFEM.registry.ConstantVectorRegistry');
+                    if i == 1;
+                        X = obj.vec.get(name, '-init');         
+                    else
+                        X = X + obj.vec.get(name, '-init');         
+                    end
+                else
+                    error('System:assemble', 'Only variables added with addMatrix or addVector may be assembled');
+                end
+            end  
         end
     end 
     
@@ -432,16 +456,11 @@ classdef System < handle
                     kern = mFEM.kernels.AutoKernel(obj.mesh, name, kern,...
                         'ConstantRegistry', obj.const,...
                         'FuncRegistry', obj.func,...
-                        'ConstantVectorRegistry', obj.vec,...
                         'boundary', opt.boundary,...
                         'subdomain', opt.subdomain,...
                         'component', opt.component,...
                         'type', type);
                     obj.mat.add(name, kern);
-%                 elseif isnumeric(kern)
-%                     obj.vec.add(name, kern, 'boundary', opt.boundary,...
-%                         'subdomain', opt.subdomain,...
-%                         'component', opt.component);
                 else
                     error('System:addMatrixPrivate', 'Input of type %s is not allowed, you must supply a valid character string or a MatrixKernel object', class(kern));
                 end

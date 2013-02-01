@@ -86,7 +86,7 @@ classdef Beam < mFEM.elements.base.Element
             N(4) = L/8*(1+xi)^2*(xi-1);            
         end
 
-        function B = grad_basis(obj, xi) 
+        function B = gradBasis(obj, xi) 
             % Second derivative of shape functions
             L = obj.size();
             B(1) = 1/L^2*6*xi;
@@ -100,7 +100,7 @@ classdef Beam < mFEM.elements.base.Element
             J = 1/2 * obj.size();            
         end
         
-        function local_grad_basis(~, varargin)
+        function localGradBasis(~, varargin)
             % Does nothing for the Truss dlement
             error('Truss:local_grad_basis','The gradient in local coordinte system is not defined for the Truss element.');   
         end

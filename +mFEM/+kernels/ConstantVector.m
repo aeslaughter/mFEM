@@ -99,8 +99,16 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             end           
         end
         
-        function value = get(obj)
-            value = obj.value();
+        function f = get(obj, varargin)
+            
+            opt.init = false;
+            opt = gatherUserOptions(opt, varargin{:});
+            
+            if opt.init;
+                f = obj.value.init();
+            else
+                f = obj.value;
+            end
         end
         
         function eval(~, varargin)

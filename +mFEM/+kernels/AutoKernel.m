@@ -21,19 +21,12 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
             
             obj.options.funcregistry = [];
             obj.options.constantregistry = [];
-            obj.options.constantvectorregistry = [];
             [obj.options, unknown] = gatherUserOptions(obj.options, varargin{:});
             
             if isa(obj.options.constantregistry, 'mFEM.registry.ConstantRegistry');
                obj.const = obj.options.constantregistry;
             else
                 obj.const = mFEM.registry.ConstantRegistry();
-            end
-            
-            if isa(obj.options.constantvectorregistry, 'mFEM.registry.ConstantVectorRegistry');
-               obj.vec = obj.options.constantvectorregistry;
-            else
-                obj.vec = mFEM.registry.ConstantVectorRegistry(mesh);
             end
             
             if isa(obj.options.funcregistry, 'mFEM.registry.FuncRegistry');
@@ -87,8 +80,5 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
             str = obj.func.apply(obj.eqn, elem, qp, t);            
             value = eval(str);
         end
-    end
-
-        
-        
+    end   
 end

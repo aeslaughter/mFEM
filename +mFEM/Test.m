@@ -18,7 +18,7 @@ classdef Test < handle
             end
         end
 
-        function compare(obj,mat1,mat2,msg,varargin)
+        function str = compare(obj,mat1,mat2,msg,varargin)
             
             opt.tol = 0;
             opt.main = false;
@@ -40,12 +40,12 @@ classdef Test < handle
             elseif ~opt.main
                 msg = ['  ', msg, ' (Tol = ', num2str(opt.tol, '%3.2e\n'),')'];
             end
-            obj.print_result(msg,all(bool));
+            obj.printResult(msg,all(bool));
         end
     end
     
     methods (Access = private)
-        function print_result(obj, msg, TF)
+        function printResult(obj, msg, TF)
             len = 128;
             str(1:len) = '.';
             if length(msg) > len - 6;

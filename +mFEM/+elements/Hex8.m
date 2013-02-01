@@ -52,7 +52,12 @@ classdef Hex8 < mFEM.elements.base.Element
     
     % Define the inherited abstract methods (protected)
     methods (Access = protected)      
-        function N = basis(~, xi, eta, zeta)
+        function N = basis(~, x)
+            
+            xi = x(1);
+            eta = x(2);
+            zeta = x(3);
+            
             % Returns a row vector of local shape functions
             N(1) = 1/8*(1-xi)*(1-eta)*(1-zeta);
             N(2) = 1/8*(1+xi)*(1-eta)*(1-zeta);
@@ -64,7 +69,12 @@ classdef Hex8 < mFEM.elements.base.Element
             N(8) = 1/8*(1-xi)*(1+eta)*(1+zeta);
         end
         
-        function GN = local_grad_basis(~, xi, eta, zeta)
+        function GN = localGradBasis(~, x)
+            
+            xi = x(1);
+            eta = x(2);
+            zeta = x(3);
+            
             % Returns gradient, in xi and eta, of the shape functions
             GN(:,1) = 1/8*[(eta-1)*(zeta-1); (zeta-1)*(xi-1); (eta-1)*(xi-1)];
             GN(:,2) = 1/8*[(eta-1)*(zeta-1); (zeta-1)*(xi+1); (eta-1)*(xi+1)];
@@ -76,14 +86,14 @@ classdef Hex8 < mFEM.elements.base.Element
             GN(:,8) = 1/8*[(eta+1)*(zeta+1); (zeta+1)*(xi-1); (eta+1)*(xi-1)];
         end
         
-        function B = grad_basis(obj, xi, eta,zeta) 
+        function B = gradBasis(obj, x) 
             % Gradient of shape functions
-            B = inv(obj.jacobian(xi, eta, zeta)) * obj.local_grad_basis(xi, eta, zeta);
+            B = inv(obj.jacobian(x)) * obj.localGradBasis(x);
         end
         
-        function J = jacobian(obj, xi, eta, zeta)
+        function J = jacobian(obj, x)
             % Returns the jacobian matrix  
-            J = obj.local_grad_basis(xi, eta, zeta)*obj.nodes;                 
+            J = obj.localGradBasis(x)*obj.nodes;                 
         end
     end
 end

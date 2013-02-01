@@ -13,17 +13,17 @@ function example14a
 import mFEM.*
 
 % Create the 2-element mesh
-mesh = FEmesh('Element','Beam');
-mesh.add_element([0;8]);
-mesh.add_element([8;12]);
+mesh = FEmesh();
+mesh.addElement('Beam',[0;8]);
+mesh.addElement('Beam',[8;12]);
 mesh.init();
 
 % Add flags for the boundary elements
-mesh.add_boundary(1,'left');    % fixed connection
-mesh.add_boundary(2,'right');   % prescribed force and rotation
+mesh.addBoundary(1,'left');    % fixed connection
+mesh.addBoundary(2,'right');   % prescribed force and rotation
 
 % Add flag for the distributed load
-mesh.add_subdomain(10, 'x<8');    % distributed load, b
+mesh.addSubdomain(10, 'x<8');    % distributed load, b
 
 % Difine the paramters for the problem
 b = -1;         % body force
@@ -47,21 +47,18 @@ for e = 1:mesh.n_elements;
     fe = zeros(elem.n_dof,1);    
     
     % Create functions for N and B
-    B = @(xi) elem.shape_deriv(xi);
+    B = @(xi) elem.shapeDeriv(xi);
     N = @(xi) elem.shape(xi);
-    
-    % Extract quadrature points
-    [qp,w] = elem.quad.rules();
 
     % Perform quadrature for stiffness matrix
-    for i = 1:length(qp);
-        Ke = Ke + w(i)*EI*B(qp(i))'*B(qp(i))*elem.detJ(qp(i));
+    for i = 1:length(elem.qp);
+        Ke = Ke + elem.W(i)*EI*B(elem.qp{i})'*B(elem.qp{i})*elem.detJ(elem.qp{i});
     end
 
     % Account for the body force, only on subdomain
     if any(elem.subdomain == 10);
-        for i = 1:length(qp);  
-            fe = fe + w(i)*N(qp(i))'*b*elem.detJ(qp(i));
+        for i = 1:length(elem.qp);  
+            fe = fe + elem.W(i)*N(elem.qp{i})'*b*elem.detJ(elem.qp{i});
         end
     end
     
@@ -70,13 +67,13 @@ for e = 1:mesh.n_elements;
         fe = fe + N(0)'*P1;
     elseif e == 2;
         fe = fe + N(-1)'*P2;
-        dof = elem.get_dof('Side',2,'-local');
+        dof = elem.getDof('Side',2,'-local');
         fe(dof) = fe(dof) + c;
     end
 
     % Add the local matrix and vector to the global
-    dof = elem.get_dof();
-    K.add_matrix(Ke, dof);
+    dof = elem.getDof();
+    K.add(Ke, dof);
     f(dof) = f(dof) + fe;
 end
 
@@ -85,7 +82,7 @@ K = K.init();
 full(K)
 f
 % Solve for the unknowns
-ess = mesh.get_dof('Boundary' , 1);
+ess = mesh.getDof('Boundary' , 1);
 u(ess) = 0;
 u(~ess) = K(~ess,~ess)\f(~ess);
 u

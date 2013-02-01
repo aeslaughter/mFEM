@@ -29,7 +29,7 @@ import mFEM.* mFEM.solvers.*;
 % Set the default options and apply the user defined options
 opt.n = 8;
 opt.element = 'Hex8';
-opt = gather_user_options(opt,varargin{:});
+opt = gatherUserOptions(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = FEmesh('Element',opt.element);
@@ -37,16 +37,16 @@ mesh.grid(0,1,0,1,0,1,opt.n,opt.n,opt.n);
 mesh.init();
 
 % Label the boundaries
-mesh.add_boundary(1); % essential boundaries (all)
+mesh.addBoundary(1); % essential boundaries (all)
 
 % Build the system
 sys = System(mesh);
-sys.add_constant('D', 1 / (2*pi^2));   % thermal conductivity
-sys.add_matrix('M', 'N''*N');
-sys.add_matrix('K', 'B''*D*B');
+sys.addConstant('D', 1 / (2*pi^2));   % thermal conductivity
+sys.addMatrix('M', 'N''*N');
+sys.addMatrix('K', 'B''*D*B');
 
 % Collect the node positions for applying the essential boundary conditions
-nodes = mesh.get_nodes();
+nodes = mesh.getNodes();
 x = nodes(:,1);
 y = nodes(:,2);
 z = nodes(:,3);
@@ -65,7 +65,7 @@ ylabel('y');
 % Create and initilize the transient solver
 dt = 0.1;
 solver = TransientLinearSolver(sys, 'dt', 0.1, 'force', 0);
-solver.add_essential_boundary('id', 1, 'value',0);
+solver.addEssential('Boundary', 1, 'value',0);
 solver.init(T);
 
 % Perform 10 time-steps

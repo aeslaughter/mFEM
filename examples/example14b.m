@@ -1,113 +1,57 @@
-%EXAMPLE14b Beam element
+%EXAMPLE14a Beam element
 % Fish and Belytschko (2009), Ex. 10.1, p. 262
 %
-% See Also EXAMPLE14a
+% This is a specialized example problem, refer that replicates the example
+% problem from the text exactly. For a more rubust approach refer to
+% example 14b
+%
+% See Also EXAMPLE14b
 
-function example14b(varargin)
-
-% User options
-opt.n = 1;
-opt.direct = false;
-opt = gather_user_options(opt,varargin{:});
+function example14b
 
 % Load the mFEM library
 import mFEM.*
 
 % Create the 2-element mesh
-n = 100;
-mesh = FEmesh('Element','Beam');
-mesh.grid(0,12,n*3); % using ensures that nodes always are at nodes
+mesh = FEmesh();
+mesh.addElement('Beam',[0;8]);
+mesh.addElement('Beam',[8;12]);
 mesh.init();
 
 % Add flags for the boundary elements
-mesh.add_boundary(1, 'left');    % fixed connection
-mesh.add_boundary(2, 'right');   % prescribed force and moment
+mesh.addBoundary(1,'left');    % fixed connection
+mesh.addBoundary(2,'right');   % prescribed force and rotation
 
-% Add flag for the distributed load and point loads
-mesh.add_subdomain(10, 'x<8');    % distributed load, b
-mesh.add_subdomain(11, 'x==4');   % point load, P1
-mesh.add_subdomain(12, 'x==8');   % point load, P2
+% Add flag for the distributed load
+mesh.addSubdomain(10, 'x<8');       % distributed load, b (integrate over element 1, using x<=8 would integrate over both elements b/c element 2 contains the node)
+mesh.addSubdomain(11, 'x<=8');      % allows for dof extraction of both nodes of element 1
+mesh.addSubdomain(12, 'x==8');      % allows for dof extraction of both node 1 of element 2
 
 % Define a system
 sys = System(mesh);
-sys.add_constant('b',-1,'EI',10^4);
-sys.add_vector('f','N''*b','Subdomain',10);
+sys.addConstant('q',-1,'EI',10^4);
+sys.addMatrix('K','EI*Ke'); 
+sys.addVector('f','N''*q','Subdomain',10);
 
-if opt.direct;
-    sys.add_matrix('K','EI*Ke','-direct'); 
-else
-    sys.add_matrix('K','EI*B''*B');
-end
-
-% Difine the paramters for the problem
-b = -1;         % body force
-P1 = -10;       % load at x = 4
-P2 = 5;         % load at x = 8
-EI = 10^4;      % modulus and moment of intertia
-c = [-20;20];   % presecribed force and moment on boundary
+elem = mesh.element(1);
+sys.addConstantVector('f',-10*elem.shape(0)','Subdomain',11, '-add');
+sys.addConstantVector('f', 5, 'Subdomain', 12, 'Component', 1, '-add');
+sys.addConstantVector('f', [-20,20], 'Boundary', 2, '-add');
 
 % Create the stiffness matrix
-K = sys.assemble('K');
-f = sys.assemble('f');
-
-% Apply point loads
-dof1 = mesh.get_dof({'Subdomain', 11, 'Component', 1},{'Subdomain', 12, 'Component', 1});
-f(dof1) = f(dof1) + [P1;P2];
-
-% Apply the natural boundary conditions
-dof3 = mesh.get_dof('Boundary', 2);
-f(dof3) = f(dof3) + c;
-
-% Solve for the unknowns
-ess = mesh.get_dof('Boundary' , 1);
-u(ess) = 0;
-u(~ess) = K(~ess,~ess)\f(~ess);
+solver = mFEM.solvers.LinearSolver(sys);
+solver.addEssential('Boundary' , 1, 'Value', 0);
+u = solver.solve()
 
 % Plot the results
-h = subplot(4,1,1);
-mesh.plot(u, 'Axes', h, 'Component', 1, '-deform', 'patch', {'EdgeColor','k','LineWidth',2});
+h = subplot(2,1,1);
+%mesh.plot(u,'Axes', h, 'Component', 1, 'colorbar', 'Displacement (m)');
+mesh.plot(u, 'Axes', h, 'Component', 1, '-deform', 'patch', {'EdgeColor','k'});
 xlabel('x (m)');
 ylabel('Displacement (m)');
 
-h = subplot(4,1,2);
-mesh.plot(u, 'Axes', h, 'Component', 2, '-deform', 'patch', {'EdgeColor','k','LineWidth',2});
+h = subplot(2,1,2);
+% mesh.plot(u,'Axes', h, 'Component',2, 'colorbar', 'Rotation');
+mesh.plot(u, 'Axes', h, 'Component', 2, '-deform', 'patch', {'EdgeColor','k'});
 xlabel('x (m)');
 ylabel('Rotation (rad.)');
-
-% Compute the moment and shear
-s = []; sx = []; m = []; mx = [];
-for e = 1:mesh.n_elements;
-    
-    % Current element
-    elem = mesh.element(e);
-    dof = elem.get_dof();  
-    
-    % Create functions for N and B
-    B = @(xi) elem.shape_deriv(xi);
-    D = elem.dNdx3();
-
-    % Shear
-    s(end+1) = EI*D*u(dof)';
-    s(end+1) = s(end);
-    sx(end+1) = elem.nodes(1);
-    sx(end+1) = elem.nodes(2);
-    
-    % Moments at quass points
-    [qp,~] = elem.quad.rules();
-    for i = 1:length(qp);
-        m(end+1) = EI*B(qp(i))*u(dof)';
-        mx(end+1) = elem.get_position(qp(i));
-    end
-end
-
-% Plot the shear force
-subplot(4,1,3);
-plot(sx,s,'b-', 'LineWidth', 2);
-xlabel('x (m)');
-ylabel('Shear (N)');
-
-% Plot the moment
-subplot(4,1,4);
-plot(mx,m,'b-', 'LineWidth', 2);
-xlabel('x (m)');
-ylabel('Moment (Nm)');

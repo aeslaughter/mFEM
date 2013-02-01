@@ -274,7 +274,7 @@ function h = plot1D_vector(obj, opt)
         % Gather y-axis data
         z = [];
         if ~isempty(opt.data)
-            dof = elem.get_dof();
+            dof = elem.getDof();
             z = opt.data(dof);
             zz(:,1) = z(1:2:end);
             zz(:,2) = z(2:2:end);           
@@ -433,7 +433,7 @@ function h = plot3D_scalar(obj, opt)
 
         % Plot with data
         if ~isempty(opt.data)
-            dof = elem.get_dof();
+            dof = elem.getDof();
             h(e) = patch('Vertices',elem.nodes,'Faces',elem.side_dof,...
                 'FaceVertexCData',opt.data(dof));
             

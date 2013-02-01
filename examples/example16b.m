@@ -24,22 +24,22 @@ mesh.grid(0,1,0,1,N,N);
 % mesh.grid(0,1,0,1,N,N);
 % mesh.grid(-1,0,-1,0,N,N);
 mesh.init();
-% mesh.plot();
+% mesh.plot();1
 
-mesh.add_boundary(1);
+mesh.addBoundary(1);
 
 sys = System(mesh);
-sys.add_constant('p',-6);
-sys.add_matrix('K','B''*B');
-sys.add_vector('f','N''*p');
+sys.addConstant('p',-6);
+sys.addMatrix('K','B''*B');
+sys.addVector('f','N''*p');
 
 u_e = @(x) 1 + x(:,1).^2 + 2*x(:,2).^2;
 solver = LinearSolver(sys);
-solver.add_essential_boundary('id',1,'value',u_e);
+solver.addEssential('boundary',1,'value',u_e);
 u = solver.solve;
 mesh.plot(u,'-new');
 
-x = mesh.get_nodes();
+x = mesh.getNodes();
 ue = u_e(x);
 mesh.plot(ue-u,'-new');
 
