@@ -64,7 +64,6 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
         function parseEquation(obj)
             
             str = obj.input;
-            str = regexprep(str,'\<L\>', 'elem.size()');
             str = regexprep(str,'\<N\>', 'elem.shape(qp)');
             str = regexprep(str,'\<B\>', 'elem.shapeDeriv(qp)');    
             
@@ -77,6 +76,8 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
             if obj.direct;
                 str = regexprep(str,'\<Ke\>','elem.stiffness()');
             end
+
+            str = regexprep(str,'\<L\>', 'elem.size()');
 
             obj.eqn = obj.const.apply(str);
             

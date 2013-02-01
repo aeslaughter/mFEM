@@ -95,12 +95,13 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
               
             if obj.direct            
                 Ke = obj.eval(elem, [], t);
+                return;
             end
             
             if strcmpi(obj.options.type,'matrix');
-                  Ke = zeros(elem.n_dof);
+                Ke = zeros(elem.n_dof);
             else
-                  Ke = zeros(elem.n_dof,1);         
+                Ke = zeros(elem.n_dof,1);         
             end
 
             % Loop over the quadrature points

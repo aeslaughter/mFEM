@@ -24,10 +24,9 @@ sys.addFunc('A',@(elem,x,t) elementArea(sys,elem));
 
 % Define stiffness matrix with direct method
 sys.addMatrix('K', 'A*E/L*Ke');
-
 % Build the force vector
 %vec = mFEM.kernels.ConstantVector('f', mesh, sys.get('P'), 'Boundary',3,'Component','x');
-sys.addVector('f', sys.get('P'), 'Boundary',3,'Component','x');
+sys.addConstantVector('f', sys.get('P'), 'Boundary', 3, 'Component','x');
 
 % Create solver, apply essential boundary conditions, and solve
 solver = solvers.LinearSolver(sys);
@@ -35,12 +34,13 @@ solver.addEssential({'boundary',1,'value', 0},{'boundary',2,'Component','y','val
 u = solver.solve();
 
 % Plot results
-mesh.plot(u,'-deform','Component','x','colorbar','x-direction disp. (m)');
+mesh.plot(u,'-deform','colorbar','Magnitude of Displacement (m)','-new');
+mesh.plot(u,'-deform','Component','x','colorbar','x-direction disp. (m)','-new');
 
 function A = elementArea(sys, elem)
-%ELEMENT_AREA returns the element area based on the element id
+%ELEMENTAREA returns the element area based on the element id
 
-a = 10^-2;% sys.get('a');
+a = sys.get('a');
 if elem.id == 2; 
     A = 2*a; 
 else

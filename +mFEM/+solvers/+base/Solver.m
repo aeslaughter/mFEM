@@ -168,19 +168,22 @@ classdef Solver < handle
            %    vector is given the System.assemble method is called to
            %    build the component. Otherwise whatever is stored in the
            %    obj.opt.(name) structure is returned.
-           
+                     
             % System case, call the assemble function        
             if ~isempty(obj.system) && ischar(obj.options.(name));
                 % Test if the component exists in the system and is the
                 % correct type, if both tests pass call the assemble method
-                TF = obj.system.exists(obj.options.(name));
-                
-                if TF;% && strcmp(sys_type);
-                    x = obj.system.assemble(obj.options.(name),'-zero'); 
-                else
-                    error('Solver:getComponent', 'The %s was not found in the system when attempting to assemble.', obj.opt.(name));
-                end
+                [TF,type] = obj.system.exists(obj.options.(name));
 
+                if TF && strcmp(type, 'mFEM.registry.MatrixKernelRegistry');
+                    x = obj.system.assemble(obj.options.(name),'-zero'); 
+                elseif TF && strcmp(type, 'mFEM.registry.ConstantVectorRegistry'); 
+                    x = obj.system.get(obj.options.(name));
+                    x = x.init();
+                else
+                    error('Solver:getComponent', 'The %s was not found in the system when attempting to assemble.', obj.options.(name));
+                end
+                
             % Generic case, the user supplied the actual matrix or vector    
             else
                 x = obj.options.(name);                    

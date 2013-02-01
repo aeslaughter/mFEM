@@ -52,6 +52,7 @@ classdef System < handle
         vec;
         const;
         func;
+        list;% = {obj.mat, obj.vec, obj.const, obj.func};
     end
 
     methods (Access = public)
@@ -87,6 +88,7 @@ classdef System < handle
             obj.const = mFEM.registry.ConstantRegistry();
             obj.func = mFEM.registry.FuncRegistry();
             obj.vec = mFEM.registry.ConstantVectorRegistry(mesh);
+            obj.list = {obj.mat, obj.const, obj.func, obj.vec};
         end
           
         function addConstant(obj, varargin)
@@ -256,6 +258,48 @@ classdef System < handle
             obj.addMatrixPrivate('vector', varargin{:});
         end
 
+        function addConstantVector(obj, varargin)
+            %ADDCONSTANTVECTOR Create a finite element vector for assembly
+            %
+            % Syntax
+            %   addConstantVector('VectorName', NumericVector, ...)
+            %
+            % Description
+            %   addConstantVector('VectorName', VectorEqn) adds numeric 
+            %   vector(s) to the System, this vector is then available in
+            %   same fashion as traditional constants also the gradient may
+            %   be used. See the example.
+            %
+            % ADDCONSTANTVECTOR Property Descriptions
+            %   Boundary
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       boundaries with the id, see FEMESH.ADDBOUNDARY
+            %
+            %   Subdomain
+            %       numeric
+            %       Limits the application of the supplied equation to the 
+            %       elements on the subdomain, see FEMESH.ADDSUBDOMAIN
+            %
+            %   Component 
+            %       numeric | char
+            %       Limits the application of the supplied vector to the
+            %       component of a vector value FEmesh. Value of of 1, 2,
+            %       and 3 or 'x', 'y', and 'z' may be supplied.
+            %
+            %   OverWrite
+            %       true | {false}
+            %       If true the vector is overwritten if the same name is
+            %       encounter, otherwise the new vector is added to any
+            %       existing.
+            %
+            %   Dof
+            %       numeric vector
+            %       Limits the application of the numeric input to specific
+            %       dofs.
+            obj.vec.add(varargin{:});
+        end
+        
         function X = get(obj, name)
             %GET Returns the value for the specified name.
             %
@@ -272,10 +316,9 @@ classdef System < handle
             %       matrix = mFEM.Matrix object
             
             % Loop through the storage structures and locate the variable
-            reg = {obj.const, obj.func, obj.mat, obj.vec};
             kern = [];
-            for i = 1:length(reg);
-                kern = reg{i}.find(name);
+            for i = 1:length(obj.list);
+                kern = obj.list{i}.find(name);
                 %X = reg{i}.get(name);
                 if ~isempty(kern); break; end;
             end
@@ -288,28 +331,38 @@ classdef System < handle
             end   
         end
         
-        function TF = exists(obj, name)
+        function [TF, varargout] = exists(obj, name)
            %EXISTS Returns true if name exists as a type in System
            %
            % Syntax
            %    TF = exists(name)
+           %    [TF, type] = exists(name)
            %
            % Description
            %    TF = exists(name) returns a true value if a constant,
            %    matrix, vector, or function exists in the System with the
-           %    name given.
+           %    name given.           
+           %
+           %    [TF, type] = exists(name) same as above, but also returns
+           %    the class type for registry containing the variable.
+
             
             % Loop through the storage structures and locate the variable
             TF = false;
-            reg = {obj.const, obj.func, obj.mat};
-            for i = 1:length(reg);
-                idx = reg{i}.find(name, '-index');
-                if ~isempty(idx); TF = true; return; end;
+            for i = 1:length(obj.list);
+                idx = obj.list{i}.find(name, '-index');
+                if ~isempty(idx); 
+                    TF = true;
+                    if nargout == 2; 
+                        varargout{1} = class(obj.list{i});
+                    end
+                    return; 
+                end;
             end
         end
         
         function X = assemble(obj, name, varargin)
-            %ASSEMBLE Assembles matrix or vector given by name
+            %ASSEMBLE Assembles Matrix objects given by name
             %
             % Syntax
             %   X = assemble(name, 'PropertyName', PropertyValue, ...)
@@ -337,10 +390,13 @@ classdef System < handle
             %       numeric
             %       Limits the application of the supplied equation to the
             %       specified component for vector unknowns.
-
-            X = obj.mat.assemble(name, varargin{:});
+            [~, type] = obj.exists(name);
+            if ~strcmp(type, 'mFEM.registry.MatrixKernelRegistry');
+                error('System:assemble', 'Only variables added with addMatrix or addVector may be assembled');
+            else
+                X = obj.mat.assemble(name, varargin{:});      
+            end
         end
-
     end 
     
     methods (Hidden = true, Access = private)    
@@ -382,10 +438,10 @@ classdef System < handle
                         'component', opt.component,...
                         'type', type);
                     obj.mat.add(name, kern);
-                elseif isnumeric(kern)
-                    obj.vec.add(name, kern, 'boundary', opt.boundary,...
-                        'subdomain', opt.subdomain,...
-                        'component', opt.component);
+%                 elseif isnumeric(kern)
+%                     obj.vec.add(name, kern, 'boundary', opt.boundary,...
+%                         'subdomain', opt.subdomain,...
+%                         'component', opt.component);
                 else
                     error('System:addMatrixPrivate', 'Input of type %s is not allowed, you must supply a valid character string or a MatrixKernel object', class(kern));
                 end

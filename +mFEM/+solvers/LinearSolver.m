@@ -28,8 +28,8 @@ classdef LinearSolver < mFEM.solvers.base.Solver
    properties (Access = protected)
        options = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
-       K;
-       f;
+       %K;
+       %f;
    end
    
    methods
@@ -84,15 +84,19 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            
        end
 
-       function u = solve(obj)
+       function [u,r] = solve(obj)
            %SOLVE Solve the linear system, Ku = f.
            %
            % Syntax
            %    u = solve()
+           %    [u,r] = solve()
            %
            % Description
            %    u = solve() returns the solution to the linear system of
            %    equations, Ku = f.
+           %
+           %    [u,r] = solve() als the returns the solution residuals,
+           %    where r = Ku - f.
 
            % Extract/assemble the stiffness matrix
            K = obj.getComponent('stiffness');
@@ -105,6 +109,11 @@ classdef LinearSolver < mFEM.solvers.base.Solver
    
            % Solve the equations
            u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
+           
+           % Compute residuals
+           if nargout == 2;
+                r = K*u - f;
+           end
        end
    end
 end
