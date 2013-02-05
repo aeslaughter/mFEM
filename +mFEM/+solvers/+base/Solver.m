@@ -96,14 +96,23 @@ classdef Solver < handle
             %       A scalar or row vector of boundary ids (see FEMESH) that are
             %       identify the essential boundary conditions.
             %
+            %   subdomain
+            %       scalar | row vector
+            %       A scalar or row vector of subdomain ids (see FEMESH) that are
+            %       identify essential boundary conditions.  
+            %
             %   value
-            %       scalar | array | char
-            %       A scalar or vector of values that are assigned to the
-            %       supplid boundary ids. If a scalar all of the dofs for the
-            %       given boundary ids are assigned the value, if an array it
-            %       must be have the same number of columns as the ids. It is
-            %       also possible to use a char, where the value is extracted
-            %       from the System class using the get method.
+            %       scalar | vector | char | func
+            %       There are four possible inputs:
+            %       scalar: Applies the given value to all dofs for the
+            %           given restrictions.
+            %       vector: Applies the given vector to all dofs for the
+            %           given restrictions, the vector must have the same 
+            %           number of columns as the ids and the same number of
+            %           rows as the number of dofs given the restrictions.
+            %       char: Use the value is extracted from the System class 
+            %           using the get method.
+            %       function: ...
             %
             %   Component
             %       scalar | 'x' | 'y' | 'z'
