@@ -5,7 +5,7 @@ classdef FEmesh < handle
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
-    %  Copyright (C) 2012 Andrew E Slaughter
+    %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
     %  it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ classdef FEmesh < handle
             %       class derivied from the Element class, located in the 
             %       +element directory may be specified. This is only used
             %       for the grid function and it may be overwritten using
-            %       the grid optoins.
+            %       the grid options.
 
             % Parse the user-defined options
             obj.options = gatherUserOptions(obj.options, varargin{:});
@@ -389,7 +389,7 @@ classdef FEmesh < handle
             %       scalar
             %       Extract the dofs for the boundary specified, where the
             %       scalar value is the numeric id added using the
-            %       ADD_BOUNDARY method.
+            %       ADDBOUNDARY method.
             %
             %   Subdomain
             %       scalar

@@ -86,6 +86,10 @@
 %       This is the last command to be applied to the patch, thus it will
 %       override other patch related settings.
 %
+%   Slice
+%       numeric matrix
+%       
+%
 % See also
 % FEmesh
 %
@@ -169,6 +173,7 @@ function opt = parse_input(obj, data, varargin)
     opt.plot = {};
     opt.patch = {};
     opt.hold = true;
+    opt.slice = {};
     
     % When using data, disable the labels by default and do not
     % create a new figure with each call
@@ -421,15 +426,27 @@ end
 
 function h = plot3D_scalar(obj, opt)
     %PLOT_SCALAR create a plot of scalar data
-
+    
+    % Limit based on slices
+    if ~isempty(opt.slice);
+        s.x = [];
+        s = gatherUserOptions(s,opt.slice{:});
+        
+        idx = obj.map.node(:,1) > s.x(1) & obj.map.node(:,1) < s.x(2);
+        elements = obj.map.elem(idx);    
+    
+    else
+        elements = 1:obj.n_elements;
+    end
+    
     % Initialize the x and y values
-    h = zeros(obj.n_elements,1);
+    h = zeros(length(elements),1);
     
     % Generate the graph
-    for e = 1:obj.n_elements;
+    for e = 1:length(elements);
 
         % The current element
-        elem = obj.element(e);
+        elem = obj.element(elements(e));
 
         % Plot with data
         if ~isempty(opt.data)
@@ -444,10 +461,12 @@ function h = plot3D_scalar(obj, opt)
     end
     
     % Apply settings
-    set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
+    set(h,'FaceColor','interp','EdgeColor','interp','Marker','.',...
         'MarkerFaceColor','flat');
     view(3);
 end
+
+
 
 function apply_plot_options(h, obj, opt)
     % APPLY_PLOT_OPTIONS
