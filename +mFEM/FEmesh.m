@@ -41,7 +41,7 @@ classdef FEmesh < handle
     end
     
     properties (SetAccess = private, GetAccess = ?mFEM.System)
-        local_n_dim = uint32([]);   % local dimensions of elements (see BUILD_SIDE)
+        local_n_dim = uint32([]);   % local dimensions of elements (see BUILDSIDE)
     end
     
     methods (Access = public)

@@ -56,8 +56,7 @@ T_exact = @(x,y,z,t) exp(-t)*sin(pi*x).*sin(pi*y).*sin(pi*z);
 T = T_exact(x,y,z,0);
 
 % Plot the initial condition
-%figure; hold on;
-mesh.plot(T,'colorbar','Temperature');
+mesh.plot(T,'-new');
 title('t = 0');
 xlabel('x');
 ylabel('y');

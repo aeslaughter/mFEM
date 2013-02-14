@@ -43,8 +43,12 @@
 %       the deformed structure visually.
 %
 %  ShowNodes
-%       {true} | false
+%       true | {false}
 %       Toggles the display of plotted dots at the nodes
+%
+%  ShowElements
+%       true | {false}
+%       Toggles the display of the element grid lines
 %
 %  ElementLabels
 %       true (default w/o data) | false (default w/ data)
@@ -54,21 +58,21 @@
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the appearence of node number labels.
 %
-%   New
+%  New
 %       true (default w/o data) | false (default w/ data)
 %       Toggles the creation of a new figure, if it is set to false then
 %       gcf is used, unless the handle is specified via FigureHandle
 %
-%   Axes
+%  Axes
 %       axes handle
 %       Add the plot to the user specified axes handle. 
 %
-%   Figure
+%  Figure
 %       figure handle
 %       Add the plot to the user specified figure handle. Note, NewFigure
 %       takes presidence over FigureHandle.
 %
-%   Plot
+%  Plot
 %       cell array
 %       Use this to pass commands directly to the plot (1D), for example
 %           FEplot(...,'Plot',{'Xlim',[0,1]});
@@ -77,7 +81,7 @@
 %       This is the last command to be applied to the plot, thus it will
 %       override other plot related settings.
 %
-%   Patch
+%  Patch
 %       cell array
 %       Use this to pass commands directly to patch (2D & 3D), for example
 %           FEplot(...,'Patch',{'FaceColor','k'});
@@ -121,40 +125,44 @@ function FEplot(obj, data, varargin)
     end
    
     % Collect the input 
-    opt = parse_input(obj, data, varargin{:});
+    opt = parseInput(obj, data, varargin{:});
 
     % Plot the data according the spacial dimensions
     if obj.n_dim == 1 && obj.n_dof_node == 1;
-        h = plot1D_scalar(obj, opt);
+        h = plot1DScalar(obj, opt);
         
     elseif obj.n_dim == 1 && obj.n_dof_node == 2;
-        h = plot1D_vector(obj, opt);
+        h = plot1DVector(obj, opt);
         
     elseif obj.n_dim == 2 && obj.n_dof_node == 1;
-        h = plot2D_scalar(obj, opt);
+        h = plot2DScalar(obj, opt);
         
     elseif obj.n_dim == 2 && obj.n_dof_node == 2;
-        h = plot2D_vector(obj, opt);
+        h = plot2DVector(obj, opt);
         
     elseif obj.n_dim == 3 && obj.n_dof_node == 1;
-        h = plot3D_scalar(obj, opt);
+        h = plot3DScalar(obj, opt);
+        
+    elseif obj.n_dim == 3 && obj.n_dof_node == 3;
+        error('FEplot:FEplot','Plotting 3D vector problems is not yet supported');
+        %h = plot3D_vector(obj, opt);
     end
     
-    apply_plot_options(h, obj, opt);
+    applyPlotOptions(h, obj, opt);
     %build_plot(obj, opt);
     
     % Add the element labels
-    add_element_labels(obj, opt);
+    addElementLabels(obj, opt);
        
     % Add the nodel lables
-    add_node_labels(obj, opt)
+    addNodeLabels(obj, opt)
     
     % Resize the figure
     box on;
 end 
 
-function opt = parse_input(obj, data, varargin)
-    %PARSE_INPUT Function for parsing input data to plot function
+function opt = parseInput(obj, data, varargin)
+    %PARSEINPUT Function for parsing input data to plot function
     %
     % See FEPLOT
 
@@ -165,6 +173,7 @@ function opt = parse_input(obj, data, varargin)
     opt.component = [];
     opt.colorbar = '';
     opt.shownodes = false;
+    opt.showelements = false;
     opt.elementlabels = true;
     opt.nodelabels = true;
     opt.new = true;
@@ -216,7 +225,7 @@ function opt = parse_input(obj, data, varargin)
     end
 end
 
-function h = plot1D_scalar(obj, opt)
+function h = plot1DScalar(obj, opt)
     %PLOT1D create a 1D plot
 
     % Initialize the handle output
@@ -260,7 +269,7 @@ function h = plot1D_scalar(obj, opt)
     h = plot(X,Y); hold on;
 end
 
-function h = plot1D_vector(obj, opt)
+function h = plot1DVector(obj, opt)
     %PLOT1D_vector create a plot for 1D with multiple dofs per node
 
     % Initialize the x and y values
@@ -328,7 +337,7 @@ function h = plot1D_vector(obj, opt)
 
 end
 
-function h = plot2D_scalar(obj, opt)
+function h = plot2DScalar(obj, opt)
     %PLOT2D_SCALAR create a 2D plot with scalar values
 
     % Initialize the x and y values
@@ -358,7 +367,7 @@ function h = plot2D_scalar(obj, opt)
     end
 end
 
-function h = plot2D_vector(obj, opt)
+function h = plot2DVector(obj, opt)
     %PLOT2D_vector create a 2D plot for vector spaces
   
     % Initialize the x and y values
@@ -424,15 +433,37 @@ function h = plot2D_vector(obj, opt)
     end
 end
 
-function h = plot3D_scalar(obj, opt)
+function h = plot3DScalar(obj, opt)
     %PLOT_SCALAR create a plot of scalar data
     
     % Limit based on slices
     if ~isempty(opt.slice);
         s.x = [];
+        s.y = [];
+        s.z = [];
+        s.all = false;
         s = gatherUserOptions(s,opt.slice{:});
         
-        idx = obj.map.node(:,1) > s.x(1) & obj.map.node(:,1) < s.x(2);
+        idx = true(size(obj.map.node));
+        
+        if ~isempty(s.x) && length(s.x) == 2;
+            idx(:,1) = obj.map.node(:,1) > s.x(1) & obj.map.node(:,1) < s.x(2);
+        end
+        
+        if ~isempty(s.y) && length(s.y) == 2;
+            idx(:,2) = obj.map.node(:,2) > s.y(1) & obj.map.node(:,2) < s.y(2);
+        end
+
+        if ~isempty(s.z) && length(s.z) == 2;
+            idx(:,3) = obj.map.node(:,3) > s.z(1) & obj.map.node(:,3) < s.z(2);
+        end      
+        
+        if s.all
+            idx = all(idx,2);
+        else
+            idx = any(idx,2);
+        end
+        
         elements = obj.map.elem(idx);    
     
     else
@@ -461,20 +492,29 @@ function h = plot3D_scalar(obj, opt)
     end
     
     % Apply settings
-    set(h,'FaceColor','interp','EdgeColor','interp','Marker','.',...
-        'MarkerFaceColor','flat');
+    set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
+        'MarkerFaceColor','flat','MarkerSize',0.1);
     view(3);
+    
+    if ~isempty(opt.slice);
+        set(h,'FaceColor','interp');
+    end
+    
+
+    
 end
 
-
-
-function apply_plot_options(h, obj, opt)
+function applyPlotOptions(h, obj, opt)
     % APPLY_PLOT_OPTIONS
     
     % Show the nodes as empty circles
     if opt.shownodes
         set(h, 'Marker','o', 'MarkerSize', 8, 'MarkerEdgeColor', 'auto',...
             'MarkerFaceColor', 'auto');
+    end
+    
+    if opt.showelements
+        set(h,'EdgeColor','k');
     end
     
     % Hold the plot
@@ -501,7 +541,7 @@ function apply_plot_options(h, obj, opt)
     end
 end
 
-function add_element_labels(obj, opt)
+function addElementLabels(obj, opt)
     %ADD_ELEMENT_LABEL
     
     % Only continue if the labels are wanted
@@ -524,7 +564,7 @@ function add_element_labels(obj, opt)
     end
 end
 
-function add_node_labels(obj, opt)
+function addNodeLabels(obj, opt)
     %ADD_NODE_LABELS
     
     % Return if the node labels are not desired
