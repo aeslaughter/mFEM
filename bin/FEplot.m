@@ -492,16 +492,14 @@ function h = plot3DScalar(obj, opt)
     end
     
     % Apply settings
-    set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
-        'MarkerFaceColor','flat','MarkerSize',0.1);
-    view(3);
-    
     if ~isempty(opt.slice);
-        set(h,'FaceColor','interp');
-    end
-    
-
-    
+        set(h,'FaceColor','interp','EdgeColor','interp','Marker','.',...
+        'MarkerFaceColor','flat','MarkerSize',0.1);
+    else
+        set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
+        'MarkerFaceColor','flat','MarkerSize',0.1); 
+    end 
+    view(3);  
 end
 
 function applyPlotOptions(h, obj, opt)

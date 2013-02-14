@@ -22,6 +22,7 @@ classdef Test < handle
             
             opt.tol = 0;
             opt.main = false;
+            opt.showmax = false;
             opt = gatherUserOptions(opt,varargin{:});
             
             if ischar(mat1) && ischar(mat2)
@@ -38,9 +39,15 @@ classdef Test < handle
             if ~opt.main && opt.tol ~= 0;
                 msg = ['  ', msg, ' (Tol = ', num2str(opt.tol, '%3.2e\n'),')'];
             elseif ~opt.main
-                msg = ['  ', msg, ' (Tol = ', num2str(opt.tol, '%3.2e\n'),')'];
+                msg = ['  ', msg];
             end
+            
             obj.printResult(msg,all(bool));
+            
+%             if opt.showmax
+%                 
+%             end
+            
         end
     end
     

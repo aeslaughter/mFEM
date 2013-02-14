@@ -28,9 +28,8 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
    properties (Access = protected)
        options = ...        % Solver options
            struct('mass', 'M', 'stiffness', 'K', 'force', 'f', ...
-           'theta', 0.5, 'dt', [], 'assemblemass', false, ...
-           'assemblestiffness', false, 'assembleforce', false, ...
-           'assembleall', false);
+           'theta', 0.5, 'dt', [], 'disablemass', false, ...
+           'disablestiffness', false, 'disableforce', false, 'disableall', false);
 
        initialized = false;     % flag of initlization state
        K;                       % stiffness matrix
@@ -107,28 +106,21 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
            %            theta = 2/3 is the Galerkin method
            %            theta = 1 is the backward difference scheme
            %
-           %    AssembleStiffness
+           %    DisableStiffness
            %        true | {false}
-           %        Toggles the automatic assembly of the stiffness matrix,
-           %        set this to false if the matrix does not change with
-           %        time.
+           %        Toggles the automatic assembly of the stiffness matrix.
            %
-           %    AssembleMass
+           %    DisableMass
            %        true | {false}
-           %        Toggles the automatic assembly of the mass matrix,
-           %        set this to false if the matrix does not change with
-           %        time.
+           %        Toggles the automatic assembly of the mass matrix.
            %
-           %    AssembleForce
+           %    DisableForce
            %        true | {false}
-           %        Toggles the automatic assembly of the force vector,
-           %        set this to false if the matrix does not change with
-           %        time.
+           %        Toggles the automatic assembly of the force vector.
            %
-           %    AssembleAll
+           %    DisableAll
            %        true | {false}
-           %        Toggles the automatic assembly for all three of the
-           %        above components.
+           %        Toggles the automatic assembly of the all components.
 
            % Call the base class constructor
            obj@mFEM.solvers.base.Solver(input)
@@ -195,17 +187,17 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
             end
             
             % Extract/assemble the stiffness matrix
-            if isempty(obj.K) || obj.options.assemblestiffness || obj.options.assembleall;
+            if isempty(obj.K) && (~obj.options.disableall || ~obj.options.disablestiffness);
                 obj.K = obj.getComponent('stiffness');
             end
 
             % Extract/assemble the force vector
-            if isempty(obj.f) || obj.options.assembleforce || obj.options.assembleall;
+            if isempty(obj.f) && (~obj.options.disableall || ~obj.options.disableforce);
                 obj.f = obj.getComponent('force');
             end
 
             % Extract/assemble the mass matrix
-            if isempty(obj.M) || obj.options.assemblemass || obj.options.assembleall;
+            if isempty(obj.M) && (~obj.options.disableall || ~obj.options.disablemass);
                obj.M = obj.getComponent('mass');
             end
 
