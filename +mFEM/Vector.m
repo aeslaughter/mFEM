@@ -28,8 +28,10 @@ classdef Vector < handle
       m     % no. of rows
     end
     
-    properties (Access = private)
+    properties %(Access = private)
         f     % the vector
+        codist;
+        is_parallel;
     end
    
     methods
@@ -50,107 +52,146 @@ classdef Vector < handle
            %    assigned to c
            %
            %    Vector(vec) create an initilized vector
-
+           
            % Case when creating from an FEmesh object
            if nargin == 1 && isa(m,'mFEM.FEmesh');
-               mesh = m;
-               obj.m = mesh.n_dof;
+               obj.m = m.n_dof;
+               obj.initialize();
                obj.zero();
                
            % Case when only m is specfied     
            elseif nargin == 1 && isscalar(m);
                obj.m = m;
+               obj.initialize();
                obj.zero();
-               
+
            % Case when a vector is given    
-           elseif nargin == 1;
-               obj.m = length(m);
-               obj.f = m;
+%            elseif nargin == 1 && iscodistributed(m);
+%                
+%                obj.m = length(m);
+%                obj.f = m;
+               
+               
                
            % Case when a constant vector is desired
            elseif nargin == 2;
                obj.m = m;
-               obj.f = ones(m,1)*varargin{1};
+               obj.initialize();
+               obj.setConstant(varargin{1});
 
            % Input not understood
            else
                error('Vector:Vector', 'Input Error');
            end
-       end
-       
-       function varargout = size(obj, varargin)
-           %SIZE Returns the size of the the matrix
-           %
-           % Syntax
-           %    m = size()
-           %
-           % Description
-           %    m = size() returns the length of the vector
-
-           % The size of the matrix
-           varargout{1} = obj.m;
-       end
-       
-       function add(obj, fe, varargin)
-            %ADD Adds a sub-vector to the global vector
-            %
-            % Syntax
-            %    add(f)
-            %    add(fe, dof)
-            %
-            % Description
-            %    add(f) adds a the complete vector, f, to the existing
-            %
-            %    add(fe, dof) adds the local vector fe to the 
-            %    locations specified in dof, this is equivelent to the 
-            %    following:
-            %        f(dof) = f(dof) + fe,
-            %    where f is the global vector.
-
-            if nargin == 3;
-                dof = varargin{1};
-            else
-                dof = 1:obj.m;
-            end
-            
-            obj.f(dof) = obj.f(dof) + fe;
-       end
-       
-       function out = getLocal(obj, dof)
-           %GETLOCAL extract a local vector given the dof
-           %
-           % Syntax
-           %    out = getLocal(dof)
-           %
-           % Description
-           %    out = getLocal(dof) returns a subvector, where dof are the
-           %    indices of the subvector
            
-           out = obj.f(dof);
-       end
-       
-       function f = init(obj)
-           %INIT Return the vector
-           %
-           % Syntax
-           %    f = init()
-           %
-           % Description
-           %    f = init() creturns the vector
-           f = obj.f;
+
+
        end
        
        function zero(obj)
-           %ZERO Clears the matrix
+           
+           if obj.is_parallel;
+                codist = obj.codist;
+                m = obj.m;
+                spmd
+                    f = codistributed.zeros([m,1], codist);
+                end
+                obj.f = f;
+           else
+              obj.f = zeros(obj.m,1); 
+           end
+ 
+       end
+       
+       function value = get(obj,in)
+           %GET Extract values from the vector
            %
            % Syntax
-           %    zero()
-           %
-           % Description 
-           %    zero() removes all existing values, it does not resize the
-           %    matrix.
+           %    x = get(idx)
+        
+        n = length(in);   
+           
+        if any(in < 1) || any(in > obj.m);
+            error('Vector:get:OutOfRange', 'The supplied index value(s) must in range of the data (1 to %d)',obj.m);
+        end
+           
+        if obj.is_parallel;
+            vec = obj.f;
+            spmd  
+                
+                idx = globalIndices(vec,1);
+                
+                pos = NaN(n,1);
+                for i = 1:length(in);
+                    p = find(idx == in(i));
+                    if ~isempty(p); pos(i) = p; end
+                
+                end
+                gsize = [n*numlabs,1];
 
-           obj.f = zeros(obj.m,1);
+
+                codist = codistributor1d(codistributor1d.unsetDimension, ...
+                    codistributor1d.unsetPartition, gsize);
+                P = codistributed.build(pos, codist); 
+            end
+
+            value = gather(vec(~isnan(P)));
+        else
+            value = obj.f(in);
+        end
+        
        end
+       
+       function init(obj,local)
+          %INIT
+%           
+%           f = obj.f
+%           spmd
+%             codist = getCodistributor(f) 
+%             f = codistributed.build(local, codist);
+%           end
+% %           obj.f = f;
+%           
+       end
+    end
+    
+    methods (Access = private)
+        
+        function initialize(obj)
+           
+           if matlabpool('size') > 1;
+               obj.is_parallel = true;
+            
+               m = obj.m;
+               spmd
+                   codist = codistributor1d(codistributor1d.unsetDimension, ...
+                                codistributor1d.unsetPartition, [m,1]);
+               end
+               obj.codist = codist;
+               
+           else
+               obj.is_parallel = false; 
+               obj.codist = [];
+           end
+        end
+        
+        function setConstant(obj, c)
+            
+            if obj.is_parallel;
+                codist = obj.codist;
+                m = obj.m;
+
+                spmd
+                    n = codist.Partition(labindex);
+                    local = ones(n,1)*c;
+                    f = codistributed.build(local, codist); 
+                end
+                obj.f = f;
+            else
+               obj.f = ones(obj.m,1)*c; 
+            end
+            
+        end
+
    end
 end
