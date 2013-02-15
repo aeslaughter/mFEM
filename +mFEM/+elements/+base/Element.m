@@ -34,8 +34,8 @@ classdef Element < mFEM.elements.base.ElementCore
     % (the user must redfine these in subclasse, e.g. Line2)
     methods (Abstract, Access = protected)
         N = basis(obj, varargin)            % basis functions
-        B = gradBasis(obj, varargin)       % basis function derivatives (dN/dx, ...)
-        G = localGradBasis(obj, varargin) % basis function derivatives (dN/dxi, ...)
+        B = gradBasis(obj, varargin)        % basis function derivatives (dN/dx, ...)
+        G = localGradBasis(obj, varargin)   % basis function derivatives (dN/dxi, ...)
         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
     end
 
@@ -153,7 +153,5 @@ classdef Element < mFEM.elements.base.ElementCore
             %   number of which varies with the number of space dimensions.
             J = det(obj.jacobian(x));
         end 
-
     end
 end
-    

@@ -33,7 +33,7 @@ opt.debug = false;
 opt = gatherUserOptions(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element',opt.element);
+mesh = FEmesh('Element',opt.element,'-time');
 mesh.grid(0,1,0,1,0,1,opt.n,opt.n,opt.n);
 mesh.init();
 

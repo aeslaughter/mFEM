@@ -103,7 +103,7 @@ for e = 1:mesh.n_elements;
         j = sort(i);
         
         % Get the global degrees of freedom for this element
-        dof = elem.get_dof();
+        dof = elem.getDof();
         I(idx) = dof(i);
         J(idx) = dof(j);
 

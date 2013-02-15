@@ -44,10 +44,6 @@ classdef Test < handle
             
             obj.printResult(msg,all(bool));
             
-%             if opt.showmax
-%                 
-%             end
-            
         end
     end
     
