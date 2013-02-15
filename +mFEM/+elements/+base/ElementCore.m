@@ -101,33 +101,33 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             % Insert required values into object properties
             obj.id = id;
             obj.nodes = nodes;
-            [obj.n_nodes, obj.n_dim] = size(nodes);
-            obj.local_n_dim = obj.n_dim;
-
-            % Change dofs per node
-            if nargin == 4 && strcmpi(varargin{2},'vector');
-                obj.n_dof_node = obj.n_dim;  
-                obj.opt.space = varargin{2};
-            elseif nargin == 4 && isnumeric(varargin{2});
-            	obj.n_dof_node = varargin{2};
-                obj.opt.space = varargin{2};
-            end   
-            
-            % Determine the total number of global dofs
-            obj.n_dof = obj.n_nodes * obj.n_dof_node;
-            
-            % Intialize the side data structure
-            obj.side = struct('on_boundary', true, ...
-                'boundary_id', cell(obj.n_sides,1),...
-                'neighbor',[], 'neighbor_side', []);
-            
-            % Initialize neighbor array
-            obj.neighbors = feval([class(obj),'.empty']);
-            
-            % Get the quadrature points and weights (N/A to Points)
-            if ~isempty(obj.quad);
-                [obj.qp,obj.W] = obj.quad.rules('-cell');
-            end
+%             [obj.n_nodes, obj.n_dim] = size(nodes);
+%             obj.local_n_dim = obj.n_dim;
+% 
+%             % Change dofs per node
+%             if nargin == 4 && strcmpi(varargin{2},'vector');
+%                 obj.n_dof_node = obj.n_dim;  
+%                 obj.opt.space = varargin{2};
+%             elseif nargin == 4 && isnumeric(varargin{2});
+%             	obj.n_dof_node = varargin{2};
+%                 obj.opt.space = varargin{2};
+%             end   
+%             
+%             % Determine the total number of global dofs
+%             obj.n_dof = obj.n_nodes * obj.n_dof_node;
+%             
+%             % Intialize the side data structure
+%             obj.side = struct('on_boundary', true, ...
+%                 'boundary_id', cell(obj.n_sides,1),...
+%                 'neighbor',[], 'neighbor_side', []);
+%             
+%             % Initialize neighbor array
+%             obj.neighbors = feval([class(obj),'.empty']);
+%             
+%             % Get the quadrature points and weights (N/A to Points)
+%             if ~isempty(obj.quad);
+%                 [obj.qp,obj.W] = obj.quad.rules('-cell');
+%             end
         end
                
         function size(obj)

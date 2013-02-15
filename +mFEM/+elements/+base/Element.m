@@ -1,4 +1,4 @@
-classdef Element < mFEM.elements.base.ElementCore
+classdef Element < handle
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -30,20 +30,28 @@ classdef Element < mFEM.elements.base.ElementCore
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+    properties 
+        id;
+    end
+    
+    properties (Access = protected)
+        nodes;
+    end
+    
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Line2)
-    methods (Abstract, Access = protected)
-        N = basis(obj, varargin)            % basis functions
-        B = gradBasis(obj, varargin)        % basis function derivatives (dN/dx, ...)
-        G = localGradBasis(obj, varargin)   % basis function derivatives (dN/dxi, ...)
-        J = jacobian(obj, varargin)         % the Jacobian matrix for the element
-    end
+%     methods (Abstract, Access = protected)
+%         N = basis(obj, varargin)            % basis functions
+%         B = gradBasis(obj, varargin)        % basis function derivatives (dN/dx, ...)
+%         G = localGradBasis(obj, varargin)   % basis function derivatives (dN/dxi, ...)
+%         J = jacobian(obj, varargin)         % the Jacobian matrix for the element
+%     end
 
     % Public Methods
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
-        function obj = Element(id, nodes, varargin)
+        function obj = Element(id, nodes)
             %ELEMENT Class constructor.
             %
             % This is an abstract class, it must be inherited by a subclass
@@ -72,86 +80,87 @@ classdef Element < mFEM.elements.base.ElementCore
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
             %       to that value.
-            obj = obj@mFEM.elements.base.ElementCore(id, nodes, varargin{:});
+            obj.id = id;
+            obj.nodes = nodes;
         end
         
-        function N = shape(obj, x, varargin)
-            %SHAPE Returns the shape functions
-            %
-            % Syntax
-            %   shape(x)
-            %   shape(x, '-scalar')
-            %
-            % Description
-            %   shape(xi) returns the element shape functions evaluated at
-            %   the locations specified by xi.
-            %
-            %   shape(...,'-scalar') allows user to
-            %   override the vectorized output using the scalar flag, this
-            %   is used by GETPOSITION
-
-            % Parse options (do not use gatherUserOptions for speed)
-            scalar_flag = false;
-            if nargin == 3 && strcmpi(varargin{1},'-scalar');
-                scalar_flag = true;            
-            end                
-            
-            % Scalar field basis functions
-            N = obj.basis(x);
-
-            % Non-scalar fields
-            if ~scalar_flag && (obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector'));
-                n = N;                          % re-assign scalar basis
-                r = obj.n_dof_node;             % no. of rows
-                c = obj.n_dof_node*obj.n_nodes; % no. of cols
-                N = zeros(r,c);                 % size the vector basis
-    
-                % Loop through the rows and assign scalar basis
-                for i = 1:r;
-                    N(i,i:r:c) = n;
-                end
-            end      
-        end
-        
-        function B = shapeDeriv(obj, x)
-            %SHAPEDERIV Returns shape function derivatives in global x,y system
-            %
-            % Syntax
-            %   shapeDeriv(x)
-            %
-            % Description
-            %   shapeDeriv(x) returns the element shape function 
-            %   derivatives evaluated at the locations specified in xi.
-
-            % Scalar field basis functin derivatives
-            B = obj.gradBasis(x);
-                        
-            % Non-scalar fields
-            if obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector');
-                b = B;                      % Re-assign scalar basis
-                r = obj.n_dof_node;         % no. of rows
-                c = r*size(b,2);            % no. of cols
-                B = zeros(r+1,c);           % size the vector basis
-
-                % Loop through the rows and assign scalar basis
-                for i = 1:r;
-                    B(i,i:r:c)  = b(i,:);
-                    B(r+1, i:r:c) = b((r+1)-i,:);
-                end
-            end
-        end
-            
-        function J = detJ(obj, x)
-            %DETJ Returns the determinate of the jacobian matrix
-            %
-            % Syntax
-            %   detJ(x)
-            %
-            % Description
-            %   detJ(...) returns the determinante of the jacobian 
-            %   evaluated at the locations specified in the inputs, the 
-            %   number of which varies with the number of space dimensions.
-            J = det(obj.jacobian(x));
-        end 
+%         function N = shape(obj, x, varargin)
+%             %SHAPE Returns the shape functions
+%             %
+%             % Syntax
+%             %   shape(x)
+%             %   shape(x, '-scalar')
+%             %
+%             % Description
+%             %   shape(xi) returns the element shape functions evaluated at
+%             %   the locations specified by xi.
+%             %
+%             %   shape(...,'-scalar') allows user to
+%             %   override the vectorized output using the scalar flag, this
+%             %   is used by GETPOSITION
+% 
+%             % Parse options (do not use gatherUserOptions for speed)
+%             scalar_flag = false;
+%             if nargin == 3 && strcmpi(varargin{1},'-scalar');
+%                 scalar_flag = true;            
+%             end                
+%             
+%             % Scalar field basis functions
+%             N = obj.basis(x);
+% 
+%             % Non-scalar fields
+%             if ~scalar_flag && (obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector'));
+%                 n = N;                          % re-assign scalar basis
+%                 r = obj.n_dof_node;             % no. of rows
+%                 c = obj.n_dof_node*obj.n_nodes; % no. of cols
+%                 N = zeros(r,c);                 % size the vector basis
+%     
+%                 % Loop through the rows and assign scalar basis
+%                 for i = 1:r;
+%                     N(i,i:r:c) = n;
+%                 end
+%             end      
+%         end
+%         
+%         function B = shapeDeriv(obj, x)
+%             %SHAPEDERIV Returns shape function derivatives in global x,y system
+%             %
+%             % Syntax
+%             %   shapeDeriv(x)
+%             %
+%             % Description
+%             %   shapeDeriv(x) returns the element shape function 
+%             %   derivatives evaluated at the locations specified in xi.
+% 
+%             % Scalar field basis functin derivatives
+%             B = obj.gradBasis(x);
+%                         
+%             % Non-scalar fields
+%             if obj.n_dof_node > 1 && strcmpi(obj.opt.space, 'vector');
+%                 b = B;                      % Re-assign scalar basis
+%                 r = obj.n_dof_node;         % no. of rows
+%                 c = r*size(b,2);            % no. of cols
+%                 B = zeros(r+1,c);           % size the vector basis
+% 
+%                 % Loop through the rows and assign scalar basis
+%                 for i = 1:r;
+%                     B(i,i:r:c)  = b(i,:);
+%                     B(r+1, i:r:c) = b((r+1)-i,:);
+%                 end
+%             end
+%         end
+%             
+%         function J = detJ(obj, x)
+%             %DETJ Returns the determinate of the jacobian matrix
+%             %
+%             % Syntax
+%             %   detJ(x)
+%             %
+%             % Description
+%             %   detJ(...) returns the determinante of the jacobian 
+%             %   evaluated at the locations specified in the inputs, the 
+%             %   number of which varies with the number of space dimensions.
+%             J = det(obj.jacobian(x));
+%         end 
     end
 end

@@ -26,12 +26,14 @@ classdef Gauss < handle
     %----------------------------------------------------------------------
     
     properties (SetAccess = private, GetAccess = public)
-        opt = ...   % Structure of available options
-            struct('order', 1, 'type', 'line');
+        order;
+        type;
+    %    opt = ...   % Structure of available options
+    %        struct('order', 1, 'type', 'line');
     end
     
     methods (Access = public)
-        function obj = Gauss(varargin)
+        function obj = Gauss(order, type)
             %GAUSS Class constructor
             %
             % Syntax
@@ -62,8 +64,8 @@ classdef Gauss < handle
             %   'line', 'quad', 'hex'   1,2,3,4,5
             %   'tri'                   1,3,4,7
 
-            % Gather/set the options
-            obj.opt = gatherUserOptions(obj.opt, varargin{:});   
+            obj.order = order; 
+            obj.type = type;
         end
         
         function [qp, w] = rules(obj, varargin)
