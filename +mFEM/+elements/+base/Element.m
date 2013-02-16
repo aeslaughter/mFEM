@@ -36,6 +36,7 @@ classdef Element < handle
     
     properties (Access = protected)
         nodes;
+        parent;
     end
     
     % Abstract Methods (protected)
