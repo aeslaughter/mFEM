@@ -22,13 +22,13 @@ classdef Vector < handle
     %----------------------------------------------------------------------
 
     properties (SetAccess = private, GetAccess = public)
-      m     % no. of rows
+      m                 % no. of rows
+      is_parallel;      % true if vector is codistributed
     end
     
     properties (Access = private)
         f               % the vector (serial or codistributed)
-        codist;         % the codistributor class used, if parallel
-        is_parallel;    % true if vector is codistributed
+        codist;         % the codistributor class used, if parallel  
     end
    
     methods
@@ -159,7 +159,7 @@ classdef Vector < handle
            %    the indices given in index. The value input may be a scalar
            %    or a numeric array the same size as index.
            obj.f(index) = obj.f(index) + value;
-       end
+        end
     end
     
     methods (Access = private)     

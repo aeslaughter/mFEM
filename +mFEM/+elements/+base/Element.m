@@ -1,4 +1,4 @@
-classdef Element < handle
+classdef Element < handle & matlab.mixin.Heterogeneous
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -12,7 +12,7 @@ classdef Element < handle
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
-    %  Copyright (C) 2012 Andrew E Slaughter
+    %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
     %  it under the terms of the GNU General Public License as published by
