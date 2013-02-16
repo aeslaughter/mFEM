@@ -4,6 +4,8 @@ classdef Mesh < handle
     
     properties %(Access = protected)
         elements
+        
+        map = struct('node',{});
     end
     
     methods
