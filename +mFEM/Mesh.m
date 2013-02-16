@@ -3,7 +3,9 @@ classdef Mesh < handle
     %   Detailed explanation goes here
     
     properties %(Access = protected)
-        elements
+        elements = mFEM.elements.Line2.empty();
+        nodes = mFEM.elements.base.Node.empty();
+        map = struct('node',{});
     end
     
     methods
@@ -11,27 +13,43 @@ classdef Mesh < handle
             
         end
         
-        function elem = getElement(obj, id)
-            vec = obj.elements;
-            
-            spmd  
-                local = getLocalPart(vec);
-                idx = [];
-                for i = 1:length(local);
-                    if local{i}.id == id;
-                        idx = i;
-                        break;
-                    end
-                end 
-
-                codist = codistributor1d(codistributor1d.unsetDimension, ...
-                    codistributor1d.unsetPartition, [numlabs,1]);
-                IDX = codistributed.build(idx, codist); 
-            end
-            
-            c = gather(vec(IDX));
-            elem = c{1};
+        function node = addNode(obj, x)
+            node = mFEM.elements.base.Node(x);     
+            obj.nodes(end+1) = node; 
         end
+        
+        function elem = addElement(obj, type, nodes)
+            id = length(obj.elements) + 1;
+            elem = feval(['mFEM.elements.',type],id,nodes);
+            obj.elements(id) = elem;
+        end
+        
+        function init(obj)
+            % distribute nodes and elements (if not already, grid) and
+            % replace the numeric arrays with mFEM.Vectors
+        end
+        
+%         function elem = getElement(obj, id)
+%             vec = obj.elements;
+%             
+%             spmd  
+%                 local = getLocalPart(vec);
+%                 idx = [];
+%                 for i = 1:length(local);
+%                     if local{i}.id == id;
+%                         idx = i;
+%                         break;
+%                     end
+%                 end 
+% 
+%                 codist = codistributor1d(codistributor1d.unsetDimension, ...
+%                     codistributor1d.unsetPartition, [numlabs,1]);
+%                 IDX = codistributed.build(idx, codist); 
+%             end
+%             
+%             c = gather(vec(IDX));
+%             elem = c{1};
+%         end
         
 %         function addElement(obj, elem_type, nodes)
 %             % ADDELEMENT to FEmesh object (must be reinitialized)
@@ -59,7 +77,9 @@ classdef Mesh < handle
 %             obj.element(id) = feval(['mFEM.elements.', elem_type],id, nodes);        
 %         end
         
-        function grid(obj, elem_type, varargin)
+        function grid(obj, cell_type, varargin)
+            
+            % cell_type = LINE, TRI, QUAD, TET, HEX, PRISIM
             
             n = length(varargin);
             if n == 3 || (n > 3 && ischar(varargin{4}))
@@ -78,39 +98,40 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
-                      
+                  
         function gen1Dgrid(obj, elem_type, x0, x1, xn, varargin)
-        % Collect user options
-%             opt.pol2cart = false;
-%             opt.element = obj.options.element;
-%             opt = gatherUserOptions(opt,varargin{:});
-            
-            % Generate the generic grid points
+
             dx = (x1-x0)/xn;
-            X(1,:) = x0 : dx : x1-dx;
-            X(2,:) = X(:,1) + dx;
-            global_size = [length(X),1];
-            X = distributed(X);
-            
-            obj.elements = mFEM.Vector(length(X));
-            
+            nX = x0 : dx : x1;
+            eX = 1:length(nX)-1;
+            node_global_size = [length(nX),1];
+            elem_global_size = [length(eX),1];
+            nX = distributed(nX);
+            eX = distributed(eX);
+
             spmd 
-                x = getLocalPart(X);
-                id = globalIndices(X,2);
+                x = getLocalPart(nX);
+                id = globalIndices(eX,1);
                 
-                elem = cell(length(x),1);
-                
-                % Loop through the grid, creating elements for each cell
-                for i = 1:length(x);     
-                    elem{i} = feval(['mFEM.elements.', elem_type], id(i), x(:,i));    
+                node_local = cell(length(x),1);
+                elem_local = cell(length(id),1);
+                for i = 1:length(x);
+                    node_local{i} = mFEM.elements.base.Node(x(i));
+                    
+                    if i > 1;
+                        elem_local{i-1} = feval(['mFEM.elements.', elem_type], id(i-1), [local_node{i-1},local_node{i}]);
+                    end
                 end
-                
-                
-                 codist = codistributor1d(codistributor1d.unsetDimension, ...
-                    codistributor1d.unsetPartition, global_size);
-                 elem_dist = codistributed.build(elem, codist);
+    
+                 node_codist = codistributor1d(codistributor1d.unsetDimension, ...
+                    codistributor1d.unsetPartition, node_global_size);
+                 elem_codist = codistributor1d(codistributor1d.unsetDimension, ...
+                    codistributor1d.unsetPartition, elem_global_size);
+                 node_dist = codistributed.build(node_local, node_codist);
+                 elem_dist = codistributed.build(elem_local, elem_codist);
             end
-            obj.elements = elem_dist;
+            obj.nodes = mFEM.Vector(node_dist);
+            obj.elements = mFEM.Vector(elem_dist);
         end
     end
 end
