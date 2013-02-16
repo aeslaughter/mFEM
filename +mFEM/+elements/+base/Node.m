@@ -4,6 +4,7 @@ classdef Node < handle
     
     properties
         coord = [0,0,0];
+        parent;
     end
     
     methods
