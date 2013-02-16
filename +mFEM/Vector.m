@@ -1,8 +1,5 @@
 classdef Vector < handle
-    %VECTOR A wrapper class for creating a column vector, this is simple 
-    % wrapper that provides the same features as the Matrix class so that 
-    % syntax may remain consistent. This creates a column vector. And will
-    % serve as the basis of creating parallel vectors in the future.  
+    %VECTOR Creates a serial or parallel column vector
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
@@ -28,19 +25,21 @@ classdef Vector < handle
       m     % no. of rows
     end
     
-    properties %(Access = private)
-        f     % the vector
-        codist;
-        is_parallel;
+    properties (Access = private)
+        f               % the vector (serial or codistributed)
+        codist;         % the codistributor class used, if parallel
+        is_parallel;    % true if vector is codistributed
     end
    
     methods
-       function obj = Vector(m,varargin)
-           %Vector Class constructor
+        function obj = Vector(m,varargin)
+           %VECTOR Class constructor
            %
            % Syntax
            %    Vector(mesh)
            %    Vector(m)
+           %    Vector(...,c)
+           %    Vector(vec)
            %
            % Description
            %    Vector(mesh) create a global vector based on the mesh
@@ -48,150 +47,153 @@ classdef Vector < handle
            %
            %    Vector(m) create an m x 1 matrix.
            %
-           %    Vector(m, c) creates an m x 1 matrix with all values
+           %    Vector(..., c) creates an m x 1 matrix with all values
            %    assigned to c
            %
-           %    Vector(vec) create an initilized vector
-           
-           % Case when creating from an FEmesh object
-           if nargin == 1 && isa(m,'mFEM.FEmesh');
-               obj.m = m.n_dof;
-               obj.initialize();
-               obj.zero();
-               
-           % Case when only m is specfied     
-           elseif nargin == 1 && isscalar(m);
-               obj.m = m;
-               obj.initialize();
-               obj.zero();
+           %    Vector(vec) create a vector from the numeric arrary vec
 
-           % Case when a vector is given    
-%            elseif nargin == 1 && iscodistributed(m);
-%                
-%                obj.m = length(m);
-%                obj.f = m;
-               
-               
-               
-           % Case when a constant vector is desired
-           elseif nargin == 2;
-               obj.m = m;
-               obj.initialize();
-               obj.setConstant(varargin{1});
+           % Case when first argument is FEmesh object
+           if nargin > 1 && isa(m, 'mFEM.FEmesh');
+               obj.m = m.n_dof;     % Define the size from Mesh object
+               obj.init();    % Initilize the vector
 
-           % Input not understood
+           % Case when first argument is a scalar (i.e., size)  
+           elseif nargin > 1 && isscalar(m);
+               obj.m = m;           % Define the size
+               obj.init();    % Initilize
+
+           % Case when a codistributed vector is given 
+           elseif nargin == 1 && isdistributed(m); 
+               obj.is_parallel = true;  % Vector is parallel
+               vec = m;                 % Codistributed vector was given
+               m = length(m);           % Define the length for use in spmd
+               obj.m = m;               % Store the length in class
+
+               % Begin parallel operations
+               spmd
+                   % Extract local part of supplied vector
+                   local = getLocalPart(vec);
+
+                   % Row vector is converted to column
+                   if ~iscolumn(local); 
+                       local = local'; 
+                       codist = codistributor1d(codistributor1d.unsetDimension, ...
+                                codistributor1d.unsetPartition, [m,1]); 
+                       vec = codistributed.build(local, codist);
+
+                   % Already a column vector, just need the codistributor
+                   else
+                       codist = getCodistributor(vec);
+                   end
+               end
+
+               % Store the codistributor and the distributed vector
+               obj.codist = codist;
+               obj.f = vec;
+
+           % Case when serial vector is given   
+           elseif nargin == 1 && ~iscodistributed(m);
+               obj.m = length(m);   % define the vector length
+               obj.init();          % initilize the vector
+               obj.f = m;           % store the actual vector
+
+           % Unknown input, produce an error
            else
-               error('Vector:Vector', 'Input Error');
+               error('Vector:Vector:InvalidInput', 'The input for the Vector class constructor was not understood.');
            end
            
-
-
-       end
-       
-       function zero(obj)
-           
-           if obj.is_parallel;
-                codist = obj.codist;
-                m = obj.m;
-                spmd
-                    f = codistributed.zeros([m,1], codist);
-                end
-                obj.f = f;
-           else
-              obj.f = zeros(obj.m,1); 
+           % Set it to a constant value
+           if nargin == 2;
+                obj.f(1:end) = varargin{1};
            end
- 
-       end
-       
-       function value = get(obj,in)
-           %GET Extract values from the vector
+        end
+
+        function zero(obj)
+           %ZERO Sets all values of the vector to zero  
            %
            % Syntax
-           %    x = get(idx)
-        
-        n = length(in);   
-           
-        if any(in < 1) || any(in > obj.m);
-            error('Vector:get:OutOfRange', 'The supplied index value(s) must in range of the data (1 to %d)',obj.m);
+           %    zero();
+           %
+           % Description
+           %    zero() sets all values of the vector to zero, it maintains
+           %    the size and parallel distribution.
+           obj.f(1:end) = 0; 
         end
-           
-        if obj.is_parallel;
-            vec = obj.f;
-            spmd  
-                
-                idx = globalIndices(vec,1);
-                
-                pos = NaN(n,1);
-                for i = 1:length(in);
-                    p = find(idx == in(i));
-                    if ~isempty(p); pos(i) = p; end
-                
-                end
-                gsize = [n*numlabs,1];
 
-
-                codist = codistributor1d(codistributor1d.unsetDimension, ...
-                    codistributor1d.unsetPartition, gsize);
-                P = codistributed.build(pos, codist); 
+        function value = get(obj,varargin)
+            %GET Extract values from the vector
+            %
+            % Syntax
+            %    x = get()
+            %    x = get(idx)
+            %
+            % Description
+            %    x = get() returns the vector, if the vector is serial this
+            %    is simpy a numeric array. If the vector is parallel it
+            %    returns the codistributed array.
+            %
+            %    x = get(idx) returns a numeric vector for the indices
+            %    supplied in idx.
+            
+            % Return full vector
+            if nargin == 1;
+               value = obj.f;
+               
+            % Return specific values   
+            else
+               if any(varargin{1} < 1) || any(varargin{1} > obj.m);
+                   error('Vector:get:OutOfRange', 'The index value(s) supplied are out of range for the vector.');
+               end
+               value = gather(obj.f(varargin{1})); 
             end
-
-            value = gather(vec(~isnan(P)));
-        else
-            value = obj.f(in);
         end
-        
-       end
-       
-       function init(obj,local)
-          %INIT
-%           
-%           f = obj.f
-%           spmd
-%             codist = getCodistributor(f) 
-%             f = codistributed.build(local, codist);
-%           end
-% %           obj.f = f;
-%           
+
+        function add(obj, value, index)
+           %ADD Adds subvector to the complete vector
+           %
+           % Syntax
+           %    add(value, index)
+           %
+           % Description
+           %    add(value, index) adds the value(s) to the global vector at
+           %    the indices given in index. The value input may be a scalar
+           %    or a numeric array the same size as index.
+           obj.f(index) = obj.f(index) + value;
        end
     end
     
-    methods (Access = private)
-        
-        function initialize(obj)
+    methods (Access = private)     
+        function init(obj)
+            %INIT sets up the parallel/serial vector, initializing to zero
+            %
+            % Syntax
+            %   init()
+            %
+            % Description
+            %   init() creates a codistributor1d instance when
+            %   running in parralel.
            
-           if matlabpool('size') > 1;
-               obj.is_parallel = true;
-            
-               m = obj.m;
-               spmd
-                   codist = codistributor1d(codistributor1d.unsetDimension, ...
-                                codistributor1d.unsetPartition, [m,1]);
-               end
-               obj.codist = codist;
-               
-           else
+            % Parallel case
+            if matlabpool('size') > 0;
+                obj.is_parallel = true; % set parallel flag to true
+                m = obj.m;  % spmd accesible vector length
+                
+                % Begin parallel operations (create codistributor)
+                spmd
+                   vec = codistributed.zeros([m,1]); 
+                   codist = getCodistributor(vec);
+                end
+                
+                % Store the codistributor
+                obj.codist = codist;
+                obj.f = vec;
+                
+           % Serial case
+            else
+               obj.f = zeros(obj.m,1);
                obj.is_parallel = false; 
                obj.codist = [];
            end
         end
-        
-        function setConstant(obj, c)
-            
-            if obj.is_parallel;
-                codist = obj.codist;
-                m = obj.m;
-
-                spmd
-                    n = codist.Partition(labindex);
-                    local = ones(n,1)*c;
-                    f = codistributed.build(local, codist); 
-                end
-                obj.f = f;
-            else
-               obj.f = ones(obj.m,1)*c; 
-            end
-            
-        end
-
    end
 end
