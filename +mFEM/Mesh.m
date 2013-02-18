@@ -61,10 +61,21 @@ classdef Mesh < handle
 %         end
         
         function grid(obj, type, varargin)
+            
+            % Display wait message
+            if obj.options.time;
+                ticID = tMessage('Generating Grid...');
+            end
+            
            [nodes, elements] = ...
                 feval(['mFEM.elements.',type,'.grid'], varargin{:});
-            obj.nodes = mFEM.Vector(nodes);
-            obj.elements = mFEM.Vector(elements); 
+            obj.nodes = mFEM.Vector(nodes,'-serial');
+            obj.elements = mFEM.Vector(elements,'-serial'); 
+
+            % Complete message
+            if obj.options.time;
+                tMessage(ticID);
+            end; 
         end
     end
     
@@ -98,7 +109,7 @@ classdef Mesh < handle
                   neighbors = elem.getNodeParents();
                   
                   for i = 1:length(neighbors);
-                      for s = 1:elem.n_sides;
+                      for s = 1:length(elem.sides);
                           
                           if ~isempty(elem.sides(s).neighbor); 
                               break;

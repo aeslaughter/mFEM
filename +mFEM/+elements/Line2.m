@@ -25,6 +25,7 @@ classdef Line2 < mFEM.cells.base.Cell
     %----------------------------------------------------------------------
     
     properties (Access = protected) 
+        n_sides = 2;
         side_ids = [1; 2];                % local dofs of the "sides"
 %         side_type = 'Point';            % sides are points
 %         quad = ...                      % instance of Gauss quadrature class
@@ -76,9 +77,12 @@ classdef Line2 < mFEM.cells.base.Cell
     
     methods (Static, Access = ?mFEM.Mesh)
         function [nodes,elements] = grid(x0,x1,xn)
+            
             type = mfilename('class');
                      
             x = x0 : (x1-x0)/xn : x1;
+            nodes = cell(length(x),1);
+            elements = cell(length(x)-1,1);
 
             for i = 1:length(x);
                 nodes{i} = mFEM.elements.base.Node(i,x(i));

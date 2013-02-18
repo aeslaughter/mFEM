@@ -7,12 +7,12 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
         id = [];
         n_nodes = [];
         nodes = {};
-        n_sides = [];
         sides = struct('neighbor',{},'neighbor_side',{});      
     end   
     
     properties (Abstract, Access = protected) 
-       side_ids;       
+       side_ids;           
+       n_sides;
     end
     
     properties %(Access = ?mFEM.Mesh)
@@ -30,9 +30,7 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
     methods
         function obj = Cell(id, nodes, varargin)
            obj.nodes = nodes;
-           obj.n_nodes = length(nodes);
            obj.id = id;
-           obj.n_sides = size(obj.side_ids,1);
            
            for i = 1:obj.n_sides;
                obj.side_map(i,:) = obj.nodes{obj.side_ids(i,:)};
@@ -48,7 +46,7 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
         function out = getNodeParents(obj)
             
            out = mFEM.elements.Line2.empty();
-           for i = 1:obj.n_nodes;
+           for i = 1:length(obj.nodes);
                 out = [out, obj.nodes{i}.parents(obj.nodes{i}.parents ~= obj)];
            end
            out = unique(out);
