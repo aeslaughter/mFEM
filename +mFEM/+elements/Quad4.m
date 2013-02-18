@@ -1,4 +1,4 @@
-classdef Quad4 < mFEM.elements.base.Element
+classdef Quad4 < mFEM.cells.base.Cell
     %Quad4 4-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)
@@ -30,69 +30,118 @@ classdef Quad4 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
+    properties (Access = protected) 
         n_sides = 4;                        % no. of sides
-        side_dof = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
-        side_type = 'Line2';                % side is 2-node line element
-        quad = ...                          % quadrature rules
-            mFEM.Gauss('order', 2, 'type', 'quad');       
+        side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
+%         side_type = 'Line2';                % side is 2-node line element
+%         quad = ...                          % quadrature rules
+%             mFEM.Gauss('order', 2, 'type', 'quad');       
      end
     
     % Define the Quad4 constructor
     methods
-        function obj = Quad4(id, nodes, varargin)
+        function obj = Quad4(varargin)
            % Class constructor; calls base class constructor
-           
-           % Test that nodes is sized correctly
-           if ~all(size(nodes) == [4,2]) && ~all(size(nodes) == [4,3]);
-                error('Quad4:Quad4','Nodes not specified correctly; expected a [4x2] or [4x3] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
-           end
-           
-           % Call the base class constructor
-           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.cells.base.Cell(varargin{:}); 
         end
     end
     
     % Define the inherited abstract methods (protected)
     methods (Access = protected)      
-        function N = basis(~, x)
-            %BASIS Returns a row vector of local shape functions
-
-            % Define xi and eta from vector input
-            xi = x(1);
-            eta = x(2);
-            
-            % Compute the shape function vector
-            N(1) = 1/4*(1-xi)*(1-eta);
-            N(2) = 1/4*(1+xi)*(1-eta);
-            N(3) = 1/4*(1+xi)*(1+eta);
-            N(4) = 1/4*(1-xi)*(1+eta);
-        end
-        
-        function GN = localGradBasis(~, x)
-            %LOCALGRADBASIS gradient, in xi and eta, of shape functions
-            
-            % Define xi and eta from vector input
-            xi = x(1);
-            eta = x(2);
-            
-            % Compute gradient
-            GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
-                      xi-1, -xi-1, 1+xi, 1-xi];
-        end
-        
-        function B = gradBasis(obj, x) 
-            %GRADBASIS Gradient of shape functions
-                        
-            % Compute the gradient of bais in x,y
-            B = inv(obj.jacobian(x)) * obj.localGradBasis(x);
-        end
-        
-        function J = jacobian(obj, x)
-            %JACOBIAN Returns the jacobian matrix  
-                        
-            % Compute the Jacobian
-            J = obj.localGradBasis(x)*obj.nodes;                 
-        end
+%         function N = basis(~, x)
+%             %BASIS Returns a row vector of local shape functions
+% 
+%             % Define xi and eta from vector input
+%             xi = x(1);
+%             eta = x(2);
+%             
+%             % Compute the shape function vector
+%             N(1) = 1/4*(1-xi)*(1-eta);
+%             N(2) = 1/4*(1+xi)*(1-eta);
+%             N(3) = 1/4*(1+xi)*(1+eta);
+%             N(4) = 1/4*(1-xi)*(1+eta);
+%         end
+%         
+%         function GN = localGradBasis(~, x)
+%             %LOCALGRADBASIS gradient, in xi and eta, of shape functions
+%             
+%             % Define xi and eta from vector input
+%             xi = x(1);
+%             eta = x(2);
+%             
+%             % Compute gradient
+%             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
+%                       xi-1, -xi-1, 1+xi, 1-xi];
+%         end
+%         
+%         function B = gradBasis(obj, x) 
+%             %GRADBASIS Gradient of shape functions
+%                         
+%             % Compute the gradient of bais in x,y
+%             B = inv(obj.jacobian(x)) * obj.localGradBasis(x);
+%         end
+%         
+%         function J = jacobian(obj, x)
+%             %JACOBIAN Returns the jacobian matrix  
+%                         
+%             % Compute the Jacobian
+%             J = obj.localGradBasis(x)*obj.nodes;                 
+%         end
     end
+    
+    methods (Static, Access = ?mFEM.Mesh)
+        function [nodes,elements] = grid(x0,x1,y0,y1,xn,yn)
+            
+            x = x0 : (x1-x0)/xn : x1;
+            y = y0 : (y1-y0)/yn : y1;
+
+            % Loop through the grid, creating elements for each cell
+            id = 0;
+            n = 0;
+
+            N = zeros(xn*yn,4);
+            nodes = cell(length(x)*length(y),1); size(nodes)
+            elements = cell(xn*yn,1);
+% nodes(1,:) = [x(i), y(j)];
+% nodes(2,:) = [x(i+1), y(j)];
+% nodes(3,:) = [x(i+1), y(j+1)];
+% nodes(4,:) = [x(i), y(j+1)];
+            for i = 1:xn;
+                for j = 1:yn;
+                    id = id + 1;
+
+                    if i == 1 && j == 1;
+                        nodes{n+1} = mFEM.elements.base.Node(n+1,[x(i),y(j)]);
+                        nodes{n+2} = mFEM.elements.base.Node(n+2,[x(i+1), y(j)]);
+                        nodes{n+3} = mFEM.elements.base.Node(n+3,[x(i+1), y(j+1)]);
+                        nodes{n+4} = mFEM.elements.base.Node(n+4,[x(i), y(j+1)]);             
+                        N(id,:) = n+1:n+4;
+                        n = n + 4;
+                    elseif i == 1 && j > 1;
+                        b = id-1;
+                        nodes{n+1} = mFEM.elements.base.Node(n+1,[x(i+1), y(j+1)]);
+                        nodes{n+2} = mFEM.elements.base.Node(n+2,[x(i), y(j+1)]);  
+                        N(id,:) = [N(b,4), N(b,3), n+1, n+2];
+                        n = n + 2;
+                    elseif i > 1 && j == 1;
+                        l = id-yn;
+                        nodes{n+1} = mFEM.elements.base.Node(n+1,[x(i+1), y(j)]);
+                        nodes{n+2} = mFEM.elements.base.Node(n+2,[x(i+1), y(j+1)]);
+                        N(id,:) = [N(l,2), n+1, n+2, N(l,3)];
+                        n = n + 2;
+                    else
+                        b = id-1;
+                        l = id-yn;
+                        nodes{n+1} = mFEM.elements.base.Node(n+1,[x(i+1), y(j+1)]); 
+                        N(id,:) = [N(l,2), N(b,3), n+1, N(l,3)];
+                        n = n + 1;
+                    end
+                    
+                    elements{id} = mFEM.elements.Quad4(id,nodes(N(id,:)));
+                end
+            end
+            
+            size(nodes)
+        end
+    end    
 end

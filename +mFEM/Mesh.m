@@ -13,6 +13,11 @@ classdef Mesh < handle
             obj.options = gatherUserOptions(obj.options, varargin{:});  
         end
         
+%         function delete(obj)
+%            obj.elements.delete
+%            obj.nodes.delete
+%         end
+        
         function node = createNode(obj, x)
             node = mFEM.elements.base.Node(x);     
             obj.nodes(end+1) = node; 
@@ -67,10 +72,8 @@ classdef Mesh < handle
                 ticID = tMessage('Generating Grid...');
             end
             
-           [nodes, elements] = ...
+            [obj.nodes, obj.elements] = ...
                 feval(['mFEM.elements.',type,'.grid'], varargin{:});
-            obj.nodes = mFEM.Vector(nodes,'-serial');
-            obj.elements = mFEM.Vector(elements,'-serial'); 
 
             % Complete message
             if obj.options.time;
@@ -98,7 +101,7 @@ classdef Mesh < handle
             end
             
             % Loop through each element and find neighboring elements
-            elements = obj.elements.get();
+            elements = obj.elements;
             
             spmd
                local = getLocalPart(elements);
@@ -130,7 +133,6 @@ classdef Mesh < handle
                end 
             end
                       
-            
             % Complete message
             if obj.options.time;
                 tMessage(ticID);
@@ -138,16 +140,7 @@ classdef Mesh < handle
         end 
     end
     
-    methods (Static)
-
-        
-%         function TF = isNeighbor(n0,n1)
-%             TF = false(n0,1);
-%             for i = 1:length(n0);
-%                 TF(i) = any(n0(i), n1);
-%             end
-%             TF = all(TF);
-%         end
-    end
+%     methods (Static)
+%     end
 end
 

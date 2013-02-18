@@ -989,6 +989,7 @@ classdef FEmesh < handle
             % Generate the generic grid points
             x = x0 : (x1-x0)/xn : x1;
             y = y0 : (y1-y0)/yn : y1;
+           
 
             % Loop through the grid, creating elements for each cell
             for i = 1:length(x)-1;           

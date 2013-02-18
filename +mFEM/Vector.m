@@ -22,14 +22,13 @@ classdef Vector < handle
     %----------------------------------------------------------------------
 
     properties (SetAccess = protected, GetAccess = public)
-      m                 % no. of rows
-      is_parallel;      % true if vector is codistributed
+      m                         % no. of rows
+      is_parallel = true;       % true if vector is codistributed
     end
     
     properties (Access = protected)
         f               % the vector (serial or codistributed)
         codist;         % the codistributor class used, if parallel 
-        options = struct('serial',false);
     end
    
     methods
@@ -53,13 +52,10 @@ classdef Vector < handle
            %
            %    Vector(vec) create a vector from the numeric arrary vec
 
-%            % Gather the options
-%            if nargin >= 2 && ischar(varargin{1});
-%                obj.options = gatherUserOptions(obj.options, varargin{:});              
-%            elseif nargin > 2;
-%                obj.options = gatherUserOptions(obj.options, varargin{2:end});
-%            end
-               
+           if matlabpool('size') == 0;
+              obj.is_parallel = false;
+           end
+
            % Case when first argument is FEmesh object
            if nargin == 1 && isa(m, 'mFEM.FEmesh');
                obj.m = m.n_dof;     % Define the size from Mesh object
@@ -75,38 +71,16 @@ classdef Vector < handle
                vec = m;                 % Codistributed vector was given
                m = length(m);           % Define the length for use in spmd
                obj.m = m;               % Store the length in class
-               
-               if matlabpool('size') > 0;
-                   obj.is_parallel = true;  % Vector is parallel
 
-                   % Begin parallel operations
-                   spmd
-                       % Extract local part of supplied vector
-                       local = getLocalPart(vec);
-
-                       % Row vector is converted to column
-                       if ~iscolumn(local); 
-                           local = local'; 
-                           codist = codistributor1d(codistributor1d.unsetDimension, ...
-                                    codistributor1d.unsetPartition, [m,1]); 
-                           vec = codistributed.build(local, codist);
-
-                       % Already a column vector, just need the codistributor
-                       else
-                           codist = getCodistributor(vec);
-                       end
-                   end
-
-                   % Store the codistributor and the distributed vector
-                   obj.codist = codist;
-                   obj.f = vec;
-
-               % Convert distributed to serial
-               else
-                    obj.is_parallel = false;
-                    obj.f = gather(vec);
-                    obj.codist = [];   
+               % Begin parallel operations
+               spmd
+                   if ~iscolumn(vec); vec = vec'; end
+                   codist = getCodistributor(vec);
                end
+
+               % Store the codistributor and the distributed vector
+               obj.codist = codist;
+               obj.f = vec;
                
            % Case when serial vector is given   
            elseif nargin == 1 && ~iscodistributed(m);
@@ -191,11 +165,11 @@ classdef Vector < handle
            if ~isscalar(value)
                if ~iscolumn(value); value = value'; end
            else
-               value = value*ones(m,1);
+               value = repmat(value,[m,1]);
            end
                                
             % Parallel case
-            if matlabpool('size') > 0;
+           % if matlabpool('size') > 0;
                 obj.is_parallel = true; % set parallel flag to true
 
                 % Begin parallel operations (create codistributor)
@@ -209,11 +183,11 @@ classdef Vector < handle
                 obj.f = vec;
                 
            % Serial case
-            else
-               obj.f = value*ones(m,1);
-               obj.is_parallel = false; 
-               obj.codist = [];
-           end
+%             else
+%                obj.f = value;
+%                obj.is_parallel = false; 
+%                obj.codist = [];
+%           end
         end
    end
 end

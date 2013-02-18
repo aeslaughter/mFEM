@@ -78,19 +78,28 @@ classdef Line2 < mFEM.cells.base.Cell
     methods (Static, Access = ?mFEM.Mesh)
         function [nodes,elements] = grid(x0,x1,xn)
             
-            type = mfilename('class');
-                     
-            x = x0 : (x1-x0)/xn : x1;
-            nodes = cell(length(x),1);
-            elements = cell(length(x)-1,1);
+        %     import mFEM.elements.base.* 
+             import mFEM.elements.*
+            
+            %   type = mfilename('class');
 
-            for i = 1:length(x);
-                nodes{i} = mFEM.elements.base.Node(i,x(i));
-                
-                if i > 1;
-                    elements{i-1} = feval(type, i-1, nodes(i-1:i));
+
+            spmd  
+                x = x0 : (x1-x0)/xn : x1;
+                nodes = cell(length(x),1);
+                elements = cell(length(x)-1,1);
+
+                for i = 1:length(x);
+                    nodes{i} = mFEM.elements.base.Node(i,x(i));
+
+                    if i > 1;
+                        elements{i-1} = Line2(i-1, nodes(i-1:i));
+                    end
                 end
-            end
+                
+                nodes = codistributed(nodes);
+                elements = codistributed(elements);
+             end
         end
     end
     
