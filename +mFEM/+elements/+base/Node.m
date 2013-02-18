@@ -4,11 +4,16 @@ classdef Node < handle
     
     properties
         coord = [0,0,0];
-        parent;
+        id = [];
+    end
+    
+    properties (Access = {?mFEM.cells.base.Cell, ?mFEM.Mesh})
+        parents = mFEM.elements.Line2.empty(); % 
     end
     
     methods
-        function obj = Node(x)
+        function obj = Node(id,x)
+            obj.id = id;
             obj.coord(1:length(x)) = x;    
         end
         
@@ -32,6 +37,12 @@ classdef Node < handle
                 end
             end  
         end
+    end
+    
+    methods (Access = ?mFEM.cells.base.Cell)
+        function addParent(obj, c)
+            obj.parents(end+1) = c;    
+        end 
     end
     
 end

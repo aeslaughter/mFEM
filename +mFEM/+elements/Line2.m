@@ -1,4 +1,4 @@
-classdef Line2 < mFEM.elements.base.Element
+classdef Line2 < mFEM.cells.base.Cell
     %LINE2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)
@@ -24,9 +24,8 @@ classdef Line2 < mFEM.elements.base.Element
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    properties (SetAccess = protected, GetAccess = public)    
-        %n_sides = 2;                    % no. "sides" (points in 1D)
-%         side_dof = [1; 2];              % local dofs of the "sides"
+    properties (Access = protected) 
+        side_ids = [1; 2];                % local dofs of the "sides"
 %         side_type = 'Point';            % sides are points
 %         quad = ...                      % instance of Gauss quadrature class
 %             mFEM.Gauss('Order', 1, 'Type', 'line');    
@@ -43,7 +42,7 @@ classdef Line2 < mFEM.elements.base.Element
             %   see mFEM.Element
             %
             % See Also mFEM.Element
-            obj = obj@mFEM.elements.base.Element(id, nodes); 
+            obj = obj@mFEM.cells.base.Cell(id, nodes); 
         end
         
         % Define the size function
@@ -74,4 +73,21 @@ classdef Line2 < mFEM.elements.base.Element
 %             GN = [-1/2, 1/2];
 %         end
     end
+    
+    methods (Static, Access = ?mFEM.Mesh)
+        function [nodes,elements] = grid(x0,x1,xn)
+            type = mfilename('class');
+                     
+            x = x0 : (x1-x0)/xn : x1;
+
+            for i = 1:length(x);
+                nodes{i} = mFEM.elements.base.Node(i,x(i));
+                
+                if i > 1;
+                    elements{i-1} = feval(type, i-1, nodes(i-1:i));
+                end
+            end
+        end
+    end
+    
 end

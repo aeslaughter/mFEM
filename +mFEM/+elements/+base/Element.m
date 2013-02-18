@@ -37,6 +37,7 @@ classdef Element < handle & matlab.mixin.Heterogeneous
     properties (Access = protected)
         nodes;
         parent;
+
     end
     
     % Abstract Methods (protected)

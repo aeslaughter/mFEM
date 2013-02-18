@@ -21,12 +21,12 @@ classdef Vector < handle
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    properties (SetAccess = private, GetAccess = public)
+    properties (SetAccess = protected, GetAccess = public)
       m                 % no. of rows
       is_parallel;      % true if vector is codistributed
     end
     
-    properties (Access = private)
+    properties (Access = protected)
         f               % the vector (serial or codistributed)
         codist;         % the codistributor class used, if parallel  
     end
@@ -55,12 +55,12 @@ classdef Vector < handle
            % Case when first argument is FEmesh object
            if nargin > 1 && isa(m, 'mFEM.FEmesh');
                obj.m = m.n_dof;     % Define the size from Mesh object
-               obj.init();    % Initilize the vector
+               obj.init(0);          % Initilize the vector
 
            % Case when first argument is a scalar (i.e., size)  
-           elseif nargin > 1 && isscalar(m);
-               obj.m = m;           % Define the size
-               obj.init();    % Initilize
+           elseif nargin == 2 && isscalar(m);
+               obj.m = m;     % Define the size
+               obj.init(varargin{1});    % Initilize
 
            % Case when a codistributed vector is given 
            elseif nargin == 1 && isdistributed(m); 
@@ -94,17 +94,11 @@ classdef Vector < handle
            % Case when serial vector is given   
            elseif nargin == 1 && ~iscodistributed(m);
                obj.m = length(m);   % define the vector length
-               obj.init();          % initilize the vector
-               obj.f = m;           % store the actual vector
-
+               obj.init(m);         % initilize the vector             
+               
            % Unknown input, produce an error
            else
                error('Vector:Vector:InvalidInput', 'The input for the Vector class constructor was not understood.');
-           end
-           
-           % Set it to a constant value
-           if nargin == 2;
-                obj.f(1:end) = varargin{1};
            end
         end
 
@@ -144,7 +138,10 @@ classdef Vector < handle
                if any(varargin{1} < 1) || any(varargin{1} > obj.m);
                    error('Vector:get:OutOfRange', 'The index value(s) supplied are out of range for the vector.');
                end
-               value = gather(obj.f(varargin{1})); 
+               value = gather(obj.f(varargin{1}));
+               if iscell(value) && isscalar(value);
+                   value = value{1};
+               end
             end
         end
 
@@ -163,7 +160,7 @@ classdef Vector < handle
     end
     
     methods (Access = private)     
-        function init(obj)
+        function init(obj, value)
             %INIT sets up the parallel/serial vector, initializing to zero
             %
             % Syntax
@@ -172,16 +169,34 @@ classdef Vector < handle
             % Description
             %   init() creates a codistributor1d instance when
             %   running in parralel.
-           
+            
             % Parallel case
             if matlabpool('size') > 0;
                 obj.is_parallel = true; % set parallel flag to true
-                m = obj.m;  % spmd accesible vector length
+                gsize = [obj.m,1];   
                 
+                % Distribute vector inputs
+                if ~isscalar(value);
+                    value = distributed(value);
+                end
+
                 % Begin parallel operations (create codistributor)
-                spmd
-                   vec = codistributed.zeros([m,1]); 
-                   codist = getCodistributor(vec);
+                spmd                  
+                   % Create a parrallel distribution scheme
+                   codist = codistributor1d(codistributor1d.unsetDimension, ...
+                        codistributor1d.unsetPartition, gsize);
+
+                   % Buld the local part 
+                   if ~isscalar(value)
+                       local = getLocalPart(value);
+                       if ~iscolumn(local); local = local'; end
+                   else
+                       n = codist.Partition(labindex);
+                       local = value*ones(n,1);
+                   end
+                   
+                   % Build the parallel vector
+                   vec = codistributed.build(local, codist);
                 end
                 
                 % Store the codistributor
