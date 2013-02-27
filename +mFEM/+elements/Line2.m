@@ -24,7 +24,7 @@ classdef Line2 < mFEM.cells.base.Cell
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    properties (Access = protected) 
+    properties (SetAccess = protected, GetAccess = public) 
         n_sides = 2;
         side_ids = [1; 2];                % local dofs of the "sides"
 %         side_type = 'Point';            % sides are points

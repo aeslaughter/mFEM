@@ -3,14 +3,14 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
     %   Detailed explanation goes here
     
     
-    properties %(GetAccess = public, SetAccess = ?mFEM.Mesh)
+    properties %(SetAccess = ?mFEM.Mesh, GetAccess = public) 
         id = [];
         n_nodes = [];
         nodes = {};
         sides = struct('neighbor',{},'neighbor_side',{});      
     end   
     
-    properties (Abstract, Access = protected) 
+    properties (Abstract, SetAccess = protected, GetAccess = public) 
        side_ids;           
        n_sides;
     end
@@ -28,7 +28,7 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
     end
     
     methods
-        function obj = Cell(id, nodes, varargin)
+        function obj = Cell(id, nodes)
            obj.nodes = nodes;
            obj.id = id;
            
@@ -52,6 +52,15 @@ classdef Cell < handle & matlab.mixin.Heterogeneous
            out = unique(out);
            
         end
+        
+        function out = getNodeCoord(obj)
+            
+           out = zeros(length(obj.nodes),3); 
+           for i = 1:length(obj.nodes);
+            out(i,:) = obj.nodes{i}.coord;
+           end
+        end
+        
     end
     
 end

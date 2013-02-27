@@ -4,7 +4,7 @@ classdef Mesh < handle
     
     properties %(Access = protected)
         elements = mFEM.elements.Line2.empty();
-        nodes = mFEM.elements.base.Node.empty();
+        nodes = {}; %mFEM.elements.base.Node.empty();
         options = struct('time', false);
     end
     
@@ -19,15 +19,24 @@ classdef Mesh < handle
 %         end
         
         function node = createNode(obj, x)
-            node = mFEM.elements.base.Node(x);     
-            obj.nodes(end+1) = node; 
+            id = length(obj.nodes) + 1;
+            node = mFEM.elements.base.Node(id,x);     
+            obj.nodes{id} = node; 
         end
         
-        function elem = addElement(obj, type, nodes)
+        function elem = createElement(obj, type, nodes)
+            
+            if isnumeric(nodes);
+                nodes = obj.nodes(nodes);
+            end
+            
             id = length(obj.elements) + 1;
             elem = feval(['mFEM.elements.',type],id,nodes);
-            obj.elements(id) = elem;
+            obj.elements{id} = elem;
         end
+        
+        %addNode
+        %addElement -> addNode
         
         function init(obj)
 
@@ -36,7 +45,8 @@ classdef Mesh < handle
         end
         
         function elem = getElement(obj, id)
-            elem = gather(obj.elements.get(id));
+            elem = gather(obj.elements(id));
+            elem = elem{1};
         end
         
 %         function addElement(obj, elem_type, nodes)
@@ -72,14 +82,49 @@ classdef Mesh < handle
                 ticID = tMessage('Generating Grid...');
             end
             
-            [obj.nodes, obj.elements] = ...
-                feval(['mFEM.elements.',type,'.grid'], varargin{:});
+           [obj.nodes, obj.elements] = buildGrid(type, varargin{:});
 
             % Complete message
             if obj.options.time;
                 tMessage(ticID);
             end; 
         end
+        
+        function plot(obj, data, varargin)
+            
+            opt.data = data;
+            opt.labelelements = false;
+            opt.labelnodes = false;
+            opt = gatherUserOptions(opt,varargin{:});
+
+            p = zeros(length(obj.elements),1);
+
+            figure; hold on;
+            elements = gather(obj.elements);
+            for e = 1:length(elements);
+                elem = elements{e};
+                no = elem.getNodeCoord();
+                face = elem.side_ids;
+                p(e) = elem.plot(no,face);
+                
+                if opt.labelelements;
+                    cntr = num2cell(mean(no,1));
+                    text(cntr{:}, num2str(elem.id),'FontSize',14,...
+                    'BackgroundColor','k','FontWeight','Bold',...
+                    'Color','w','HorizontalAlignment','center');
+                end
+                
+                if opt.labelnodes;
+                    for i = 1:length(elem.nodes);
+                        n = elem.nodes{i};
+                        loc = num2cell(n.coord);
+                        text(loc{:},num2str(n.id),'FontSize',10,'Color','w',...
+                            'BackgroundColor','b','HorizontalAlignment','center');
+                    end
+                end
+            end
+        end
+        
     end
     
     methods (Access = protected)
@@ -112,7 +157,7 @@ classdef Mesh < handle
                   neighbors = elem.getNodeParents();
                   
                   for i = 1:length(neighbors);
-                      for s = 1:length(elem.sides);
+                      for s = 1:length(elem.side_ids);
                           
                           if ~isempty(elem.sides(s).neighbor); 
                               break;
