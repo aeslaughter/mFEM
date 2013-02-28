@@ -8,6 +8,11 @@ classdef Mesh < handle
         options = struct('time', false);
     end
     
+    properties (Access = protected)
+        node_map = uint32([]);
+    end
+    
+    
     methods
         
         function obj = Mesh(varargin)
@@ -78,15 +83,12 @@ classdef Mesh < handle
         
         function grid(obj, type, varargin)
             
-            
-            
-            
             % Display wait message
             if obj.options.time;
                 ticID = tMessage('Generating Grid...');
             end
             
-           obj.gridQuad(type, varargin{:});
+            feval(['mFEM.elements.',type,'.grid'],varargin{:});
 
             % Complete message
             if obj.options.time;
@@ -132,7 +134,7 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
-        gridQuad(obj, type, x0, x1, y0, y1, xn, yn);
+        
         
         function findNeighbors(obj)
             % Locates elements that share a side

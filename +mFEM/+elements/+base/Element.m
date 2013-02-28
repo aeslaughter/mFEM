@@ -30,14 +30,18 @@ classdef Element < handle & matlab.mixin.Heterogeneous
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    properties 
-        id;
+    properties
+        id = uint32([]);
+    end
+    
+    properties (Abstract, SetAccess = protected, GetAccess = public)
+        side_ids;        
+        n_sides;
+        n_nodes;
     end
     
     properties (Access = protected)
-        nodes;
-        parent;
-
+        nodes = {};
     end
     
     % Abstract Methods (protected)
@@ -164,5 +168,11 @@ classdef Element < handle & matlab.mixin.Heterogeneous
 %             %   number of which varies with the number of space dimensions.
 %             J = det(obj.jacobian(x));
 %         end 
+    end
+    
+    methods (Static) %(Static, Access = ?mFEM.Mesh)
+        function grid(varargin)
+            error('Element:grid:NotImplemented', 'The grid method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
+        end
     end
 end

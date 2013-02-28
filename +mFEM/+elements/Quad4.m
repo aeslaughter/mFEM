@@ -1,4 +1,4 @@
-classdef Quad4 < mFEM.cells.base.Cell
+classdef Quad4 < mFEM.elements.base.Element
     %Quad4 4-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)
@@ -30,8 +30,9 @@ classdef Quad4 < mFEM.cells.base.Cell
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public) 
-        n_sides = 4;                        % no. of sides
+    properties (SetAccess = protected, GetAccess = public)
+        n_nodes = uint32(4);
+        n_sides = uint32(4);
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
 %         side_type = 'Line2';                % side is 2-node line element
 %         quad = ...                          % quadrature rules
@@ -42,7 +43,7 @@ classdef Quad4 < mFEM.cells.base.Cell
     methods
         function obj = Quad4(varargin)
            % Class constructor; calls base class constructor
-           obj = obj@mFEM.cells.base.Cell(varargin{:}); 
+           obj = obj@mFEM.elements.base.Element(varargin{:}); 
         end
     end
     
@@ -89,9 +90,41 @@ classdef Quad4 < mFEM.cells.base.Cell
 %         end
     end
     
-    methods (Static, Access = ?mFEM.Mesh)
+    methods (Static)%(Static, Access = ?mFEM.Mesh)
         function p = plot(vert, face)
             p = patch('Vertices',vert,'Faces',face);
+        end
+        
+        function grid(x0,x1,y0,y1,xn,yn)
+            
+            tic;
+            [nodes, node_map] = buildGrid(x0,x1,y0,y1,xn,yn);
+            toc;
+
+%             n_elem = xn*yn;
+%             n_nodes = length(nodes);
+%             elem_id = reshape(1:n_nodes,xn+1,yn+1);
+% 
+%             elem_map = zeros(n_elem,4,'uint32');
+%             id = 0;
+%             for j = 1:yn;
+%                 for i = 1:xn;
+%                     id = id + 1;
+%                     idx = [elem_id(i,j), elem_id(i+1,j),...
+%                            elem_id(i+1,j+1), elem_id(i,j+1)];
+%                     elem_map(id,:) = idx;
+%                 end
+%             end
+%             
+%             nodes = gather(nodes);
+%             elements = cell(n_elem,1);
+%             for i = 1:n_elem;
+%                 no = nodes(elem_map(i,:));
+%                 elements{i} = mFEM.elements.Quad4(i,no);
+%             end
+%             
+%             elements = distributed(elements);
+            
         end
     end    
 end
