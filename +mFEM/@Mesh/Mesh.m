@@ -9,6 +9,7 @@ classdef Mesh < handle
     end
     
     methods
+        
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
         end
@@ -77,12 +78,15 @@ classdef Mesh < handle
         
         function grid(obj, type, varargin)
             
+            
+            
+            
             % Display wait message
             if obj.options.time;
                 ticID = tMessage('Generating Grid...');
             end
             
-           [obj.nodes, obj.elements] = buildGrid(type, varargin{:});
+           obj.gridQuad(type, varargin{:});
 
             % Complete message
             if obj.options.time;
@@ -128,6 +132,8 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
+        gridQuad(obj, type, x0, x1, y0, y1, xn, yn);
+        
         function findNeighbors(obj)
             % Locates elements that share a side
             %
