@@ -30,15 +30,18 @@ classdef Quad4 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
-        n_nodes = uint32(4);
-        n_sides = uint32(4);
+    properties (Constant)
+        order   = 1; 
+        n_nodes = 4;
+        n_sides = 4;
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
 %         side_type = 'Line2';                % side is 2-node line element
 %         quad = ...                          % quadrature rules
-%             mFEM.Gauss('order', 2, 'type', 'quad');       
-     end
-    
+%             mFEM.Gauss('order', 2, 'type', 'quad');    
+
+        cell = [1,1; 1,2; 2,2; 2,1];     
+    end
+
     % Define the Quad4 constructor
     methods
         function obj = Quad4(varargin)
@@ -98,7 +101,7 @@ classdef Quad4 < mFEM.elements.base.Element
         function grid(x0,x1,y0,y1,xn,yn)
             
             tic;
-            [nodes, node_map] = buildGrid(x0,x1,y0,y1,xn,yn);
+            [nodes, node_map] = obj.buildGrid(1,x0,x1,y0,y1,xn,yn);
             toc;
 
 %             n_elem = xn*yn;

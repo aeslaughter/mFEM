@@ -34,14 +34,17 @@ classdef Element < handle & matlab.mixin.Heterogeneous
         id = uint32([]);
     end
     
-    properties (Abstract, SetAccess = protected, GetAccess = public)
+    properties (Abstract, Constant, Access = public)
         side_ids;        
         n_sides;
         n_nodes;
+        order;
+        cell;
     end
     
     properties (Access = protected)
         nodes = {};
+        
     end
     
     % Abstract Methods (protected)

@@ -1,116 +1,100 @@
 function work
 
-nx = 3;
-ny = 3;
-[nodes,node_map] = buildGrid(0,1,0,1,nx,ny);
+opt.debug = true;
+nx = 100;
+ny = 50;
+[nodes, node_map] = buildGrid(0,1,0,1,nx,ny);
 
 spmd
+    E.n_elem = nx*ny;
+    E.elem_map = zeros(E.n_elem,4);
+    
     n_nodes = length(nodes);
     id = reshape(1:n_nodes,nx+1,ny+1);
-    n_elem = nx*ny;
-    elements = cell(n_elem,1);
+
     k = 0;
     for j = 1:ny;
         for i = 1:nx;
             k = k + 1;
-            elem_map(k,[1,2,4,3]) = reshape(id(i:i+1,j:j+1),4,1);
+            E.elem_map(k,[1,2,4,3]) = reshape(id(i:i+1,j:j+1),4,1);
         end
     end
     
-    codist = codistributor1d(1, codistributor1d.unsetPartition, size(elem_map));
-    dist_elem_map = codistributed(elem_map, codist);
-
-    [no_send, no_send_lab] = locateSendNodes(globalIndices(nodes,1), elem_map, codist);
-    disp(['Nodes ', mat2str(no_send), ' are needed by labs ', mat2str(no_send_lab)]);
-    [no_rec, no_rec_lab] = locateRecieveNodes();
-    
-    
-    
-    % Build elem_proc_map
-%     elem_proc_map = zeros(size(elem_map));
-%     part = [0,cumsum(codist.Partition)];
-%     for i = 1:length(part)-1;
-%         elem_proc_map(part(i)+1:part(i+1),:) = i;
-%     end
-% 
-%     elem_proc_map = reshape(elem_proc_map, numel(elem_proc_map), 1);
-%     elem_linear_map = reshape(elem_map, numel(elem_map), 1)
-    
-    
-%     local_node_id = globalIndices(nodes,1);
-%     local_elem_id = globalIndices(dist_elem_map,1);
-
-    % Get nodes needed by other processors
-%     idx = true(n_elem,1);
-%     idx(local_elem_id) = false;
-%     off_proc_elem_nodes = unique(reshape(elem_map(idx,:),sum(idx)*4,1));
-    
-    [~,~,ib] = intersect(local_node_id, elem_linear_map, 'stable');
-    
-    no = elem_linear_map(ib);
-    loc = elem_proc_map(ib)~=labindex;
-    no = no(loc);
-    
-    disp(['Nodes ', mat2str(no), ' are needed by labs ', mat2str(elem_proc_map(loc))]);
-
-    
+    E.codist = codistributor1d(1, codistributor1d.unsetPartition, size(E.elem_map));
+    elem_map = codistributed(E.elem_map, E.codist);
+%     local = getLocalPart(nodes);
+%     node_id = globalIndices(nodes,1);
+%     elem_id = globalIndices(elem_map,1);
     
 
-
+    [info,ghost,ghost_id] = sendRecieveNodes(E,nodes);
     
-%     local_elem_map = getLocalPart(dist_elem_map);
-%     no = unique(reshape(local_elem_map,numel(local_elem_map),1));
-%     
-%     no = no(no < local_node_id(1) | no > local_node_id(end));
-    
-    % Locate the nodes needed
-
+    if opt.debug;
+        disp(['Nodes ', mat2str(info.send.id), ' sent to ', mat2str(info.send.lab)]);
+        disp(['Nodes ', mat2str(info.rec.id), ' are recieved from labs ', mat2str(info.rec.lab)]);
+    end
 
 end
+end
 
-function [no,lab] = locateSendNodes(node_id, elem_map, codist)
 
-    % Build elem_proc_map
-    n_elem = size(elem_map,1);
-    elem_proc_map = zeros(n_elem,1);
-    part = [0,cumsum(codist.Partition)];
-    for i = 1:length(part)-1;
-        elem_proc_map(part(i)+1:part(i+1)) = i;
-    end
+
+
+function [info,ghost,ghost_id] = sendRecieveNodes(E, nodes)
+
+    E.proc_map = buildElemProcMap(E);
     
-    no = [];
-    lab = [];
-    for i = 1:n_elem;
-       if labindex ~= elem_proc_map(i);
-            [C,ia,ib] = intersect(node_id, elem_map(i,:));
-            no = [no,C];
-            lab = [lab,repmat(elem_proc_map(i),1,length(C))];
+    node_id = globalIndices(nodes,1);
+    local = getLocalPart(nodes);
+
+    send = struct('id',[], 'lab',[]);
+    rec  = struct('id',[], 'lab',[]);
+
+    for i = 1:E.n_elem;
+       if labindex ~= E.proc_map(i);
+           Lia = ismember(E.elem_map(i,:), node_id);
+           send.id = [send.id, E.elem_map(i,Lia)];
+           send.lab = [send.lab,repmat(E.proc_map(i),1,sum(Lia))];
+           
+       elseif labindex == E.proc_map(i);
+           Lia = ~ismember(E.elem_map(i,:), node_id);
+           rec.id = [rec.id, E.elem_map(i,Lia)];
+           rec.lab = [rec.lab,repmat(E.proc_map(i),1,sum(Lia))];
        end
     end
+
+    [send.id,ia] = unique(send.id);
+    send.lab = send.lab(ia);
+
+    [rec.id,ia] = unique(rec.id);
+    rec.lab = rec.lab(ia);
     
-[no,ia] = unique(no);
-lab = lab(ia);
+    info = struct('send', send, 'rec', rec);
 
-%     elem_proc_map = reshape(elem_proc_map, numel(elem_proc_map), 1);
-%     elem_linear_map = reshape(elem_map, numel(elem_map), 1)
-%     
-%     
-%     local_node_id = globalIndices(nodes,1);
-% %     local_elem_id = globalIndices(dist_elem_map,1);
-% 
-%     % Get nodes needed by other processors
-% %     idx = true(n_elem,1);
-% %     idx(local_elem_id) = false;
-% %     off_proc_elem_nodes = unique(reshape(elem_map(idx,:),sum(idx)*4,1));
-%     
-%     [~,~,ib] = intersect(local_node_id, elem_linear_map, 'stable')
-%     
-%     no = elem_linear_map(ib);
-%     loc = elem_proc_map(ib)~=labindex;
-%     no = no(loc);
-%     
-%     disp(['Nodes ', mat2str(no), ' are needed by labs ', mat2str(elem_proc_map(loc))]);
 
+    [~,idx] = intersect(node_id, send.id, 'stable');
+    for i = 1:length(idx)
+        labSend(local(idx(i)), send.lab(i), 1);
+        labSend(send.id(i), send.lab(i), 2);
+    end
+    
+    N = length(rec.id);
+    ghost = cell(N,1);
+    ghost_id = zeros(N,1);
+    for i = 1:N
+        ghost{i} = labReceive;%(rec.lab(i));
+        ghost_id(i,1) = labReceive;
+    end
+end
+
+function proc_map = buildElemProcMap(E)
+    % Build elem_proc_map
+    proc_map = zeros(E.n_elem,1);
+    part = [0,cumsum(E.codist.Partition)];
+    for i = 1:length(part)-1;
+        proc_map(part(i)+1:part(i+1)) = i;
+    end
+end
 
 
 
