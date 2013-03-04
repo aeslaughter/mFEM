@@ -1,24 +1,16 @@
-function [pts,elms] = buildGrid(order, c, varargin)
+function [pts,elms] = buildGrid(type, varargin)
 
-    n = nargin-2;
+    import mFEM.elements.*
+    order = eval([type,'.order']);
+    c = eval([type,'.cell']);
+    if isempty(c);
+        error('Mesh:grid:GridCreationNotSupported','Grid generation for the %s element is not supported, the ''cell'' property must be defined',type);
+    end
+
+    n = nargin-1;
     
     elms = Composite();
-    spmd
-        
-%         E.n_elem = nx*ny;
-%         E.elem_map = zeros(E.n_elem,4);
-% 
-%         n_nodes = length(nodes);
-%         id = reshape(1:n_nodes,nx+1,ny+1);
-% 
-%         k = 0;
-%         for j = 1:ny;
-%             for i = 1:nx;
-%                 k = k + 1;
-%                 E.elem_map(k,[1,2,4,3]) = reshape(id(i:i+1,j:j+1),4,1);
-%             end
-%         end
-        
+%     spmd        
         % One Dimension
         if n == 3;
             x0 = varargin{1}; x1 = varargin{2}; xn = order*varargin{3};
@@ -26,10 +18,13 @@ function [pts,elms] = buildGrid(order, c, varargin)
 
         % Two Dimension
         elseif n == 6;
+tic;
             x0 = varargin{1}; x1 = varargin{2}; xn = order*varargin{5};
             y0 = varargin{3}; y1 = varargin{4}; yn = order*varargin{6};
-            x = codistributed(x0:(x1-x0)/xn:x1);
-            y = codistributed(y0:(y1-y0)/yn:y1);
+%             x = codistributed(x0:(x1-x0)/xn:x1);
+%             y = codistributed(y0:(y1-y0)/yn:y1);
+            x =(x0:(x1-x0)/xn:x1);
+            y =(y0:(y1-y0)/yn:y1);
             [X,Y] = ndgrid(x,y);
             
             nx = length(x);
@@ -44,7 +39,8 @@ function [pts,elms] = buildGrid(order, c, varargin)
             n_elem = varargin{5}*varargin{6};
             elms = zeros(n_elem, size(c,1),'uint32');
             
-            
+            labBarrier;
+
             skipped = [];
             for j = 1:order:ny-order;
                 for i = 1:order:nx-order;
@@ -55,15 +51,17 @@ function [pts,elms] = buildGrid(order, c, varargin)
                     elms(k,:) = id(g_ind(ind));
                     N(g_ind(ind)) = true;
                     
-                    mem = ~ismember(g_ind, g_ind(ind));
-                    skipped = [skipped,g_ind(mem)];
+%                     mem = ~ismember(g_ind, g_ind(ind));
+%                     skipped = [skipped,g_ind(mem)];
                 end
             end
-            
-            for s = 1:length(skipped)
-                map = elms>skipped(s);
-                elms(map) = elms(map) - 1;
-            end
+
+%             for s = 1:length(skipped)
+%                 map = elms>skipped(s);
+%                 elms(map) = elms(map) - 1;
+%             end
+
+            labBarrier; 
             pts = [reshape(X(N),numel(X(N)),1), reshape(Y(N),numel(Y(N)),1)];
 
         % Three Dimension
@@ -81,6 +79,6 @@ function [pts,elms] = buildGrid(order, c, varargin)
         else
             error('buildGrid:InputError','The number of inputs is invalid.');
         end  
-    end
+%     end
 end
 

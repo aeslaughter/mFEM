@@ -174,8 +174,8 @@ classdef Element < handle & matlab.mixin.Heterogeneous
     end
     
     methods (Static) %(Static, Access = ?mFEM.Mesh)
-        function grid(varargin)
-            error('Element:grid:NotImplemented', 'The grid method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
+        function buildMaps(varargin)
+            error('Element:buildMaps:NotImplemented', 'The ''buildMaps'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
         end
     end
 end

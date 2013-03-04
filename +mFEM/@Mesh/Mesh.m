@@ -87,18 +87,12 @@ classdef Mesh < handle
             if obj.options.time;
                 ticID = tMessage('Generating Grid...');
             end
+
+            profile on;
+            [node_map, elem_map] = feval(['mFEM.elements.',type,'.buildMaps'],varargin{:});
+
+            nodes = obj.buildNodes(node_map);
             
-            order = eval(['mFEM.elements.',type,'.order']);
-            c = eval(['mFEM.elements.',type,'.cell']);
-            
-            if isempty(c);
-                error('Mesh:grid:GridCreationNotSupported','Grid generation for the %s element is not supported, the ''cell'' property must be defined',type);
-            end
-            
-            [node_map, elem_map] = obj.buildGrid(order, c, varargin{:});
-            
-            node_map
-            elem_map{1}
             
             
             
@@ -209,7 +203,8 @@ classdef Mesh < handle
     end
     
     methods (Static)
-        [node_map, elem_map] = buildGrid(order, varargin);
+        nodes = buildNodes(varargin);
+%         [node_map, elem_map] = buildGrid(order, varargin);
 %         [node_map, elem_map] = buildMaps(varargin);
         
 %         nodes = buildNodes(varargin);

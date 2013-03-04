@@ -1,5 +1,173 @@
 function work
 
+x0 = 0; x1 = 1;
+y0 = 0; y1 = 1;
+xn = 10; yn = 10;
+
+% tic;
+% spmd
+%     x = 1:(xn+1)*(yn+1);
+%     id = reshape(x,xn+1,yn+1);
+%     elem_map = zeros(yn*xn,4);
+%     k = 0;
+%     for j = 1:yn;
+%         for i = 1:xn;
+%             k = k + 1;
+%             elem_map(k,[1,2,4,3]) = reshape(id(i:i+1,j:j+1),4,1);
+%         end
+%     end
+%     codist = codistributor1d(1, codistributor1d.unsetPartition , size(elem_map));
+%     elem_map = codistributed(elem_map, codist);
+% end
+% toc;
+
+
+% tic;
+% spmd
+%     e = uint32(1:xn*yn);
+%     elem_map(:,1) = e + ceil(e/(yn))-1;
+%     elem_map(:,2) = elem_map(:,1) + 1;
+%     elem_map(:,3) = elem_map(:,1) + xn + 2;
+%     elem_map(:,4) = elem_map(:,1) + xn + 1;
+%     codist = codistributor1d(1, codistributor1d.unsetPartition , size(elem_map));
+%     elem_map = codistributed(elem_map, codist);
+% end
+% toc;
+% elem_map
+
+tic;
+spmd
+    codist = codistributor1d(1, codistributor1d.unsetPartition , [xn*yn,4]);
+    part = [0, cumsum(codist.Partition)];
+    e = uint32(part(labindex)+1:part(labindex+1));
+    map(:,1) = e + ceil(e/(yn))-1;
+    map(:,2) = map(:,1) + 1;
+    map(:,3) = map(:,1) + xn + 2;
+    map(:,4) = map(:,1) + xn + 1;
+    elem_map = codistributed.build(map,codist);
+end
+toc;
+
+tic;
+spmd
+    x = codistributed(x0:(x1-x0)/xn:x1);
+    y = codistributed(y0:(y1-y0)/yn:y1);
+    [X,Y] = ndgrid(x,y); 
+    node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)]; 
+end
+toc;
+
+tic;
+spmd  
+    local_map = getLocalPart(node_map);
+    id = globalIndices(node_map,1);
+    n = size(local_map,1);
+    local = cell(n,1);
+    for i = 1:n;
+        local{i} = mFEM.elements.base.Node(id(i), local_map(i,:));
+    end
+
+    codist = getCodistributor(node_map);
+    n_nodes = size(node_map,1);
+    codist = codistributor1d(1, codist.Partition , [n_nodes,1]);
+    nodes = codistributed.build(local, codist);
+end
+toc;
+
+tic;
+spmd
+    local_map = getLocalPart(elem_map);
+    id = globalIndices(elem_map,1);
+    n = size(local_map);
+    
+    nlocal= getLocalPart(nodes);
+    nid = globalIndices(nodes,1);
+    
+    no = unique(local_map);
+    
+    ndist = getCodistributor(node_map);
+    part = cumsum(ndist.Partition);
+    
+    loc = ones(size(no));
+    for i = 2:numlabs
+        loc(no>part(i-1)&no<=part(i)) = i;
+    end
+    
+    ix = loc~=labindex;
+    no = no(ix);
+    loc = loc(ix);
+
+    u = unique(loc);
+    for i = 1:length(u);
+        labSend(no(loc==u(i)),u(i));
+        disp(['Sending request to lab ', num2str(u(i)), ' for nodes ', mat2str(no(loc==u(i)))]);
+    end
+    labBarrier;
+    
+    idx = {};
+    k = 1;
+    while labProbe
+        [idx{k},L(k)] = labReceive;        
+        disp(['Lab ', num2str(L(k)), ' requested nodes ', mat2str(idx{k})]);
+        k = k + 1;
+    end
+    
+    labBarrier;
+    for k = 1:length(idx);
+        [~,ib] = intersect(nid,idx{k});
+        pkg.id = nid(ib);
+        pkg.nodes = nlocal(ib);
+        labSend(pkg,L(k));
+        disp(['Lab ', num2str(labindex), ' sent nodes ', mat2str(ib), ' to lab ', num2str(L(k))]);
+    end
+    
+    
+    labBarrier;
+    while labProbe
+        [pkg,L(k)] = labReceive;
+        pkg
+%         [idx{k}] = labReceive;
+%         disp(['Lab ', num2str(labindex), ' recieved nodes ', mat2str(idx{k}), ' from lab ', num2str(L(k))]);
+        k = k + 1;
+    end
+    
+end
+toc;
+
+
+
+
+
+
+
+
+
+
+
+% tic;
+% spmd
+%     elem_id = codistributed(uint32(0:nx*ny-1));
+% 
+%     e = getLocalPart(elem_id);
+%     
+% %     elem_map = zeros(length(e),4,'uint32');
+%     map(:,1) = e + floor(e/ny) + 1;
+%     map(:,2) = map(:,1) + 1;
+%     map(:,3) = map(:,1) + 6;
+%     map(:,4) = map(:,1) + 5;
+% %     
+% %     
+% %     codist = getCodistributor(elem_id);
+% %     part = codist.Partition;
+%     codist = codistributor1d(1, codistributor1d.unsetPartition , [nx*ny,4]);
+%     elem_map = codistributed.build(map,codist);
+% end
+% toc;
+
+
+return;
+
+
 opt.debug = true;
 nx = 100;
 ny = 50;

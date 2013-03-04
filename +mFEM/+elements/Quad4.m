@@ -94,40 +94,63 @@ classdef Quad4 < mFEM.elements.base.Element
     end
     
     methods (Static)%(Static, Access = ?mFEM.Mesh)
-        function p = plot(vert, face)
-            p = patch('Vertices',vert,'Faces',face);
+        function [node_map, elem_map] = buildMaps(x0,x1,y0,y1,xn,yn)
+            
+%             elem_map = Composite();
+            spmd
+                x = codistributed(x0:(x1-x0)/xn:x1);
+                y = codistributed(y0:(y1-y0)/yn:y1);
+                [X,Y] = ndgrid(x,y); 
+                node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
+                
+                n = size(node_map,1);
+                id = reshape(1:n,xn+1,yn+1);
+                k = 0;
+                elem_map = zeros(xn*yn,4,'uint32');
+                for j = 1:yn;
+                    for i = 1:xn;
+                        k = k + 1;
+                        elem_map(k,:) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
+                    end
+                end
+            end
         end
         
-        function grid(x0,x1,y0,y1,xn,yn)
-            
-            tic;
-            [nodes, node_map] = obj.buildGrid(1,x0,x1,y0,y1,xn,yn);
-            toc;
-
-%             n_elem = xn*yn;
-%             n_nodes = length(nodes);
-%             elem_id = reshape(1:n_nodes,xn+1,yn+1);
+        
+%         function p = plot(vert, face)
+%             p = patch('Vertices',vert,'Faces',face);
+%         end
+        
+%         function grid(x0,x1,y0,y1,xn,yn)
+%             
+%             tic;
+%             [nodes, node_map] = obj.buildGrid(1,x0,x1,y0,y1,xn,yn);
+%             toc;
 % 
-%             elem_map = zeros(n_elem,4,'uint32');
-%             id = 0;
-%             for j = 1:yn;
-%                 for i = 1:xn;
-%                     id = id + 1;
-%                     idx = [elem_id(i,j), elem_id(i+1,j),...
-%                            elem_id(i+1,j+1), elem_id(i,j+1)];
-%                     elem_map(id,:) = idx;
-%                 end
-%             end
+% %             n_elem = xn*yn;
+% %             n_nodes = length(nodes);
+% %             elem_id = reshape(1:n_nodes,xn+1,yn+1);
+% % 
+% %             elem_map = zeros(n_elem,4,'uint32');
+% %             id = 0;
+% %             for j = 1:yn;
+% %                 for i = 1:xn;
+% %                     id = id + 1;
+% %                     idx = [elem_id(i,j), elem_id(i+1,j),...
+% %                            elem_id(i+1,j+1), elem_id(i,j+1)];
+% %                     elem_map(id,:) = idx;
+% %                 end
+% %             end
+% %             
+% %             nodes = gather(nodes);
+% %             elements = cell(n_elem,1);
+% %             for i = 1:n_elem;
+% %                 no = nodes(elem_map(i,:));
+% %                 elements{i} = mFEM.elements.Quad4(i,no);
+% %             end
+% %             
+% %             elements = distributed(elements);
 %             
-%             nodes = gather(nodes);
-%             elements = cell(n_elem,1);
-%             for i = 1:n_elem;
-%                 no = nodes(elem_map(i,:));
-%                 elements{i} = mFEM.elements.Quad4(i,no);
-%             end
-%             
-%             elements = distributed(elements);
-            
-        end
+%         end
     end    
 end
