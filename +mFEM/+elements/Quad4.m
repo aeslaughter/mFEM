@@ -30,7 +30,7 @@ classdef Quad4 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
+    properties (Constant, GetAccess = public)
         n_sides = 4;                        % no. of sides
         side_dof = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
         side_type = 'Line2';                % side is 2-node line element

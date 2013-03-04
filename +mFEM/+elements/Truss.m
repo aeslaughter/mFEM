@@ -27,7 +27,7 @@ classdef Truss < mFEM.elements.base.ElementCore
     %----------------------------------------------------------------------
 
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
+    properties (Constant, GetAccess = public)
         n_sides = 2;                 % no. "sides" (nodes are sides in 1D)
         side_dof = [1; 2];           % local dofs of the "sides"
         side_type = 'Point';         % 1D elements have points on sides

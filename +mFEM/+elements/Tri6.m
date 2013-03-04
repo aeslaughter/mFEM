@@ -38,7 +38,7 @@ classdef Tri6 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
+    properties (Constant, GetAccess = public)
         n_sides = 3;                        % no. of sides
         side_dof = [1,2,4; 2,3,5; 3,1,6];   % define the side dofs (ordered as associated with Line3 element)
         side_type = 'Line3';                % 3-node line element for sides
