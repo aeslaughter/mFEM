@@ -43,8 +43,8 @@ sys.addMatrix('K', 'B''*D*B');
 sys.addMatrix('K', 'h*N''*N', 'Boundary', 2);
 sys.addVector('f', 'h*T_inf*N''', 'Boundary', 2);
 
-% Create solver
-solver = solvers.TransientLinearSolver(sys, 'dt', 30);
+%Create solver
+solver = solvers.TransientLinearSolver(sys, 'dt', 30,'-DisableAll');
 
 % Add essential boundary
 solver.addEssential('boundary', 3, 'value', 'T_s');

@@ -198,7 +198,7 @@ classdef Solver < handle
                 for i = 1:length(type);
                     % Assembly
                     if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry');
-                        x = obj.system.assemble(obj.options.(name)); 
+                        x = obj.system.assemble(obj.options.(name),'-clear'); 
                 
                     % Do nothing for ConstantVector (inclusion is handled
                     % in assembly function), throw an error if something

@@ -98,7 +98,7 @@ T(:,1) = T_0 * ones(size(f));       % initialize the temperature vector
 T(ess,1) = T_s;                     % apply essential boundaries
 
 % Compute residual for non-essential boundaries, the mass matrix does not
-% contribute because the dT/dt = 0 on the essential boundaries
+% contribute because dT/dt = 0 on the essential boundaries
 R(:,1) = f(non) - K(non,ess)*T(ess,1);
 
 % Use a general time integration scheme

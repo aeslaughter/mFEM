@@ -25,9 +25,11 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
      
         function K = assemble(obj,name,varargin)
 
-            opt.zero = false;    
+            opt.clear = false;    
             kern = obj.find(name);
-           
+            if opt.clear;
+                kern(1).value.zero();
+            end       
             for i = 1:length(kern);
                 opt.boundary = kern(i).options.boundary;
                 opt.subdomain = kern(i).options.subdomain;
@@ -36,13 +38,11 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
                 kern(i).assemble('boundary',opt.boundary,...
                                  'subdomain', opt.subdomain,...
                                  'component',opt.component,...
-                                 'zero',opt.zero);
+                                 'clear',opt.clear);
             end
            
             K = kern(1).value.init(); 
-            if opt.zero;
-                kern(1).value.zero();
-            end           
+    
            
         end
     end

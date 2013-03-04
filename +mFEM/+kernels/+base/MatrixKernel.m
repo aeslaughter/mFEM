@@ -58,14 +58,18 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 %                     warning('MatrixKernel:assemble:MatrixPreviouslyAssembled', 'The kernel named %s was previously assembled.', obj.name);
 %                 end
                
-                opt.zero = false;
+                opt.clear = false;
                 opt.boundary = obj.options.boundary;
                 opt.subdomain = obj.options.subdomain;
                 opt.component = obj.options.component;
                 opt.time = obj.t;
                 opt = gatherUserOptions(opt, varargin{:});
                 obj.t = opt.time;
-
+                
+                if opt.clear;
+                    obj.value.zero();
+                end
+                    
                 elem = obj.mesh.getElements('boundary', opt.boundary, ...
                                              'subdomain', opt.subdomain);
                for i = 1:length(elem);
