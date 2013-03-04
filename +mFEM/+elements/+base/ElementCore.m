@@ -22,7 +22,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
     %----------------------------------------------------------------------
 
     % Abstract Properties (must be redefined in subclass)
-    properties (Abstract = true, SetAccess = protected, GetAccess = public) 
+    properties (Abstract, Constant, GetAccess = public) 
         n_sides;      % no. of sides
         side_dof;     % array of local node ids for each side
         side_type;    % defines the type of element that defines the sides

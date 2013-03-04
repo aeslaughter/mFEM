@@ -22,11 +22,7 @@ sys = System(mesh);
 sys.addConstant('E', 3e7, 'v', 0.3, 't_top', [0;-20]);
 sys.addConstant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
 sys.addMatrix('K', 'B''*D*B');
-sys.addVector('f', 'N''*t_top');
-
-% Assemble the matrix and vector
-K = sys.assemble('K'); 
-f = sys.assemble('f', 'Boundary', 2);
+sys.addVector('f', 'N''*t_top','Boundary', 2);
 
 % Assemble and solve
 solver = solvers.LinearSolver(sys);

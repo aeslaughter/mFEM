@@ -32,7 +32,7 @@ classdef Tri3 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
+    properties (Constant, GetAccess = public)
         n_sides = 3;                % no. of sides
         lims = [0,1; 0,1];          % limits of xi1 and xi2        
         side_dof = [1,2; 2,3; 3,1]; % define the side dofs 

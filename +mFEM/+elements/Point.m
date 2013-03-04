@@ -21,7 +21,7 @@ classdef Point < mFEM.elements.base.Element
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    properties (SetAccess = protected, GetAccess = public)    
+    properties (Constant, GetAccess = public)    
         n_sides = [];                   % no. "sides" (nodes are sides in 1D)
         side_dof = [];                  % local dofs of the "sides"
         side_type = '';                 % 1D elements do not have side elements

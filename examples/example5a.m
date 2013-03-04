@@ -57,7 +57,7 @@ for e = 1:mesh.n_elements;
     Me = zeros(elem.n_dof);     % mass matrix
     Ke = zeros(elem.n_dof);     % stiffness matrix
     fe = zeros(elem.n_dof,1);   % force vector
-    
+
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
     for i = 1:length(elem.qp);
@@ -69,18 +69,19 @@ for e = 1:mesh.n_elements;
     % id of 2 (bottom), then add the convective flux term to stiffness
     % matrix and force vector using numeric integration via the quadrature 
     % points for element side.
+    
     for s = 1:elem.n_sides;
         if any(elem.side(s).boundary_id == 2);
             side = elem.buildSide(s);
             N = @(xi) side.shape(xi);
             for i = 1:length(side.qp);
                 d = elem.getDof('side',s,'-local'); % local dofs for side
-                Ke(d,d) = Ke(d,d) + side.W(i) * h * N(side.qp{i})'*N(side.qp{i})*side.detJ(side.qp{i});
+                Ke(d,d) = Ke(d,d) + h *side.W(i)*N(side.qp{i})'*N(side.qp{i})*side.detJ(side.qp{i});
                 fe(d) = fe(d) + h*T_inf*side.W(i)*N(side.qp{i})'*side.detJ(side.qp{i});              
             end
         end
     end      
-    
+
     % Add local mass, stiffness, and force to global (this method is slow)
     dof = elem.getDof();
     M(dof,dof) = M(dof,dof) + Me;

@@ -13,15 +13,16 @@ performTests(T, 'Example5b', Mb, Kb, fb, Tb);
 
 function performTests(x, name, M, K, f, T)
 
-% "Exact solution," taken from known working set, see also Bhatti 2005.
+% "Exact solution" taken from known working set, Mex and Kex taken from  Bhatti 2005.
 Tex = [50 145.031526140504 160.751903085136 175.901546899857 180.149547931426 182.806447442623 183.754905085443 184.249105278178 184.447125625046 184.542048394261 184.58224523089;50 78.2358744154568 123.605675519846 133.756244557911 141.356159096001 143.796177047445 145.171916188397 145.695831329464 145.956281108166 146.063924266308 146.11440560176;300 300 300 300 300 300 300 300 300 300 300;300 300 300 300 300 300 300 300 300 300 300];
-Mex = sparse([1;2;3;4;1;2;3;1;2;3;4;1;3;4], [1;1;1;1;2;2;2;3;3;3;3;4;4;4], [128;42.6666666666667;64;21.3333333333333;42.6666666666667;85.3333333333333;42.6666666666667;64;42.6666666666667;128;21.3333333333333;21.3333333333333;21.3333333333333;42.6666666666667], 4, 4);
-Kex = sparse([1;2;3;4;1;2;3;1;2;3;4;1;3;4], [1;1;1;1;2;2;2;3;3;3;3;4;4;4], [7;-2;1.5;-4.5;-2;4.75;-0.75;1.5;-0.75;2.25;-3;-4.5;-3;7.5], 4, 4);
-fex = [100;100;0;0];
+Mex = [128,64/3,128/3,64; 64/3,128/3,0,64/3; 128/3,0,256/3,128/3; 64,64/3,128/3,128];
+Kex = [22/3,-9/2,-7/3,3/2; -9/2,15/2,0,-3; -7/3,0,61/12,-3/4; 3/2,-3,-3/4,9/4];
+fex = [100;0;100;0];
+ix = [1,4,2,3];
 
-tol = 10^-13;
-x.compare(Tex(1,:), T(1,:), [name,': First time-step temperature.'], 'Tol', 10^-12);
+tol = 10^-12;
+x.compare(Tex(1,:), T(1,:), [name,': First time-step temperature.'], 'Tol', tol);
 x.compare(Tex(end,:), T(end,:), [name, ': Last time-step temperature.'], 'Tol', tol);
-x.compare(Mex, M, [name,': Mass matrix'], 'Tol', tol);
-x.compare(Kex, K, [name,': Stiffness matrix'], 'Tol', tol);
-x.compare(fex, f, [name,': Force vector']);
+x.compare(Mex, M(ix,ix), [name,': Mass matrix'], 'Tol', tol);
+x.compare(Kex, K(ix,ix), [name,': Stiffness matrix'], 'Tol', tol);
+x.compare(fex, f(ix,:), [name,': Force vector']);

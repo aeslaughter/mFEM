@@ -41,11 +41,7 @@ sys.addConstant('T_0', 50);            % initial temperature (C)
 sys.addMatrix('M', 'rho*c_p*N''*N');
 sys.addMatrix('K', 'B''*D*B');
 sys.addMatrix('K', 'h*N''*N', 'Boundary', 2);
-sys.addVector('f','h*T_inf*N''', 'Boundary', 2);
-
-M = full(sys.assemble('M','-zero'));
-K = full(sys.assemble('K','-zero'));
-f = full(sys.assemble('f','-zero'));
+sys.addVector('f', 'h*T_inf*N''', 'Boundary', 2);
 
 % Create solver
 solver = solvers.TransientLinearSolver(sys, 'dt', 30);
@@ -64,7 +60,10 @@ end
 
 % Display the temperatures (in same order as p.556 of Bhatti, 2005)
 if opt.debug; % debug, return M,K,f,T
-    varargout = {M,K,f,T};
+    M = sys.get('M');
+    K = sys.get('K');
+    f = sys.get('f');
+    varargout = {M.init(),K.init(),f.init(),T};
 else
     ix = [1,4,2,3];
     T(ix,:)'

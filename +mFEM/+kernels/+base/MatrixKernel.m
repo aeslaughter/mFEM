@@ -55,7 +55,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         function varargout = assemble(obj, varargin)
             
 %                 if obj.assembled
-%                     warning('MatrixKernel:assemble', 'The kernel named %s was previously assembled.', obj.name);
+%                     warning('MatrixKernel:assemble:MatrixPreviouslyAssembled', 'The kernel named %s was previously assembled.', obj.name);
 %                 end
                
                 opt.zero = false;
@@ -68,7 +68,6 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 
                 elem = obj.mesh.getElements('boundary', opt.boundary, ...
                                              'subdomain', opt.subdomain);
-                                            %'component', opt.component);
                for i = 1:length(elem);
                
                     if isempty(opt.boundary);
