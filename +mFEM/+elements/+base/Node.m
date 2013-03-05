@@ -18,6 +18,14 @@ classdef Node < handle
             end
         end
         
+        function init(obj,id,x)
+            n = size(x,2);
+            for i = 1:length(obj);
+                obj(i).id = id(i);
+                obj(i).coord(1:n) = x(i,:);
+            end
+        end
+        
         function out = getCoord(obj)
             n = length(obj);
             out = zeros(n,3);
@@ -59,16 +67,16 @@ classdef Node < handle
                 end
             end
         end 
-    end
-    
-    methods
-        function init(obj,id,x)
-            n = size(x,2);
+
+        function out = getParents(obj)
+            out = {};
             for i = 1:length(obj);
-                obj(i).id = id(i);
-                obj(i).coord(1:n) = x(i,:);
+                out = [out,obj(i).parents];
             end
+            out = unique(out);
         end
+        
+
     end
     
 end

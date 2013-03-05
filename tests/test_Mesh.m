@@ -1,9 +1,8 @@
 function test_Mesh
 
-mesh = mFEM.Mesh();
-mesh.grid('Quad4',0,1,0,1,20,20);
-mesh.plot([]);
-
+mesh = mFEM.Mesh('-time');
+mesh.grid('Quad4',0,2,0,2,2,2);
+% mesh.plot([]);
 
 
 delete(mesh);

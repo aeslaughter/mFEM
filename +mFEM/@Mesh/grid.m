@@ -23,4 +23,6 @@ function grid(obj, type, varargin)
     % Complete message
     if obj.options.time;
         tMessage(ticID);
-    end; 
+    end
+    
+    obj.init();

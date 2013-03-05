@@ -23,10 +23,14 @@ classdef Mesh < handle
             obj.options = gatherUserOptions(obj.options, varargin{:});  
         end
         
-%         function delete(obj)
-%            obj.elements.delete
-%            obj.nodes.delete
-%         end
+        function delete(obj)
+            nodes = obj.nodes;
+            elements = obj.elements;
+            spmd
+                nodes.delete();
+                elements.delete();
+            end
+        end
         
         function node = createNode(obj, x)
             id = length(obj.nodes) + 1;
@@ -91,63 +95,9 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
+        findNeighbors(obj);
         
-        
-        function findNeighbors(obj)
-            % Locates elements that share a side
-            %
-            % Syntax
-            %   findNeighbors()   
-            %
-            % Description
-            %   findNeighbors() locates neighboring elements and
-            %   neighboring sides for the finite element mesh, it sets the
-            %   various neighbor and side related properties for the
-            %   elements in the mesh.
 
-            % Display wait message
-            if obj.options.time;
-                ticID = tMessage('Locating neighbor elements...');
-            end
-            
-            % Loop through each element and find neighboring elements
-            elements = obj.elements;
-            
-            spmd
-               local = getLocalPart(elements);
-               
-               for e = 1:length(local)
-                  elem = local{e};
-                  
-                  neighbors = elem.getNodeParents();
-                  
-                  for i = 1:length(neighbors);
-                      for s = 1:length(elem.side_ids);
-                          
-                          if ~isempty(elem.sides(s).neighbor); 
-                              break;
-                          end
-                          
-                      	  [C,~,ns] = intersect(elem.side_map(s,:), neighbors(i).side_map, 'rows');
-                          if ~isempty(C);
-                             elem.sides(s).neighbor = neighbors(i);
-                             elem.sides(s).neighbor_side = ns;
-                             neighbors(i).sides(ns).neighbor = elem;
-                             neighbors(i).sides(ns).neighbor_side = s;   
-                          else
-                             elem.sides(s).neighbor = [];
-                             elem.sides(s).neighbor_side = [];
-                          end
-                      end
-                  end
-               end 
-            end
-                      
-            % Complete message
-            if obj.options.time;
-                tMessage(ticID);
-            end;
-        end 
     end
     
     methods (Static)

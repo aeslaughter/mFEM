@@ -32,6 +32,9 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
 
     properties
         id = uint32([]);
+        on_boundary = false;
+        sides = struct('neighbor',{},'neighbor_side',{});      
+
 %         n_sides = uint32([]);
 %         n_nodes = uint32([]);
     end
@@ -182,8 +185,21 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
 %             %   number of which varies with the number of space dimensions.
 %             J = det(obj.jacobian(x));
 %         end 
-
-
+    end
+    
+    methods (Access = public)%(Access = ?mFEM.Mesh)
+        function n = getNeighborElements(obj)
+            n = obj.nodes.getParents();
+            n = unique(n(n~=obj));
+        end
+        
+        function out = getNodes(obj)
+           n = length(obj);
+           out(n,obj(1).n_nodes) = mFEM.elements.base.Node();
+           for i = 1:n;
+               out(i,:) = obj(i).nodes;
+           end
+        end
     end
     
     methods (Static) %(Static, Access = ?mFEM.Mesh)
