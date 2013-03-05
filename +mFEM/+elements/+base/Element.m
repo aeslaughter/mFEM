@@ -1,4 +1,4 @@
-classdef Element < handle & matlab.mixin.Heterogeneous
+classdef Element < handle
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -32,19 +32,18 @@ classdef Element < handle & matlab.mixin.Heterogeneous
 
     properties
         id = uint32([]);
+%         n_sides = uint32([]);
+%         n_nodes = uint32([]);
     end
     
     properties (Abstract, Constant, Access = public)
         side_ids;        
         n_sides;
         n_nodes;
-        order;
-        cell;
     end
-    
+
     properties (Access = protected)
         nodes = {};
-        
     end
     
     % Abstract Methods (protected)
@@ -89,8 +88,17 @@ classdef Element < handle & matlab.mixin.Heterogeneous
             %       number of dofs per node to 1, vector  sets it to the 
             %       no. of space dimension, and  specifing a number sets it
             %       to that value.
-            obj.id = id;
-            obj.nodes = nodes;
+            if nargin == 2;
+                obj.init(id,nodes);
+            end
+        end
+        
+        function init(obj,id,nodes)
+           for i = 1:length(obj);
+               obj(i).id = id(i);
+               obj(i).nodes = nodes(i,:);
+           end
+            
         end
         
 %         function N = shape(obj, x, varargin)
@@ -171,6 +179,8 @@ classdef Element < handle & matlab.mixin.Heterogeneous
 %             %   number of which varies with the number of space dimensions.
 %             J = det(obj.jacobian(x));
 %         end 
+
+
     end
     
     methods (Static) %(Static, Access = ?mFEM.Mesh)

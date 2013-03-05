@@ -31,7 +31,6 @@ classdef Quad4 < mFEM.elements.base.Element
     
     % Define the inherited abstract properties
     properties (Constant)
-        order   = 1; 
         n_nodes = 4;
         n_sides = 4;
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
@@ -39,7 +38,7 @@ classdef Quad4 < mFEM.elements.base.Element
 %         quad = ...                          % quadrature rules
 %             mFEM.Gauss('order', 2, 'type', 'quad');    
 
-        cell = [1,1; 1,2; 2,2; 2,1];     
+%         cell = [1,1; 1,2; 2,2; 2,1];     
     end
 
     % Define the Quad4 constructor
@@ -96,7 +95,25 @@ classdef Quad4 < mFEM.elements.base.Element
     methods (Static)%(Static, Access = ?mFEM.Mesh)
         function [node_map, elem_map] = buildMaps(x0,x1,y0,y1,xn,yn)
             
-%             elem_map = Composite();
+%             if matlabpool('size') == 0;
+%                 x = x0:(x1-x0)/xn:x1;
+%                 y = y0:(y1-y0)/yn:y1;
+%                 [X,Y] = ndgrid(x,y); 
+%                 node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
+%                 
+%                 n = size(node_map,1);
+%                 id = reshape(1:n,xn+1,yn+1);
+%                 k = 0;
+%                 elem_map = zeros(xn*yn,4,'uint32');
+%                 for j = 1:yn;
+%                     for i = 1:xn;
+%                         k = k + 1;
+%                         elem_map(k,:) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
+%                     end
+%                 end   
+%                 return;
+%             end
+            
             spmd
                 x = codistributed(x0:(x1-x0)/xn:x1);
                 y = codistributed(y0:(y1-y0)/yn:y1);
@@ -113,44 +130,11 @@ classdef Quad4 < mFEM.elements.base.Element
                         elem_map(k,:) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
                     end
                 end
+                
+                codist = codistributor1d(1,codistributor1d.unsetPartition,size(elem_map));
+                elem_map = codistributed(elem_map,codist);
+                
             end
         end
-        
-        
-%         function p = plot(vert, face)
-%             p = patch('Vertices',vert,'Faces',face);
-%         end
-        
-%         function grid(x0,x1,y0,y1,xn,yn)
-%             
-%             tic;
-%             [nodes, node_map] = obj.buildGrid(1,x0,x1,y0,y1,xn,yn);
-%             toc;
-% 
-% %             n_elem = xn*yn;
-% %             n_nodes = length(nodes);
-% %             elem_id = reshape(1:n_nodes,xn+1,yn+1);
-% % 
-% %             elem_map = zeros(n_elem,4,'uint32');
-% %             id = 0;
-% %             for j = 1:yn;
-% %                 for i = 1:xn;
-% %                     id = id + 1;
-% %                     idx = [elem_id(i,j), elem_id(i+1,j),...
-% %                            elem_id(i+1,j+1), elem_id(i,j+1)];
-% %                     elem_map(id,:) = idx;
-% %                 end
-% %             end
-% %             
-% %             nodes = gather(nodes);
-% %             elements = cell(n_elem,1);
-% %             for i = 1:n_elem;
-% %                 no = nodes(elem_map(i,:));
-% %                 elements{i} = mFEM.elements.Quad4(i,no);
-% %             end
-% %             
-% %             elements = distributed(elements);
-%             
-%         end
     end    
 end

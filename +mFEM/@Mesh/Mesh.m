@@ -10,10 +10,14 @@ classdef Mesh < handle
     
     properties (Access = protected)
         node_map = uint32([]);
+        elem_map = uint32([]);
     end
     
     
     methods
+        plot(obj,varargin);
+        grid(obj,varargin);
+        
         
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
@@ -80,65 +84,9 @@ classdef Mesh < handle
 %             id = length(obj.element) + 1;
 %             obj.element(id) = feval(['mFEM.elements.', elem_type],id, nodes);        
 %         end
+       
         
-        function grid(obj, type, varargin)
-            
-            % Display wait message
-            if obj.options.time;
-                ticID = tMessage('Generating Grid...');
-            end
 
-            profile on;
-            [node_map, elem_map] = feval(['mFEM.elements.',type,'.buildMaps'],varargin{:});
-
-            nodes = obj.buildNodes(node_map);
-            
-            
-            
-            
-            
-%             feval(['mFEM.elements.',type,'.grid'],varargin{:});
-
-            % Complete message
-            if obj.options.time;
-                tMessage(ticID);
-            end; 
-        end
-        
-        function plot(obj, data, varargin)
-            
-            opt.data = data;
-            opt.labelelements = false;
-            opt.labelnodes = false;
-            opt = gatherUserOptions(opt,varargin{:});
-
-            p = zeros(length(obj.elements),1);
-
-            figure; hold on;
-            elements = gather(obj.elements);
-            for e = 1:length(elements);
-                elem = elements{e};
-                no = elem.getNodeCoord();
-                face = elem.side_ids;
-                p(e) = elem.plot(no,face);
-                
-                if opt.labelelements;
-                    cntr = num2cell(mean(no,1));
-                    text(cntr{:}, num2str(elem.id),'FontSize',14,...
-                    'BackgroundColor','k','FontWeight','Bold',...
-                    'Color','w','HorizontalAlignment','center');
-                end
-                
-                if opt.labelnodes;
-                    for i = 1:length(elem.nodes);
-                        n = elem.nodes{i};
-                        loc = num2cell(n.coord);
-                        text(loc{:},num2str(n.id),'FontSize',10,'Color','w',...
-                            'BackgroundColor','b','HorizontalAlignment','center');
-                    end
-                end
-            end
-        end
         
     end
     
@@ -203,13 +151,14 @@ classdef Mesh < handle
     end
     
     methods (Static)
-        nodes = buildNodes(varargin);
+        nodes = buildNodes(node_map);
+        elements = buildElements(type,elem_map,nodes);
 %         [node_map, elem_map] = buildGrid(order, varargin);
 %         [node_map, elem_map] = buildMaps(varargin);
         
 %         nodes = buildNodes(varargin);
 %         [node_map, elem_map] = buildMaps(varargin)
-%         elements = buildElements(nodes, elem_map);
+        
     end
 end
 

@@ -8,13 +8,14 @@ classdef Node < handle
     end
     
     properties (Access = {?mFEM.cells.base.Cell, ?mFEM.Mesh})
-        parents = mFEM.elements.Line2.empty(); % 
+        parents = uint32([]);
     end
     
     methods
-        function obj = Node(id,x)
-            obj.id = id;
-            obj.coord(1:length(x)) = x;    
+        function obj = Node(id, x)
+            if nargin == 2;
+            	obj.init(id,x);
+            end
         end
         
         function varargout = get(obj, varargin)
@@ -39,10 +40,24 @@ classdef Node < handle
         end
     end
     
-    methods (Access = ?mFEM.cells.base.Cell)
+    methods %(Access = ?mFEM.cells.base.Cell)
         function addParent(obj, c)
-            obj.parents(end+1) = c;    
+            for i = 1:length(obj);
+                idx = length(obj(i).parents);
+                obj(i).parents(idx+1) = c(i);
+            end
         end 
+    end
+    
+    methods
+        function init(obj,id,x)
+            n = size(x,2);
+            for i = 1:length(obj);
+                obj(i).id = id(i);
+                obj(i).coord(1:n) = x(i,:);
+            end
+        end
+        
     end
     
 end
