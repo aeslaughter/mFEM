@@ -1,4 +1,4 @@
-classdef Element < handle
+classdef Element < handle %& matlab.mixin.Heterogeneous
     %ELEMENT Base class for defining elements.
     % Inludes the general behavior of an element, including the node 
     % locations, id, shape functions, etc...
@@ -42,8 +42,8 @@ classdef Element < handle
         n_nodes;
     end
 
-    properties (Access = protected)
-        nodes = {};
+    properties %(Access = protected)
+        nodes = mFEM.elements.base.Node.empty();
     end
     
     % Abstract Methods (protected)
@@ -97,8 +97,8 @@ classdef Element < handle
            for i = 1:length(obj);
                obj(i).id = id(i);
                obj(i).nodes = nodes(i,:);
+               obj(i).nodes.addParent(obj(i));
            end
-            
         end
         
 %         function N = shape(obj, x, varargin)

@@ -7,8 +7,8 @@ classdef Node < handle
         id = [];
     end
     
-    properties (Access = {?mFEM.cells.base.Cell, ?mFEM.Mesh})
-        parents = uint32([]);
+    properties (GetAccess = public, SetAccess = protected)
+        parents;
     end
     
     methods
@@ -40,11 +40,15 @@ classdef Node < handle
         end
     end
     
-    methods %(Access = ?mFEM.cells.base.Cell)
-        function addParent(obj, c)
+    methods (Access = ?mFEM.elements.base.Element)
+        function addParent(obj, elem)
             for i = 1:length(obj);
                 idx = length(obj(i).parents);
-                obj(i).parents(idx+1) = c(i);
+                if idx == 0;
+                    obj(i).parents = elem;
+                else
+                    obj(i).parents(idx+1) = elem;
+                end
             end
         end 
     end
@@ -57,7 +61,6 @@ classdef Node < handle
                 obj(i).coord(1:n) = x(i,:);
             end
         end
-        
     end
     
 end

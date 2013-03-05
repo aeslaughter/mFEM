@@ -1,7 +1,7 @@
 function test_Node
     %TEST_NODE Tests the mFEM.elements.base.Node class
 
-n = mFEM.elements.base.Node([1,2,3]);
+n = mFEM.elements.base.Node(1,[1,2,3]);
 T = mFEM.Test();
 
 [x,y,z] = n.get();
