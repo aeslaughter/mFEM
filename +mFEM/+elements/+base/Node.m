@@ -18,6 +18,14 @@ classdef Node < handle
             end
         end
         
+        function out = getCoord(obj)
+            n = length(obj);
+            out = zeros(n,3);
+            for i = 1:n;
+                out(i,:) = obj(i).coord;
+            end
+        end
+        
         function varargout = get(obj, varargin)
            
             if nargin == 1

@@ -3,8 +3,8 @@ classdef Mesh < handle
     %   Detailed explanation goes here
     
     properties %(Access = protected)
-        elements = mFEM.elements.Line2.empty();
-        nodes = {}; %mFEM.elements.base.Node.empty();
+        elements = Composite();%mFEM.elements.Line2.empty();
+        nodes = Composite(); %mFEM.elements.base.Node.empty();
         options = struct('time', false);
     end
     
@@ -152,7 +152,7 @@ classdef Mesh < handle
     
     methods (Static)
         nodes = buildNodes(node_map);
-        elements = buildElements(type,elem_map,nodes);
+        elements = buildElements(type,elem_map,node_map,nodes);
 %         [node_map, elem_map] = buildGrid(order, varargin);
 %         [node_map, elem_map] = buildMaps(varargin);
         

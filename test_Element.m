@@ -15,3 +15,6 @@ T.compare(elems(1).nodes(4).coord, [0,1,0], 'Element coordinates correct');
 T.compare(node(2).coord, [1,0,0], 'Input nodes coordinates correct');
 T.compare(elems(1).nodes(3).parents, elems, 'Parent test');
 
+
+delete(elems);
+delete(node);

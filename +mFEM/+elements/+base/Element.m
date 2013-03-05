@@ -101,6 +101,9 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
            end
         end
         
+%         function out = getNodeCoord(obj)    
+%             out = obj.nodes.getCoord;
+%         end
 %         function N = shape(obj, x, varargin)
 %             %SHAPE Returns the shape functions
 %             %

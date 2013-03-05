@@ -94,6 +94,7 @@ classdef Quad4 < mFEM.elements.base.Element
     
     methods (Static)%(Static, Access = ?mFEM.Mesh)
         function node_map = buildNodeMap(x0,x1,y0,y1,xn,yn)
+%             node_map = Composite();
             spmd
                 x = codistributed(x0:(x1-x0)/xn:x1);
                 y = codistributed(y0:(y1-y0)/yn:y1);
