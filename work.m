@@ -1,32 +1,14 @@
 function work
 
-n = 100000;
+elem_map = [10,11,11,12; 12,15,17,16]
+no_id = [12,13,14,15,16,17,10,11];
 
-tic;
-node = mFEM.elements.base.Node.empty(n,0);
-for i = 1:n;
-    node(i) = mFEM.elements.base.Node(i,rand(2,1));
-    node(i).addParent(i);
-end
-c = num2cell(node);
-toc;
-    
-tic;
-node(n) = mFEM.elements.base.Node();
-for i = 1:length(node)
-    node(i).init(i,rand(2,1));
-end
-node(1:n).addParent(1:n)
-c = num2cell(node);
-toc;
+v = reshape(elem_map,1,numel(elem_map))
+[C,ia,ib] = intersect(no_id,v,'stable')
 
-tic;
-node(n) = mFEM.elements.base.Node();
-node(1:n).init(1:n, rand(n,2));
-c = num2cell(node);
-toc;
+[Lia,Locb] = ismember(v,no_id);
+elem_map = reshape(Locb,size(elem_map))
 
-tic;
-node = mFEM.elements.base.Node(1:n, rand(n,2));
-c = num2cell(node);
-toc;
+% elem_map(no_id) = 1:length(no_id)
+
+

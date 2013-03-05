@@ -93,8 +93,14 @@ classdef Quad4 < mFEM.elements.base.Element
     end
     
     methods (Static)%(Static, Access = ?mFEM.Mesh)
-        function [node_map, elem_map] = buildMaps(x0,x1,y0,y1,xn,yn)
-            
+        function node_map = buildNodeMap(x0,x1,y0,y1,xn,yn)
+            spmd
+                x = codistributed(x0:(x1-x0)/xn:x1);
+                y = codistributed(y0:(y1-y0)/yn:y1);
+                [X,Y] = ndgrid(x,y); 
+                node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
+            end
+        end
 %             if matlabpool('size') == 0;
 %                 x = x0:(x1-x0)/xn:x1;
 %                 y = y0:(y1-y0)/yn:y1;
@@ -114,12 +120,8 @@ classdef Quad4 < mFEM.elements.base.Element
 %                 return;
 %             end
             
+        function elem_map = buildElementMap(node_map,~,~,~,~,xn,yn)
             spmd
-                x = codistributed(x0:(x1-x0)/xn:x1);
-                y = codistributed(y0:(y1-y0)/yn:y1);
-                [X,Y] = ndgrid(x,y); 
-                node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
-                
                 n = size(node_map,1);
                 id = reshape(1:n,xn+1,yn+1);
                 k = 0;

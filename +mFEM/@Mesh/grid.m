@@ -12,17 +12,14 @@ function grid(obj, type, varargin)
         ticID = tMessage('Generating Grid...');
     end
 
-    tic;
-    [obj.node_map, obj.elem_map] = feval(['mFEM.elements.',type,'.buildMaps'],varargin{:});
-    toc;
+    [obj.node_map] = feval(['mFEM.elements.',type,'.buildNodeMap'],varargin{:});
+
     
-    tic;
+    [obj.elem_map] = feval(['mFEM.elements.',type,'.buildElementMap'], obj.node_map, varargin{:});
+    
     obj.nodes = obj.buildNodes(obj.node_map);
-    toc;
     
-    tic;
     obj.elements = obj.buildElements(type, obj.elem_map, obj.nodes);
-    toc;
     
 %     if ~iscodistributed(node_map)
 %         spmd

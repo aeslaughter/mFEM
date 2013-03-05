@@ -184,8 +184,11 @@ classdef Element < handle
     end
     
     methods (Static) %(Static, Access = ?mFEM.Mesh)
-        function buildMaps(varargin)
-            error('Element:buildMaps:NotImplemented', 'The ''buildMaps'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
+        function buildNodeMap(varargin)
+            error('Element:buildNodeMap:NotImplemented', 'The ''buildNodeMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
+        end
+        function buildNodess(varargin)
+            error('Element:buildElementMap:NotImplemented', 'The ''buildElementMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
         end
     end
 end
