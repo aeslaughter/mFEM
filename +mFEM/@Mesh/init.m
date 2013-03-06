@@ -1,10 +1,13 @@
 function init(obj)
 
-    nodes = obj.nodes;
-    space = obj.options.space;
+    %
+    nodes    = obj.nodes;
     elements = obj.elements;
-    obj.n_nodes = size(obj.node_map,1);
+    node_map = obj.node_map;
+    n_nodes  = size(obj.node_map,1);
+    obj.n_nodes = n_nodes;
     obj.n_elements = size(obj.elem_map,1);
+    
     
     % Display wait message
     if obj.options.time;
@@ -20,10 +23,22 @@ function init(obj)
         tMessage(ticID);
     end;
     
+    space = obj.options.space;
     spmd
-    %     codist = getCodistributor(node_map);
-    %     codist = codistributor1d(1,codist.Partition,[obj.n_nodes,1]);  
-    %     boundary_map = codistributed.false(obj.n_nodes,1,codist);
         nodes.setDof(space);
     end
+
+    % Initilize boundary map
+%     no_boundary_ids = getpref('MFEM_PREF','NO_BOUNDARY_IDS');
+%     obj.boundary_tag
+%     spmd
+%         codist = getCodistributor(node_map);
+%         gsize = [n,no_boundary_ids];
+%         codist = codistributor(1,codist.Partition,gsize);
+%         boundary_map = codistributed.false(gsize,codist);
+%         
+%         local = getLocalPart(boundary_map);
+%     end
+%     
+    
 end

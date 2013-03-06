@@ -45,21 +45,15 @@ if nargin == 1 && isnumeric(varargin{1});
     nel = varargin{1};
 end
     
-%% Create a FEmesh Object 
+%% Create a Mesh Object 
 % Build mesh of 2-node linear elemnts from 0 to 4
 mesh = Mesh();
 mesh.grid('Line2',0,4,nel); 
-%mesh.init();
-return;
-%% Label The Boundaries
-mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
-mesh.addBoundary(2,'right');   % q = 20 boundary   
 
-%% Create Gauss Objects 
-% Initilizes an object for performing integration on the element and
-% extracts the integration rules.
-q_elem = Gauss('Order',1);
-[qp, W] = q_elem.rules();
+%% Label The Boundaries
+mesh.addTag('essential','left');    % T = 0 boundary (essential)    
+mesh.addTag('flux','right');   % q = 20 boundary   
+return;
 
 %% Define the constants for the problem
 k = 2;          % thermal conductivity 

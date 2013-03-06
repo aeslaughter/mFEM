@@ -13,14 +13,15 @@ classdef Mesh < handle
     properties (Access = protected)
         node_map = uint32([]);
         elem_map = uint32([]);
-        boundary_map = logical([]);
-        boundary_tag = {};
+%         boundary_map = logical([]);
+%         boundary_tag = {};
         dof_map = uint32([]);
     end
     
     methods
         plot(obj,varargin);
         grid(obj,varargin);
+        addTag(obj, id, func, type)
         
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  

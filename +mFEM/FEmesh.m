@@ -308,7 +308,7 @@ classdef FEmesh < handle
         end
 
         function addSubdomain(obj, id, varargin)
-            %ADD_UBDOMAIN Labels elements with numeric tags.
+            %ADDSUBDOMAIN Labels elements with numeric tags.
             %
             % Syntax
             %   addSudomain(id, Limit1,...)

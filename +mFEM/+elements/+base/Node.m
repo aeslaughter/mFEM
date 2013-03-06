@@ -5,9 +5,10 @@ classdef Node < handle
     properties
         coord = [0;0;0];
         id = [];
-        on_boundary = true;
+        on_boundary = false;
         n_dim;
         dof = uint32([]);
+        tag = {};
     end
     
     properties (GetAccess = public, SetAccess = protected)
@@ -43,7 +44,20 @@ classdef Node < handle
             out = [obj.coord];
         end
         
+        function addTag(obj,tag)
+           for i = 1:length(obj);
+               n = length(obj(i).tag)+1;
+               obj(i).tag{n} = tag;
+           end
+        end
         
+        function tf = hasTag(obj,tag)
+            n = length(obj);
+            tf = false(n,1);
+            for i = 1:n;
+                tf(i) = any(strcmp(tag,obj(i).tag));
+            end
+        end
         
         function varargout = get(obj, varargin)
            
@@ -105,6 +119,12 @@ classdef Node < handle
                 end
                 obj(i).dof = transformDof(obj(i).id,n);
             end
+        end
+        
+        function setBoundaryFlag(obj)
+           for i = 1:length(obj);
+               obj(i).on_boundary = true;
+           end
         end
     end
 end

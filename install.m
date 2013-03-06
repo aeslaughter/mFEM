@@ -70,4 +70,5 @@ builddocsearchdb([cd,filesep,'doc',filesep,'html']);
 
 % Set the mFEM root preference
 setpref('MFEM_PREF','ROOT_DIR',cd);
-
+setpref('MFEM_PREF','SEND_LIMIT',300);
+setpref('MFEM_PREF','NO_BOUNDARY_IDS',10);
