@@ -22,10 +22,10 @@ function plot(obj, data, varargin)
             elem = local(e);
             vert = elem.nodes.getCoord();
             face = elem.side_ids;
-            p(i) = patch('Vertices',vert,'Faces',face);
+            p(i) = patch('Vertices',vert','Faces',face);
 
             if opt.labelelements;
-                cntr = num2cell(mean(vert,1));
+                cntr = num2cell(mean(vert',1));
                 text(cntr{:}, num2str(elem.id),'FontSize',14,...
                 'BackgroundColor','k','FontWeight','Bold',...
                 'Color','w','HorizontalAlignment','center');

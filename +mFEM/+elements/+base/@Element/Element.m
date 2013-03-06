@@ -203,6 +203,7 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     
     methods %(Access = ?mFEM.Mesh)
          findNeighbors(obj);
+         addTag(obj,tag,type);
     end
 
     methods (Static)

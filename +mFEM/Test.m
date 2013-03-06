@@ -7,7 +7,6 @@ classdef Test < handle
         results = [];
     end
     
-    
     methods
         function obj = Test(varargin)
             if nargin == 1;
@@ -18,6 +17,11 @@ classdef Test < handle
             end
         end
 
+        function caught(obj,err)
+            msg = [obj.name, ' Error: ', err.identifier];
+            obj.printResult(msg,false); 
+        end
+        
         function str = compare(obj,mat1,mat2,msg,varargin)
             
             opt.tol = 0;

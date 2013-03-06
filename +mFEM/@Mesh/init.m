@@ -28,17 +28,5 @@ function init(obj)
         nodes.setDof(space);
     end
 
-    % Initilize boundary map
-%     no_boundary_ids = getpref('MFEM_PREF','NO_BOUNDARY_IDS');
-%     obj.boundary_tag
-%     spmd
-%         codist = getCodistributor(node_map);
-%         gsize = [n,no_boundary_ids];
-%         codist = codistributor(1,codist.Partition,gsize);
-%         boundary_map = codistributed.false(gsize,codist);
-%         
-%         local = getLocalPart(boundary_map);
-%     end
-%     
-    
+    obj.initialized = true;
 end

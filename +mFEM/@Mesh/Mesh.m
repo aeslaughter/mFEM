@@ -7,22 +7,23 @@ classdef Mesh < handle
         nodes = Composite(); %mFEM.elements.base.Node.empty();
         n_nodes;                
         n_elements;
+        n_dof;
         options = struct('time', false, 'space', 'scalar');
     end
     
     properties (Access = protected)
         node_map = uint32([]);
         elem_map = uint32([]);
-%         boundary_map = logical([]);
-%         boundary_tag = {};
         dof_map = uint32([]);
+        initialized = false;
     end
     
     methods
         plot(obj,varargin);
         grid(obj,varargin);
-        addTag(obj, id, func, type)
-        
+        addBoundary(obj,id,varargin);
+        addSubdomain(obj,id,varargin);
+
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
         end
@@ -54,18 +55,12 @@ classdef Mesh < handle
         end
 
 
-
-        
-        function elem = getElement(obj, id)
-            elem = gather(obj.elements(id));
-            elem = elem{1};
-        end
     end
     
     methods (Access = protected)
-        init(obj)        
+        init(obj)   
+        addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
-
     end
     
     methods (Static)

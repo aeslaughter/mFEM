@@ -52,7 +52,7 @@ mesh.grid('Line2',0,4,nel);
 
 %% Label The Boundaries
 mesh.addTag('essential','left');    % T = 0 boundary (essential)    
-mesh.addTag('flux','right');   % q = 20 boundary   
+mesh.addTag('flux','right');        % q = 20 boundary   
 return;
 
 %% Define the constants for the problem

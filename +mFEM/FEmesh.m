@@ -274,7 +274,7 @@ classdef FEmesh < handle
 
             % Check that the id is a numeric value
             if ~isnumeric(id) || id == 0;
-                error('FEmesh:add_boundary',...
+                error('FEmesh:addBoundary',...
                     'The boundary id must be a number greater than 0');
             end
             
