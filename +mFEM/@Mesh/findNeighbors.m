@@ -1,4 +1,4 @@
-function findNeighbors(elements,time_flag)
+function findNeighbors(obj)
     % Locates elements that share a side
     %
     % Syntax
@@ -11,17 +11,17 @@ function findNeighbors(elements,time_flag)
     %   elements in the mesh.
 
     % Display wait message
-    if time_flag;
+    if obj.options.time;
         ticID = tMessage('Locating neighbor elements...');
     end
-    
-    % Use the Element class function
+
+    elements = obj.elements;
     spmd
         elements.findNeighbors();
     end
 
     % Complete message
-    if time_flag;
+    if obj.options.time;
         tMessage(ticID);
     end;
 end 

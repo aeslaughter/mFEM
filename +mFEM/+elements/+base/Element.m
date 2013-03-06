@@ -191,65 +191,57 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     methods (Access = public)%(Access = ?mFEM.Mesh)
         function findNeighbors(obj)
 
+ % BRUTE FORCE: slow          
             for i = 1:length(obj);
                 elem = obj(i);
                 neighbors = elem.nodes.getParents(elem);
-
-                for j = 1:length(neighbors);
-                    neigh = neighbors(j);
-
-                    for s = 1:length(elem.n_sides);
-%                         if ~isempty(elem.sides(s).neighbor); continue; end
-                        
-                        elem_side = elem.getSideCoord(s)
-                                             
-                        for n = 1:length(neigh.n_sides);
-                            neigh_side = neigh.getSideCoord(s)
+                
+                for s = 1:elem.n_sides;
+                    if ~isempty(elem.sides(s).neighbor); continue; end
+                    elem_side = elem.getSideCoord(s);
+                    for j = 1:length(neighbors);
+                        neigh = neighbors(j);                      
+                        for n = 1:neigh.n_sides;
+                            neigh_side = neigh.getSideCoord(n);
                             if isequal(elem_side, neigh_side);
-                                str = sprintf('E%ds%d = E%ds%d',i,s,j,n); 
-                                disp(str);
+                                elem.sides(s).neighbor = neigh;
+                                elem.sides(s).neighbor_side = n;
+                                elem.sides(s).on_boundary = false;
+                                neigh.sides(n).neighbor = elem;
+                                neigh.sides(n).neighbor_side = s;
+                                neigh.sides(n).on_boundary = false;
                             end
                         end
                     end
                 end
             end
 
-% THIS IS WICKED SLOW: ismember and unique are pigs                
+% ISMEMBER METHOD: very slow (half as above)          
 %             for i = 1:length(obj);
 %                 elem = obj(i);
-%                 [c1,i1] = elem.getSideMap();
-%                 neigh = elem.nodes.getParents(elem);
+%                 neighbors = elem.nodes.getParents(elem);
 %                 n = size(elem.side_ids,2);
 %                 
-%                 if isempty(elem.sides)
-%                     elem.sides = struct('neighbor',[],'neighbor_side',[],'on_boundary',num2cell(true(obj(i).n_sides,1)));
-%                 end
-%                 
-%                 for j = 1:length(neigh);
-%                     
-%                     if isempty(neigh(j).sides);
-%                         neigh(j).sides = struct('neighbor',[],'neighbor_side',[],'on_boundary',num2cell(true(neigh(j).n_sides,1)));
-%                     end
-%                     
-%                     [c2,i2] = neigh(j).getSideMap();
-%                     idx = ismember(c1,c2,'rows');
-%                     i1u = unique(i1(idx));
-%                     h = histc(i1(idx),i1u);
-%                     s1 = i1u(h >= n);
+%                 for j = 1:length(neighbors);
+%                      neigh = neighbors(j);
+%                      
+%                      nse = neigh.getSideElements();
+%                      if any(nse == elem); continue; end;
+%                     idx = ismember(elem.smap.map,neigh.smap.map,'rows');
+%                     h = histc(elem.smap.id(idx),elem.smap.uid);
+%                     s1 = elem.smap.uid(h >= n);
 %                     if isempty(s1); continue; end
-%                     if ~isempty(elem.sides(s1).neighbor); continue; end
 %                     
-%                     idx = ismember(c2,c1,'rows');
-%                     i2u = unique(i2(idx));
-%                     h = histc(i2(idx),i2u);
-%                     s2 = i2u(h >= n);
+%                     idx = ismember(neigh.smap.map,elem.smap.map,'rows');
+%                     h = histc(neigh.smap.id(idx),neigh.smap.uid);
+%                     s2 = neigh.smap.uid(h >= n);
 % 
-%                     elem.sides(s1).neighbor = neigh(j);
+%                     elem.sides(s1).neighbor = neigh;
 %                     elem.sides(s1).neighbor_side = s2;
 %                     elem.sides(s1).on_boundary = false;
-%                     neigh(j).sides(s2).neighbor = elem;
-%                     neigh(j).sides(s2).neighbor_side = s1;  
-%                     neigh(j).sides(s2).on_boundary = false;
+%                     neigh.sides(s2).neighbor = elem;
+%                     neigh.sides(s2).neighbor_side = s1;  
+%                     neigh.sides(s2).on_boundary = false;
 %                 end
 %             end
         end
@@ -264,11 +256,8 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         end
         
         function out = getSideCoord(obj,s)
-        
-            out = sort(obj.nodes(obj.side_ids(s,:)).getCoord(),1);
-            
+            out = sort(obj.nodes(obj.side_ids(s,:)).getCoord(),1);           
         end
-        
         
         function out = getNodes(obj)
            n = length(obj);
