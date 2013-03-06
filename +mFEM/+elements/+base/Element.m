@@ -199,14 +199,12 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                 
                 for s = 1:elem.n_sides;
                     if ~isempty(elem.sides(s).neighbor); continue; end
-%                     elem_side = elem.getSideCoord(s);
-                    elem_side = elem_coord(elem.side_ids(s,:),:);
+                    elem_side = sort(elem_coord(:,elem.side_ids(s,:)),2);
                     for j = 1:length(neighbors);
                         neigh = neighbors(j);
                         neigh_coord = neigh.nodes.getCoord();
                         for n = 1:neigh.n_sides;
-%                             neigh_side = neigh.getSideCoord(n);
-                            neigh_side = neigh_coord(neigh.side_ids(n,:),:);
+                            neigh_side = sort(neigh_coord(:,neigh.side_ids(n,:)),2);
 
                             if isequal(elem_side, neigh_side);
                                 elem.sides(s).neighbor = neigh;

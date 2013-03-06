@@ -13,9 +13,9 @@ classdef Node < handle
     end
     
     methods
-        function obj = Node(id, x)
+        function obj = Node(id,x)
             if nargin == 2;
-            	obj.init(id,x');
+            	obj.init(id,x);
             end
         end
         
@@ -28,7 +28,7 @@ classdef Node < handle
         end
         
         function out = getCoord(obj)
-            out = [obj.coord]';
+            out = [obj.coord];
         end
         
         function varargout = get(obj, varargin)
