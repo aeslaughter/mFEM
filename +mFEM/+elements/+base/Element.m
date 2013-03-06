@@ -190,19 +190,24 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     
     methods (Access = public)%(Access = ?mFEM.Mesh)
         function findNeighbors(obj)
-
+            profile on;
  % BRUTE FORCE: slow          
             for i = 1:length(obj);
                 elem = obj(i);
+                elem_coord = elem.nodes.getCoord();
                 neighbors = elem.nodes.getParents(elem);
                 
                 for s = 1:elem.n_sides;
                     if ~isempty(elem.sides(s).neighbor); continue; end
-                    elem_side = elem.getSideCoord(s);
+%                     elem_side = elem.getSideCoord(s);
+                    elem_side = elem_coord(elem.side_ids(s,:),:);
                     for j = 1:length(neighbors);
-                        neigh = neighbors(j);                      
+                        neigh = neighbors(j);
+                        neigh_coord = neigh.nodes.getCoord();
                         for n = 1:neigh.n_sides;
-                            neigh_side = neigh.getSideCoord(n);
+%                             neigh_side = neigh.getSideCoord(n);
+                            neigh_side = neigh_coord(neigh.side_ids(n,:),:);
+
                             if isequal(elem_side, neigh_side);
                                 elem.sides(s).neighbor = neigh;
                                 elem.sides(s).neighbor_side = n;
@@ -215,7 +220,7 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                     end
                 end
             end
-
+            profile viewer;
 % ISMEMBER METHOD: very slow (half as above)          
 %             for i = 1:length(obj);
 %                 elem = obj(i);
@@ -246,18 +251,14 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
 %             end
         end
         
-        function [out,id] = getSideMap(obj)
-               x = obj.nodes.getCoord();
-               s = obj.side_ids;
-               [m,n] = size(s);
-               id = reshape(repmat(1:m,1,n),1,m*n);
-               s = reshape(s,1,m*n);
-               out = x(s,:);
-        end
-        
-        function out = getSideCoord(obj,s)
-            out = sort(obj.nodes(obj.side_ids(s,:)).getCoord(),1);           
-        end
+%         function [out,id] = getSideMap(obj)
+%                x = obj.nodes.getCoord();
+%                s = obj.side_ids;
+%                [m,n] = size(s);
+%                id = reshape(repmat(1:m,1,n),1,m*n);
+%                s = reshape(s,1,m*n);
+%                out = x(s,:);
+%         end
         
         function out = getNodes(obj)
            n = length(obj);

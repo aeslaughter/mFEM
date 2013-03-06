@@ -3,7 +3,7 @@ classdef Node < handle
     %   Detailed explanation goes here
     
     properties
-        coord = [0,0,0];
+        coord = [0;0;0];
         id = [];
         on_boundary = true;
     end
@@ -15,7 +15,7 @@ classdef Node < handle
     methods
         function obj = Node(id, x)
             if nargin == 2;
-            	obj.init(id,x);
+            	obj.init(id,x');
             end
         end
         
@@ -23,16 +23,12 @@ classdef Node < handle
             n = size(x,2);
             for i = 1:length(obj);
                 obj(i).id = id(i);
-                obj(i).coord(1:n) = x(i,:);
+                obj(i).coord(1:n,1) = x(i,:);
             end
         end
         
         function out = getCoord(obj)
-            n = length(obj);
-            out = zeros(n,3);
-            for i = 1:n;
-                out(i,:) = obj(i).coord;
-            end
+            out = [obj.coord]';
         end
         
         function varargout = get(obj, varargin)
