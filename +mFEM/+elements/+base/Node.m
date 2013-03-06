@@ -5,6 +5,7 @@ classdef Node < handle
     properties
         coord = [0,0,0];
         id = [];
+        on_boundary = true;
     end
     
     properties (GetAccess = public, SetAccess = protected)
@@ -54,6 +55,8 @@ classdef Node < handle
                 end
             end  
         end
+        
+        
     end
     
     methods (Access = ?mFEM.elements.base.Element)
@@ -68,16 +71,17 @@ classdef Node < handle
             end
         end 
 
-        function out = getParents(obj)
+        function out = getParents(obj,varargin)
             out = {};
             for i = 1:length(obj);
                 out = [out,obj(i).parents];
             end
             out = unique(out);
+            
+            if nargin == 2;
+                out = out(out~=varargin{1});
+            end
         end
-        
-
     end
-    
 end
 

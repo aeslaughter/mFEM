@@ -34,9 +34,6 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         id = uint32([]);
         on_boundary = false;
         sides = struct('neighbor',{},'neighbor_side',{});      
-
-%         n_sides = uint32([]);
-%         n_nodes = uint32([]);
     end
     
     properties (Abstract, Constant, Access = public)
@@ -101,6 +98,10 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                obj(i).id = id(i);
                obj(i).nodes = nodes(i,:);
                obj(i).nodes.addParent(obj(i));
+               obj(i).sides = struct('neighbor',[],...
+                                     'neighbor_side',[],...
+                                     'on_boundary',...
+                                     num2cell(true(obj(i).n_sides,1)));
            end
         end
         
@@ -188,10 +189,86 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     end
     
     methods (Access = public)%(Access = ?mFEM.Mesh)
-        function n = getNeighborElements(obj)
-            n = obj.nodes.getParents();
-            n = unique(n(n~=obj));
+        function findNeighbors(obj)
+
+            for i = 1:length(obj);
+                elem = obj(i);
+                neighbors = elem.nodes.getParents(elem);
+
+                for j = 1:length(neighbors);
+                    neigh = neighbors(j);
+
+                    for s = 1:length(elem.n_sides);
+%                         if ~isempty(elem.sides(s).neighbor); continue; end
+                        
+                        elem_side = elem.getSideCoord(s)
+                                             
+                        for n = 1:length(neigh.n_sides);
+                            neigh_side = neigh.getSideCoord(s)
+                            if isequal(elem_side, neigh_side);
+                                str = sprintf('E%ds%d = E%ds%d',i,s,j,n); 
+                                disp(str);
+                            end
+                        end
+                    end
+                end
+            end
+
+% THIS IS WICKED SLOW: ismember and unique are pigs                
+%             for i = 1:length(obj);
+%                 elem = obj(i);
+%                 [c1,i1] = elem.getSideMap();
+%                 neigh = elem.nodes.getParents(elem);
+%                 n = size(elem.side_ids,2);
+%                 
+%                 if isempty(elem.sides)
+%                     elem.sides = struct('neighbor',[],'neighbor_side',[],'on_boundary',num2cell(true(obj(i).n_sides,1)));
+%                 end
+%                 
+%                 for j = 1:length(neigh);
+%                     
+%                     if isempty(neigh(j).sides);
+%                         neigh(j).sides = struct('neighbor',[],'neighbor_side',[],'on_boundary',num2cell(true(neigh(j).n_sides,1)));
+%                     end
+%                     
+%                     [c2,i2] = neigh(j).getSideMap();
+%                     idx = ismember(c1,c2,'rows');
+%                     i1u = unique(i1(idx));
+%                     h = histc(i1(idx),i1u);
+%                     s1 = i1u(h >= n);
+%                     if isempty(s1); continue; end
+%                     if ~isempty(elem.sides(s1).neighbor); continue; end
+%                     
+%                     idx = ismember(c2,c1,'rows');
+%                     i2u = unique(i2(idx));
+%                     h = histc(i2(idx),i2u);
+%                     s2 = i2u(h >= n);
+% 
+%                     elem.sides(s1).neighbor = neigh(j);
+%                     elem.sides(s1).neighbor_side = s2;
+%                     elem.sides(s1).on_boundary = false;
+%                     neigh(j).sides(s2).neighbor = elem;
+%                     neigh(j).sides(s2).neighbor_side = s1;  
+%                     neigh(j).sides(s2).on_boundary = false;
+%                 end
+%             end
         end
+        
+        function [out,id] = getSideMap(obj)
+               x = obj.nodes.getCoord();
+               s = obj.side_ids;
+               [m,n] = size(s);
+               id = reshape(repmat(1:m,1,n),1,m*n);
+               s = reshape(s,1,m*n);
+               out = x(s,:);
+        end
+        
+        function out = getSideCoord(obj,s)
+        
+            out = sort(obj.nodes(obj.side_ids(s,:)).getCoord(),1);
+            
+        end
+        
         
         function out = getNodes(obj)
            n = length(obj);
@@ -200,8 +277,8 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                out(i,:) = obj(i).nodes;
            end
         end
-    end
-    
+   end
+
     methods (Static) %(Static, Access = ?mFEM.Mesh)
         function buildNodeMap(varargin)
             error('Element:buildNodeMap:NotImplemented', 'The ''buildNodeMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
@@ -209,5 +286,6 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         function buildNodess(varargin)
             error('Element:buildElementMap:NotImplemented', 'The ''buildElementMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
         end
+
     end
 end

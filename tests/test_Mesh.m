@@ -1,8 +1,10 @@
 function test_Mesh
 
+profile on;
 mesh = mFEM.Mesh('-time');
-mesh.grid('Quad4',0,2,0,2,2,2);
+mesh.grid('Quad4',0,2,0,2,20,20);
 % mesh.plot([]);
+profile viewer;
 
 
 delete(mesh);

@@ -54,7 +54,9 @@ classdef Mesh < handle
         
         function init(obj)
 
-            obj.findNeighbors();
+            % Locate the neighbors
+            obj.findNeighbors(obj.elements, obj.options.time);
+            
             % replace the numeric arrays with mFEM.Vectors
         end
         
@@ -95,14 +97,15 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
-        findNeighbors(obj);
-        
+%         findNeighbors(obj);
+%         
 
     end
     
     methods (Static)
         nodes = buildNodes(node_map);
         elements = buildElements(type,elem_map,node_map,nodes);
+        findNeighbors(elements,time_flag);
 %         [node_map, elem_map] = buildGrid(order, varargin);
 %         [node_map, elem_map] = buildMaps(varargin);
         
