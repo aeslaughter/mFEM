@@ -5,19 +5,22 @@ classdef Mesh < handle
     properties %(Access = protected)
         elements = Composite();%mFEM.elements.Line2.empty();
         nodes = Composite(); %mFEM.elements.base.Node.empty();
-        options = struct('time', false);
+        n_nodes;                
+        n_elements;
+        options = struct('time', false, 'space', 'scalar');
     end
     
     properties (Access = protected)
         node_map = uint32([]);
         elem_map = uint32([]);
+        boundary_map = logical([]);
+        boundary_tag = {};
+        dof_map = uint32([]);
     end
-    
     
     methods
         plot(obj,varargin);
         grid(obj,varargin);
-        
         
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
@@ -48,55 +51,19 @@ classdef Mesh < handle
             elem = feval(['mFEM.elements.',type],id,nodes);
             obj.elements{id} = elem;
         end
-        
-        %addNode
-        %addElement -> addNode
-        
-        function init(obj)
 
-            obj.findNeighbors();
-            
-            % replace the numeric arrays with mFEM.Vectors
-        end
+
+
         
         function elem = getElement(obj, id)
             elem = gather(obj.elements(id));
             elem = elem{1};
         end
-        
-%         function addElement(obj, elem_type, nodes)
-%             % ADDELEMENT to FEmesh object (must be reinitialized)
-%             %
-%             % Syntax:
-%             %   addElement(nodes);
-%             %
-%             % Input:
-%             %   The input should take the exact form as the input for the
-%             %   element that was established when the FEmesh object was
-%             %   created. For example:
-%             %
-%             %   >> mesh = FEmesh();
-%             %   >> mesh.addElement(1,'Quad4', [0,0; 1,0; 1,1; 0,1]);
-%             %
-%             %   Note, the optional space string for the element is not
-%             %   accepted here, as it is defined across the entire mesh
-%             %   when the FEmesh object is created.
-%             
-%             % Indicate that the object must be reinitialized
-%             obj.initialized = false;
-%                         
-%             % Create the element
-%             id = length(obj.element) + 1;
-%             obj.element(id) = feval(['mFEM.elements.', elem_type],id, nodes);        
-%         end
-       
-        
-
-        
     end
     
     methods (Access = protected)
-        findNeighbors(obj);
+        init(obj)        
+        idEmptyBoundary(obj,id);
 
     end
     

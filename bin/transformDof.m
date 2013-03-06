@@ -1,11 +1,11 @@
-function D = transform_dof(d, n)
+function D = transformDof(d, n)
     %TRANSFROM_DOF Converts the dofs for vector element space
     %
     % Syntax
-    %   D = transform_dof(d,n)
+    %   D = transformDof(d,n)
     %   
     % Description
-    %   D = transform_dof(d,n) converts the scalar degrees of freedom
+    %   D = transformDof(d,n) converts the scalar degrees of freedom
     %       for to vector based degrees of freedom. For example,
     %       inputing d = [1,3], n = 2 returns D = [1,2,5,6].
     %

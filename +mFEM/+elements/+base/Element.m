@@ -190,7 +190,6 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     
     methods (Access = public)%(Access = ?mFEM.Mesh)
         function findNeighbors(obj)
-            profile on;
  % BRUTE FORCE: slow          
             for i = 1:length(obj);
                 elem = obj(i);
@@ -218,7 +217,6 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                     end
                 end
             end
-            profile viewer;
 % ISMEMBER METHOD: very slow (half as above)          
 %             for i = 1:length(obj);
 %                 elem = obj(i);
@@ -267,7 +265,7 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         end
    end
 
-    methods (Static) %(Static, Access = ?mFEM.Mesh)
+    methods (Static)
         function buildNodeMap(varargin)
             error('Element:buildNodeMap:NotImplemented', 'The ''buildNodeMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
         end

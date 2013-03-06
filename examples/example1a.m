@@ -47,10 +47,10 @@ end
     
 %% Create a FEmesh Object 
 % Build mesh of 2-node linear elemnts from 0 to 4
-mesh = FEmesh();
-mesh.grid(0,4,nel, 'Element', 'Line2'); 
-mesh.init();
-
+mesh = Mesh();
+mesh.grid('Line2',0,4,nel); 
+%mesh.init();
+return;
 %% Label The Boundaries
 mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
 mesh.addBoundary(2,'right');   % q = 20 boundary   

@@ -6,6 +6,8 @@ classdef Node < handle
         coord = [0;0;0];
         id = [];
         on_boundary = true;
+        n_dim;
+        dof = uint32([]);
     end
     
     properties (GetAccess = public, SetAccess = protected)
@@ -19,17 +21,29 @@ classdef Node < handle
             end
         end
         
-        function init(obj,id,x)
-            n = size(x,2);
-            for i = 1:length(obj);
-                obj(i).id = id(i);
-                obj(i).coord(1:n,1) = x(i,:);
+        function init(obj,id,x)           
+            if iscell(x);
+                for i = 1:length(obj);
+                    n = length(x{i});
+                    obj(i).id = id(i);
+                    obj(i).n_dim = n;
+                    obj(i).coord(1:n,1) = x{i};
+                end   
+            else
+                n = size(x,2);
+                for i = 1:length(obj);
+                    obj(i).id = id(i);
+                    obj(i).n_dim = n;
+                    obj(i).coord(1:n,1) = x(i,:);
+                end
             end
         end
         
         function out = getCoord(obj)
             out = [obj.coord];
         end
+        
+        
         
         function varargout = get(obj, varargin)
            
@@ -52,10 +66,13 @@ classdef Node < handle
             end  
         end
         
-        
+%         function getDof(obj,varargin)
+%             for i = 1:length(obj);  
+%             end
+%         end
     end
     
-    methods (Access = ?mFEM.elements.base.Element)
+    methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
         function addParent(obj, elem)
             for i = 1:length(obj);
                 idx = length(obj(i).parents);
@@ -76,6 +93,17 @@ classdef Node < handle
             
             if nargin == 2;
                 out = out(out~=varargin{1});
+            end
+        end
+        
+        function setDof(obj,type)
+            for i = 1:length(obj);
+                if strcmpi(type,'vector'); 
+                    n = obj(i).n_dim; 
+                else
+                    n = 1;
+                end
+                obj(i).dof = transformDof(obj(i).id,n);
             end
         end
     end

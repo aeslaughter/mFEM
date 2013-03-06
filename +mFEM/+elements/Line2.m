@@ -1,4 +1,4 @@
-classdef Line2 < mFEM.cells.base.Cell
+classdef Line2 < mFEM.elements.base.Element
     %LINE2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)
@@ -6,7 +6,7 @@ classdef Line2 < mFEM.cells.base.Cell
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
-    %  Copyright (C) 2012 Andrew E Slaughter
+    %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
     %  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,8 @@ classdef Line2 < mFEM.cells.base.Cell
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    properties (SetAccess = protected, GetAccess = public) 
+    properties (Constant)
+        n_nodes = 2;
         n_sides = 2;
         side_ids = [1; 2];                % local dofs of the "sides"
 %         side_type = 'Point';            % sides are points
@@ -33,7 +34,7 @@ classdef Line2 < mFEM.cells.base.Cell
     end
     
     methods     
-        function obj = Line2(id, nodes)
+        function obj = Line2(varargin)
             %LINE2 Class constructor; calls base class constructor
             %
             % Syntax
@@ -43,7 +44,7 @@ classdef Line2 < mFEM.cells.base.Cell
             %   see mFEM.Element
             %
             % See Also mFEM.Element
-            obj = obj@mFEM.cells.base.Cell(id, nodes); 
+            obj = obj@mFEM.elements.base.Element(varargin{:}); 
         end
         
         % Define the size function
@@ -75,31 +76,23 @@ classdef Line2 < mFEM.cells.base.Cell
 %         end
     end
     
-    methods (Static, Access = ?mFEM.Mesh)
-        function [nodes,elements] = grid(x0,x1,xn)
-            
-        %     import mFEM.elements.base.* 
-             import mFEM.elements.*
-            
-            %   type = mfilename('class');
+    methods (Static)
+        function node_map = buildNodeMap(x0,x1,xn)
+            spmd
+                node_map = codistributed((x0:(x1-x0)/xn:x1)');
+            end
+        end
 
-
-            spmd  
-                x = x0 : (x1-x0)/xn : x1;
-                nodes = cell(length(x),1);
-                elements = cell(length(x)-1,1);
-
-                for i = 1:length(x);
-                    nodes{i} = mFEM.elements.base.Node(i,x(i));
-
-                    if i > 1;
-                        elements{i-1} = Line2(i-1, nodes(i-1:i));
-                    end
+        function elem_map = buildElementMap(~,~,~,xn)
+            spmd
+                id = 1:xn+1;
+                elem_map = zeros(xn,2,'uint32');
+                for i = 1:xn;
+                    elem_map(i,:) = [id(i),id(i+1)];
                 end
-                
-                nodes = codistributed(nodes);
-                elements = codistributed(elements);
-             end
+                codist = codistributor1d(1,codistributor1d.unsetPartition,size(elem_map));
+                elem_map = codistributed(elem_map,codist); 
+            end
         end
     end
     

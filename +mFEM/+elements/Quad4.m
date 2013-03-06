@@ -92,9 +92,8 @@ classdef Quad4 < mFEM.elements.base.Element
 %         end
     end
     
-    methods (Static)%(Static, Access = ?mFEM.Mesh)
+    methods (Static)
         function node_map = buildNodeMap(x0,x1,y0,y1,xn,yn)
-%             node_map = Composite();
             spmd
                 x = codistributed(x0:(x1-x0)/xn:x1);
                 y = codistributed(y0:(y1-y0)/yn:y1);
@@ -102,28 +101,10 @@ classdef Quad4 < mFEM.elements.base.Element
                 node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
             end
         end
-%             if matlabpool('size') == 0;
-%                 x = x0:(x1-x0)/xn:x1;
-%                 y = y0:(y1-y0)/yn:y1;
-%                 [X,Y] = ndgrid(x,y); 
-%                 node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
-%                 
-%                 n = size(node_map,1);
-%                 id = reshape(1:n,xn+1,yn+1);
-%                 k = 0;
-%                 elem_map = zeros(xn*yn,4,'uint32');
-%                 for j = 1:yn;
-%                     for i = 1:xn;
-%                         k = k + 1;
-%                         elem_map(k,:) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
-%                     end
-%                 end   
-%                 return;
-%             end
             
-        function elem_map = buildElementMap(node_map,~,~,~,~,xn,yn)
+        function elem_map = buildElementMap(~,~,~,~,~,xn,yn)
             spmd
-                n = size(node_map,1);
+                n = (xn+1)*(yn+1);
                 id = reshape(1:n,xn+1,yn+1);
                 k = 0;
                 elem_map = zeros(xn*yn,4,'uint32');
@@ -136,7 +117,6 @@ classdef Quad4 < mFEM.elements.base.Element
                 
                 codist = codistributor1d(1,codistributor1d.unsetPartition,size(elem_map));
                 elem_map = codistributed(elem_map,codist);
-                
             end
         end
     end    
