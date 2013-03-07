@@ -34,7 +34,4 @@ function elem = getElements(obj, varargin)
     
     % Collect the elements
     elem = obj.gatherComposite(varargin{:},'name','elements'); 
-    
-    obj.tag
-    obj.node_tag_map
 end

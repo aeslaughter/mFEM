@@ -1,5 +1,11 @@
 function out = gatherComposite(obj,varargin)
     %GATHERCOMPOSITE (protected) Returns selection of nodes or elements
+    %   The gatherComposite method is a generic method for extracting data
+    %   stored as a MATLAB Composite, which is the case for the node and
+    %   elements objects for the mFEM.Mesh. The nodes and elements are
+    %   stored as a Compsite because MATLAB currently does not support
+    %   codistributed vectors of custom classes, this function allows
+    %   vectors of nodes and elements to be extracted.
     %
     % Syntax
     %   no = getComposite()
@@ -32,48 +38,80 @@ function out = gatherComposite(obj,varargin)
     %       scalar | vector
     %       Limits the objects returned to the given processors in
     %       parallel applications
+    %
+    %----------------------------------------------------------------------
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
+    %  Copyright (C) 2013 Andrew E Slaughter
+    % 
+    %  This program is free software: you can redistribute it and/or modify
+    %  it under the terms of the GNU General Public License as published by
+    %  the Free Software Foundation, either version 3 of the License, or
+    %  (at your option) any later version.
+    % 
+    %  This program is distributed in the hope that it will be useful,
+    %  but WITHOUT ANY WARRANTY; without even the implied warranty of
+    %  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    %  GNU General Public License for more details.
+    % 
+    %  You should have received a copy of the GNU General Public License
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
+    %
+    %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
+    %----------------------------------------------------------------------
 
     % Gather the input and extract the desired objects
-    [comp,map,codist,id,all_ids,opt] = ...
+    [comp,map,id,all_ids,opt] = ...
         parseGatherCompositeInput(obj, varargin{:});
 
-    % Extract in serial case    
-    if matlabpool('size') == 0;
-        out = obj.elements{1};
+    % Serial case is identical to specified single lab case 
+    if matlabpool('size') == 0 || isempty(opt.lab);
+        opt.lab = 1;
+    end
+    
+    % If lab is a scalar, get the values and be done
+    if isscalar(opt.lab);
+        out = obj.elements{opt.lab};
         if ~all_ids;
             out = out(id);
         end
-    else
-            
-        if ~all_ids;
-            spmd
-                % IDs of the elements stored on this lab
-                local_id = globalIndices(map,1);
-
-                % local ids for the desired elements
-                idx = id >= min(local_id) & id <= max(local_id);
-
-                % Build a Composite
-                comp_idx = comp(idx);
-            end
-        else
-            comp_idx = comp;
-        end
+        return %ends operation of this method
+    end
+              
+    % Re-assign lab, dot ref. ont allowed in spmd and account for empty
+    lab = opt.lab;
+    if isempty(lab);
+        lab = 1:matlabpool('size');
+    end
     
-        if isempty(opt.lab)
-            out = comp_idx{1};
-            for i = 2:length(comp_idx);
-                out = [out; comp_idx{i}];
-            end   
-        else
-            out = comp_idx{opt.lab};
+    % Only perform parallel operations if paritial list is desired
+    if ~all_ids;
+        % Parallel case, allows for multiple labs to be specified
+
+        spmd % begin parallel
+            
+            % Limit operations to the specified labs
+            if any(labindex == lab);
+                local_id = globalIndices(map,1);  % IDs of local elements
+                idx = id >= min(local_id) & id <= max(local_id); % desired elements on this processor
+                comp = comp(idx); % build a new limited Composite
+            end
         end
+    end
+    
+    % Build the output vector
+    out = comp;
+    for i = 1:length(lab);
+        out = [out;comp{lab(i)}];
     end
 end
 
-function [comp,map,codist,id,all_ids,opt] = ...
+function [comp,map,id,all_ids,opt] = ...
     parseGatherCompositeInput(obj, varargin)
     %PARSEGATHERCOMPOSITEINPUT Prepares input for use by main function
+    %   The gatherComposite method is a generic method for extracting data
+    %   stored as a MATLAB Composite, which is the case for the node and
+    %   elements objects for the mFEM.Mesh. This function extracts the
+    %   desired information depending on the 'name' property.
     
     % No input given by user, get all nodes
     if nargin == 1;
@@ -105,12 +143,10 @@ function [comp,map,codist,id,all_ids,opt] = ...
     % Extract the data to work with
     switch lower(opt.name)
         case {'elem','element','elements'};
-            codist = obj.elem_map_codist;
             map = obj.elem_map;
             comp = obj.elements;
             n = obj.n_elements;
         case {'nodes','node'};
-            codist = obj.node_map_codist;
             map = obj.node_map;
             comp = obj.nodes;
             n = obj.n_nodes;

@@ -20,7 +20,7 @@ function addTag(obj, tag, type, varargin)
     %    inside a single cell array. In this case the tag is added if ALL
     %    of the criteria are met.
     % 
-    % See Also ADDBOUNDARY ADDSUBDOMAIN
+    % See Also mFEM.Mesh.AddBoundary mFEM.Mesh.AddSubdomain
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
