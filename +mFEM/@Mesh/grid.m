@@ -12,9 +12,11 @@ function grid(obj, type, varargin)
         ticID = tMessage('Generating Grid...');
     end
 
-    obj.node_map = feval(['mFEM.elements.',type,'.buildNodeMap'],varargin{:});
-
-    obj.elem_map = feval(['mFEM.elements.',type,'.buildElementMap'], obj.node_map, varargin{:});
+    node_map = feval(['mFEM.elements.',type,'.buildNodeMap'],varargin{:});
+    [obj.node_map, obj.node_map_codist] = createCodistributed(node_map);
+    
+    elem_map = feval(['mFEM.elements.',type,'.buildElementMap'], obj.node_map, varargin{:});
+    [obj.elem_map, obj.elem_map_codist] = createCodistributed(elem_map);
 
     obj.nodes = obj.buildNodes(obj.node_map);
 
@@ -26,3 +28,15 @@ function grid(obj, type, varargin)
     end
     
     obj.init();
+end
+
+function [in,codist] = createCodistributed(in)
+    spmd 
+        if ~iscodistributed(in);
+            codist = codistributor1d(1,codistributor1d.unsetPartition,size(in));
+            in = codistributed(in, codist);
+        else
+            codist = getCodistributor(in);
+        end
+    end
+end

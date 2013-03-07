@@ -1,4 +1,4 @@
-function elem = getElement(obj, varargin)
+function elem = getElements(obj, varargin)
     %GETELEMENT returns the desired elements
     %
     % Syntax
@@ -35,57 +35,17 @@ function elem = getElement(obj, varargin)
     % Parse input
     if nargin == 1;
         id = 1:obj.n_elements;
-        flag = true;
+    elseif nargin == 2;
+        id = varargin{1};
+        lab = [];
     else
         id = varargin{1};
-        flag = false;
-    end
-
-    % If serial returning the elements is easy
-    if matlabpool('size') == 0;
-        elem = obj.elements{1};
-        if ~flag;
-            elem = elem(id);
-        end
-        return;
+        lab = varargin{2}; 
     end
     
-    % Determine the value of the lab input
-    if nargin == 3;
-        lab = varargin{2};
-    else
-        lab = [];
-    end
-    
-    % Begin parallel operations
-    elem = gatherComposite(flag,id,obj.elem_map,obj.elements,lab);
+    elem = obj.gatherComposite('elem',id,lab); 
 end
 
-function out = gatherComposite(flag,id,map,comp,lab)
 
-    if ~flag;
-        spmd
-            % IDs of the elements stored on this lab
-            local_id = globalIndices(map,1);
-
-            % local ids for the desired elements
-            idx = id >= min(local_id) & id <= max(local_id);
-
-            % Build a Composite
-            comp_idx = comp(idx);
-        end
-    else
-        comp_idx = comp;
-    end
-    
-    if isempty(lab)
-        out = comp_idx{1};
-        for i = 2:length(comp_idx);
-            out = [out; comp_idx{i}];
-        end   
-    else
-        out = comp_idx{lab};
-    end
-end
 
 

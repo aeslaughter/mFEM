@@ -40,8 +40,13 @@ function addTag(obj, tag, type, varargin)
         else
             idx = any(idx,2); 
         end
+
         nodes(idx).addTag(tag);
         
+%         if strcmpi(type,'boundary');
+%             idx = [elements.on_boundary]
+%         end
+
         elements.addTag(tag,type);
     end
 end

@@ -50,10 +50,9 @@ function [local,local_id] = getOffLabNodes(e_map, node_map, nodes)
     n_dist = getCodistributor(node_map);
     part = cumsum(n_dist.Partition);
     local = nodes;
-%     local = getLocalPart(nodes);        % local nodes
-%     local(1:length(local)) = local{:};
     local_id = globalIndices(node_map,1);  % local node ids
-        
+    limit = getpref('MFEM_PREF','LABSEND_LIMIT');
+   
     % Build a map that indicates the lab location for each node
     no = unique(e_map);         % all nodes needed by this lab
     loc = ones(size(no));       % initilize location map
@@ -89,7 +88,6 @@ function [local,local_id] = getOffLabNodes(e_map, node_map, nodes)
     for k = 1:length(nid);
         [~,idx] = intersect(local_id,nid{k});
 
-        limit = 300;
         s = [0:limit:length(idx),length(idx)];
         for i = 1:length(s)-1;
             ix = idx(s(i)+1:s(i+1)); 

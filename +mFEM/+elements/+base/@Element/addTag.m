@@ -2,10 +2,10 @@ function addTag(obj,tag,type)
 
 % Update the elements
     for i = 1:length(obj);
-        % Go to next iteration if element is not on boundary
-       if strcmpi(type,'boundary');
-            if ~obj(i).on_boundary; continue; end
-       end
+%         % Go to next iteration if element is not on boundary
+%        if strcmpi(type,'boundary');
+%             if ~obj(i).on_boundary; continue; end
+%        end
 
        % Loop through sides, mark side if dofs match
        found = false;

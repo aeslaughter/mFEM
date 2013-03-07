@@ -3,19 +3,24 @@ classdef Mesh < handle
     %   Detailed explanation goes here
     
     properties %(Access = protected)
-        elements = Composite();%mFEM.elements.Line2.empty();
-        nodes = Composite(); %mFEM.elements.base.Node.empty();
-        n_nodes;                
-        n_elements;
-        n_dof;
+        elements = Composite();
+        nodes = Composite(); 
+        n_nodes = uint32([]);                
+        n_elements = uint32([]);            
+        n_dof = uint32([]);            
         options = struct('time', false, 'space', 'scalar');
     end
     
     properties (Access = protected)
-        node_map = uint32([]);
-        elem_map = uint32([]);
-        dof_map = uint32([]);
+        node_map = Composite();
+        elem_map = Composite();
+        dof_map = Composite();       
         initialized = false;
+        node_map_codist;
+        elem_map_codist;
+        node_tag_map = Composite();
+        elem_tag_map = Composite();
+        tag = {};
     end
     
     methods
@@ -23,6 +28,8 @@ classdef Mesh < handle
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
+        getElements(obj,varargin);
+        getNodes(obj,varargin);
 
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
@@ -53,14 +60,13 @@ classdef Mesh < handle
             elem = feval(['mFEM.elements.',type],id,nodes);
             obj.elements{id} = elem;
         end
-
-
     end
     
     methods (Access = protected)
         init(obj)   
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
+        gatherComposite(obj,name,id,tag,lab);
     end
     
     methods (Static)
