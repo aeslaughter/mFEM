@@ -28,8 +28,8 @@ classdef Mesh < handle
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
-        getElements(obj,varargin);
-        getNodes(obj,varargin);
+        el = getElements(obj,varargin);
+        no = getNodes(obj,varargin);
 
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
@@ -66,7 +66,7 @@ classdef Mesh < handle
         init(obj)   
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
-        gatherComposite(obj,name,id,tag,lab);
+        out = gatherComposite(obj,name,id,tag,lab);
     end
     
     methods (Static)

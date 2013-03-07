@@ -30,22 +30,11 @@ function elem = getElements(obj, varargin)
     %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
-    %----------------------------------------------------------------------
-
-    % Parse input
-    if nargin == 1;
-        id = 1:obj.n_elements;
-    elseif nargin == 2;
-        id = varargin{1};
-        lab = [];
-    else
-        id = varargin{1};
-        lab = varargin{2}; 
-    end
+    %---------------------------------------------------------------------
     
-    elem = obj.gatherComposite('elem',id,lab); 
+    % Collect the elements
+    elem = obj.gatherComposite(varargin{:},'name','elements'); 
+    
+    obj.tag
+    obj.node_tag_map
 end
-
-
-
-

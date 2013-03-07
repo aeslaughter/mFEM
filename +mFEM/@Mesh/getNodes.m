@@ -57,4 +57,5 @@ function nodes = getNodes(obj,varargin)
     %----------------------------------------------------------------------
 
     % Collect the nodes
-    nodes = gatherComposite('composite','nodes',varargin{:});
+    nodes = obj.gatherComposite(varargin{:},'name','nodes');
+end

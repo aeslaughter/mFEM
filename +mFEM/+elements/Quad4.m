@@ -33,6 +33,7 @@ classdef Quad4 < mFEM.elements.base.Element
     properties (Constant)
         n_nodes = 4;
         n_sides = 4;
+        n_dim = 2;
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
 %         side_type = 'Line2';                % side is 2-node line element
 %         quad = ...                          % quadrature rules
@@ -99,6 +100,12 @@ classdef Quad4 < mFEM.elements.base.Element
                 y = codistributed(y0:(y1-y0)/yn:y1);
                 [X,Y] = ndgrid(x,y); 
                 node_map = [reshape(X,numel(X),1), reshape(Y,numel(Y),1)];
+            
+                if numlabs == 1;
+                    codist = codistributor1d(1,codistributor1d.unsetPartition,size(node_map));
+                    node_map = redistribute(node_map,codist);
+                end
+            
             end
         end
             

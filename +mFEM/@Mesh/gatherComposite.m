@@ -32,22 +32,16 @@ function out = gatherComposite(obj,varargin)
     %       scalar | vector
     %       Limits the objects returned to the given processors in
     %       parallel applications
-    %
-    %   ID
-    %       scalar | vector
-    %       Same as supplied id discussed in description above, this is
-    %       simply an alternative method for supplying the ids. The values
-    %       given in this option will overwrite those supplied directly.
-    %
 
     % Gather the input and extract the desired objects
-    [comp,id,codist,all_ids,opt] = parseGatherCompositeInput(varargin{:});
+    [comp,map,codist,id,all_ids,opt] = ...
+        parseGatherCompositeInput(obj, varargin{:});
 
     % Extract in serial case    
     if matlabpool('size') == 0;
-        elem = obj.elements{1};
+        out = obj.elements{1};
         if ~all_ids;
-            elem = elem(id);
+            out = out(id);
         end
     else
             
@@ -66,64 +60,69 @@ function out = gatherComposite(obj,varargin)
             comp_idx = comp;
         end
     
-        if isempty(lab)
+        if isempty(opt.lab)
             out = comp_idx{1};
             for i = 2:length(comp_idx);
                 out = [out; comp_idx{i}];
             end   
         else
-            out = comp_idx{lab};
+            out = comp_idx{opt.lab};
         end
     end
 end
 
-function [comp,id,codist,all_ids,opt] = parseGatherCompositeInput(varargin)
+function [comp,map,codist,id,all_ids,opt] = ...
+    parseGatherCompositeInput(obj, varargin)
     %PARSEGATHERCOMPOSITEINPUT Prepares input for use by main function
     
     % No input given by user, get all nodes
-    if nargin == 0;
-        opt.id = 1:obj.n_nodes;
+    if nargin == 1;
+        id = [];
         properties = {};
     
     % Ids without properties given by user    
-    elseif nargin == 1 && isnumeric(varargin{1});
-        opt.id = varargin{1};
+    elseif nargin == 2 && isnumeric(varargin{1});
+        id = varargin{1};
         properties = {};
         
     % Ids with properties given by the user    
-    elseif nargin >= 2 && isnumeric(varargin{1});
-        opt.id = varargin{1};
+    elseif nargin >= 3 && isnumeric(varargin{1});
+        id = varargin{1};
         properties = varargin(2:end);
         
     % Only properties supplied    
     else
-        opt.id = 1:obj.n_nodes;
+        id = [];
         properties = varargin;
     end
     
     % Gather the properties
     opt.tag = {};
     opt.lab = [];
-    opt.name;
+    opt.name = '';
     opt = gatherUserOptions(opt,properties{:});
-    
-    % Input the ids property to the output
-    id = opt.id;
     
     % Extract the data to work with
     switch lower(opt.name)
         case {'elem','element','elements'};
             codist = obj.elem_map_codist;
+            map = obj.elem_map;
             comp = obj.elements;
-            n = sise(obj.elem_map,1);
+            n = obj.n_elements;
         case {'nodes','node'};
-            codist = obj.elem_map_codist;
-            comp = obj.elements;
-            n = sise(obj.elem_map,1);
+            codist = obj.node_map_codist;
+            map = obj.node_map;
+            comp = obj.nodes;
+            n = obj.n_nodes;
         otherwise
             error('Mesh:gatherComposite:InvalidName','The name input must be either ''elements'' or ''nodes''.');
     end
     
+    % Set the ids for case empty id cases
+    if isempty(id);
+        id = 1:n;
+    end
+        
     % Determine if all of the elements are requested
     all_ids = false;
     if islogical(id) && sum(id) == n;

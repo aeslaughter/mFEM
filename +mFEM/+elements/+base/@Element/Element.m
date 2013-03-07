@@ -8,10 +8,10 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     % subclass, see Line2.m for an example. In general, if you need help 
     % for an element see the the help for the subclass itself.
     %
-    % See Also mFEM.elements.Line2
+    % See Also mFEM.elements.Quad4
     %
     %----------------------------------------------------------------------
-    %  mFEM: An Object-Oriented MATLAB Finite Element Library
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
     %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
@@ -25,28 +25,30 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     %  GNU General Public License for more details.
     % 
     %  You should have received a copy of the GNU General Public License
-    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    properties
-        id = uint32([]);
-        on_boundary = false;
-        sides;     
-        tag = {};
+    % Basic read-only properties that are available for user
+    properties (GetAccess = public, SetAccess = ?mFEM.Mesh)
+        id = uint32([]);        % unique global id
+        on_boundary = false;    % true when element touches a border
+        sides;                  % structure of side information
+        tag = {};               % list of char tags for this element
+        lab;                    % the processor that holds this element
+        nodes =...              % node objects for this element
+            mFEM.elements.base.Node.empty();
     end
     
+    % Constants that must be defined by inhering class (e.g., Quad4)
     properties (Abstract, Constant, Access = public)
-        side_ids;        
-        n_sides;
-        n_nodes;
+        side_ids; % map that defines which nodes comprise each side    
+        n_sides;  % no. of sides for this element
+        n_nodes;  % no. of nodes for this element
+        n_dim;    % no. of spatial dimensions for this element
     end
 
-    properties %(Access = protected)
-        nodes = mFEM.elements.base.Node.empty();
-    end
-    
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Line2)
 %     methods (Abstract, Access = protected)
@@ -100,10 +102,17 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
            end
         end
         
-        function init(obj,id,nodes)
+        function init(obj,id,nodes,varargin)
+            
+           lab = 1; 
+           if nargin == 4 && isinteger(varargin{1});
+               lab = varargin{1};
+           end
+            
            for i = 1:length(obj);
                obj(i).id = id(i);
                obj(i).nodes = nodes(i,:);
+               obj(i).lab = lab;
                obj(i).nodes.addParent(obj(i));
                obj(i).sides = struct('neighbor',[],...
                                      'neighbor_side',[],...
