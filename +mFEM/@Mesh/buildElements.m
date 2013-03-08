@@ -1,13 +1,21 @@
-function [elements,nodes] = buildElements(type, elem_map, node_map, nodes) 
-    %BUILDELEMENTS Create elements from the element map and nodes
+function [elements,nodes] = buildElements(obj,nodes) 
+    %BUILDELEMENTS (protected) Create elements from element map and nodes
     %
     % Syntax
-    %   elements = buildElements(type, elem_map, nodes)
+    %   [elements,nodes] = buildElements(nodes)
     %
     % Description
     %
     %
-
+    
+    % Get variables for use
+    elem_map = obj.elem_map;
+    node_map = obj.node_map;
+    
+    % Get the element type (todo) this will allow for mixed meshes
+    elem_type = obj.elem_type;
+    type = gather(elem_type(1));type = type{1};
+    
     % Serial case
     if matlabpool('size') == 0;
         spmd
@@ -31,15 +39,9 @@ function [elements,nodes] = buildElements(type, elem_map, node_map, nodes)
         e_map = reshape(Locb, size(e_map));
         
         % Create the elements
+        type = elem_type{1}; %(todo)
         elements(n,1) = feval(['mFEM.elements.',type]);
-        elements.init(e_id, no(e_map));
-% 
-%         % Build the codistributed elements
-%         n_elem = size(elem_map,1);
-%         e_dist = getCodistributor(elem_map);
-%         part = e_dist.Partition;
-%         codist = codistributor1d(1,part,[n_elem,1]);
-%         elements = codistributed.build(num2cell(local),codist);   
+        elements.init(e_id, no(e_map));  
     end
 end
 
@@ -108,6 +110,3 @@ function [local,local_id] = getOffLabNodes(e_map, node_map, nodes)
     end
     labBarrier;
 end
-    
-
-

@@ -17,6 +17,7 @@ classdef Mesh < handle
     properties (Access = protected)
         node_map = Composite();
         elem_map = Composite();
+        elem_type = Composite();
         initialized = false;
         node_map_codist;
         elem_map_codist;
@@ -66,15 +67,18 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
-        [elements,nodes] = init(obj,elements,nodes)   
+        setup(obj);
+        init(obj);   
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
         out = gatherComposite(obj,name,id,tag,lab);
+        nodes = buildNodes(obj);
+        [elements, nodes] = buildElements(obj,nodes);
     end
     
     methods (Static)
-        nodes = buildNodes(node_map,space);
-        [elements,nodes] = buildElements(type,elem_map,node_map,nodes);
+        
+
 %         D = transformDof(d,n);
     end
 end

@@ -22,18 +22,18 @@ function T = test_Mesh
     %     T.caught(err);
     %     return;
     % end
-
-    mesh.addBoundary('A','top','right');    
-    mesh.addBoundary('B','x<1','y<1');
-    mesh.addSubdomain('C',{'x>1.5','y>1.5'});
-    % add.init()
-
-    no = mesh.getNodes();
-    el = mesh.getElements();
-    
-
-    no(4)
-    el(3).nodes(2)
+% 
+%     mesh.addBoundary('A','top','right');    
+%     mesh.addBoundary('B','x<1','y<1');
+%     mesh.addSubdomain('C',{'x>1.5','y>1.5'});
+%     % add.init()
+% 
+%     no = mesh.getNodes();
+%     el = mesh.getElements();
+%     
+% 
+%     no(4)
+%     el(3).nodes(2)
 
 
 

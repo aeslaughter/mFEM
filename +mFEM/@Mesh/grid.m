@@ -1,4 +1,5 @@
 function grid(obj, type, varargin)
+
     % Test for valid type
     d = dir(fullfile(getpref('MFEM_PREF','ROOT_DIR'),'+mFEM','+elements','*.m'));
     c = struct2cell(d);
@@ -12,22 +13,24 @@ function grid(obj, type, varargin)
         ticID = tMessage('Generating Grid...');
     end
 
+    % Create the node map using the element
     node_map = feval(['mFEM.elements.',type,'.buildNodeMap'],varargin{:});
     [obj.node_map, obj.node_map_codist] = createCodistributed(node_map);
     
+    % Create the element map using the element
     elem_map = feval(['mFEM.elements.',type,'.buildElementMap'], obj.node_map, varargin{:});
     [obj.elem_map, obj.elem_map_codist] = createCodistributed(elem_map);
 
-    nodes = obj.buildNodes(obj.node_map,obj.options.space);
-
-    [elements,nodes] = obj.buildElements(type, obj.elem_map, obj.node_map, nodes);
+    % Create a map of the type
+    obj.elem_type = distributed(repmat({type},size(elem_map,1),1));
     
     % Complete message
     if obj.options.time;
         tMessage(ticID);
     end
-    
-    [obj.elements,obj.nodes] = obj.init(elements,nodes);
+
+    % Setup the Mesh object
+    obj.setup();
 end
 
 function [in,codist] = createCodistributed(in)

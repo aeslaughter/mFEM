@@ -1,15 +1,15 @@
-function [elements,nodes] = init(obj,elements,nodes)
-    %INIT (protected) Initializes the mFEM.Mesh object for use
-    %   The initilization process does three main tasks: (1) locating
+function setup(obj)
+    %SETUP (protected) Initializes the mFEM.Mesh object for use
+    %   The setup process does three main tasks: (1) locating
     %   neighboring elements, (2) sets the degrees-of-freedom for nodes,
     %   and (3) sets up the various tag maps for identifing boundaries and
     %   subdomains.
     %
     % Syntax
-    %   init()
+    %   setup()
     %
     % Description
-    %   init() prepares the mFEM.Mesh object for use. by locating the
+    %   setup() prepares the mFEM.Mesh object for use. by locating the
     %   neighboring elements, setting the degrees-of-freedom for each node
     %
     %----------------------------------------------------------------------
@@ -32,7 +32,13 @@ function [elements,nodes] = init(obj,elements,nodes)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    % Gather variables for use
+    % Build the nodes
+    nodes = obj.buildNodes();
+    
+    % Build the elements
+    [elements,nodes] = obj.buildElements(nodes);
+    
+    % Set no. of nodes and elements
     obj.n_nodes = size(obj.node_map,1);
     obj.n_elements = size(obj.elem_map,1);
     
@@ -45,6 +51,7 @@ function [elements,nodes] = init(obj,elements,nodes)
     spmd
         elements.findNeighbors();
     end
+    
     % Complete message time message
     if obj.options.time;
         tMessage(ticID);
@@ -58,11 +65,10 @@ function [elements,nodes] = init(obj,elements,nodes)
        strt = [0,cumsum(ndof)] + 1;  
        nodes.setDof(strt(labindex));
     end
-%     obj.nodes = nodes; % this shouldn't be necessary
-    obj.n_dof = sum(ndof{1});
-%     obj.dof_partition = ndof;
-%     obj.dof_map = dof_map; % store in Mesh
     
+    % Set the total degrees-of-freedom for the mesh
+    obj.n_dof = sum(ndof{1});
+
     % The following code initializes the tag maps for the element and 
     % nodes, in parallel. Each map is a codistributed sparse logical 
     % matrix.
@@ -88,7 +94,4 @@ function [elements,nodes] = init(obj,elements,nodes)
     % Update the mesh object with initalized tag maps
     obj.node_tag_map = node_tag_map;
     obj.elem_tag_map = elem_tag_map;
-    
-    % Set flag indicating the the mFEM.Mesh object is ready for use
-    obj.initialized = true;
 end
