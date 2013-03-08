@@ -64,10 +64,10 @@ function out = gatherComposite(obj,varargin)
         parseGatherCompositeInput(obj, varargin{:});
 
     % Serial case is identical to specified single lab case 
-    if matlabpool('size') == 0 || isempty(opt.lab);
+    if matlabpool('size') == 0 && isempty(opt.lab);
         opt.lab = 1;
     end
-    
+ 
     % If lab is a scalar, get the values and be done
     if isscalar(opt.lab);
         out = obj.elements{opt.lab};
@@ -85,22 +85,40 @@ function out = gatherComposite(obj,varargin)
     
     % Only perform parallel operations if paritial list is desired
     if ~all_ids;
-        % Parallel case, allows for multiple labs to be specified
-
+        
+        % Define variables for use in spmd
+        tag = opt.tag;
+        all_tag = obj.tag;
+        
         spmd % begin parallel
             
             % Limit operations to the specified labs
             if any(labindex == lab);
-                local_id = globalIndices(map,1);  % IDs of local elements
-                idx = id >= min(local_id) & id <= max(local_id); % desired elements on this processor
-                comp = comp(idx); % build a new limited Composite
+                
+                % IDs of local values
+                local_id = globalIndices(map,1); 
+                
+                % Desired values on this processor
+                idx = id >= min(local_id) & id <= max(local_id); 
+                
+                % Limit to defined tags
+                if ~isempty(tag);
+                    for i = 1:length(tag);
+                        c = strcmp(tag,all_tag); 
+                        idx(:,i+1) = map(:,c);
+                    end
+                    idx = all(idx,2);
+                end
+                
+                % Build a new limited Composite
+                comp = comp(idx); 
             end
         end
     end
     
     % Build the output vector
-    out = comp;
-    for i = 1:length(lab);
+    out = comp{lab(1)};
+    for i = 2:length(lab);
         out = [out;comp{lab(i)}];
     end
 end
@@ -143,11 +161,11 @@ function [comp,map,id,all_ids,opt] = ...
     % Extract the data to work with
     switch lower(opt.name)
         case {'elem','element','elements'};
-            map = obj.elem_map;
+            map = obj.elem_tag_map;
             comp = obj.elements;
             n = obj.n_elements;
         case {'nodes','node'};
-            map = obj.node_map;
+            map = obj.node_tag_map;
             comp = obj.nodes;
             n = obj.n_nodes;
         otherwise

@@ -18,7 +18,7 @@ function grid(obj, type, varargin)
     elem_map = feval(['mFEM.elements.',type,'.buildElementMap'], obj.node_map, varargin{:});
     [obj.elem_map, obj.elem_map_codist] = createCodistributed(elem_map);
 
-    obj.nodes = obj.buildNodes(obj.node_map);
+    obj.nodes = obj.buildNodes(obj.node_map,obj.options.space);
 
     obj.elements = obj.buildElements(type, obj.elem_map, obj.node_map, obj.nodes);
     

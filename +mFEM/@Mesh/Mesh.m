@@ -1,6 +1,9 @@
 classdef Mesh < handle
     %MESH Summary of this class goes here
     %   Detailed explanation goes here
+    %
+    % mention dimension independance, is possible to mix elements of
+    % different dimensions (not tested)
     
     properties %(Access = protected)
         elements = Composite();
@@ -14,7 +17,6 @@ classdef Mesh < handle
     properties (Access = protected)
         node_map = Composite();
         elem_map = Composite();
-        dof_map = Composite();       
         initialized = false;
         node_map_codist;
         elem_map_codist;
@@ -24,12 +26,13 @@ classdef Mesh < handle
     end
     
     methods
-        plot(obj,varargin);
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
         el = getElements(obj,varargin);
         no = getNodes(obj,varargin);
+        dof = getDof(obj,varargin);
+        plot(obj,varargin);
 
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
@@ -70,8 +73,9 @@ classdef Mesh < handle
     end
     
     methods (Static)
-        nodes = buildNodes(node_map);
+        nodes = buildNodes(node_map,space);
         elements = buildElements(type,elem_map,node_map,nodes);
+        D = transformDof(d,n);
     end
 end
 

@@ -20,7 +20,7 @@ function addTag(obj, tag, type, varargin)
     %    inside a single cell array. In this case the tag is added if ALL
     %    of the criteria are met.
     % 
-    % See Also mFEM.Mesh.AddBoundary mFEM.Mesh.AddSubdomain
+    % See Also addBoundary addSubdomain
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -89,11 +89,20 @@ function addTag(obj, tag, type, varargin)
         
         % Update the node tag map
         gi = globalIndices(node_tag_map,1);
-        node_tag_map(gi,cnt) = logical(n_idx);
+        node_tag_map(gi,cnt) = n_idx;
 
         % Extract elements from node parents, limit to current lab
         elem = unique([nodes(n_idx).parents]);
-        elem([elem.lab]==labindex).addTag(tag,type);
+        if ~isempty(elem);
+            
+            % Add tags to elements           
+            e_idx = [elem.lab]==labindex;
+            elem(e_idx).addTag(tag,type);
+
+            % Update the element map
+            gi = [elem(e_idx).id];
+            elem_tag_map(gi,cnt) = e_idx;
+        end
     end
     
     % Return codistributed maps  to the object

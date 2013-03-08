@@ -1,14 +1,14 @@
 classdef Element < handle %& matlab.mixin.Heterogeneous
     %ELEMENT Base class for defining elements.
-    % Inludes the general behavior of an element, including the node 
-    % locations, id, shape functions, etc...
+    %   Inludes the general behavior of an element, including the node 
+    %   locations, id, shape functions, etc...
     %
-    % This is an abstract class, as such it must be inherited to function.
-    % The abstract properties and methods must be redifined in the
-    % subclass, see Line2.m for an example. In general, if you need help 
-    % for an element see the the help for the subclass itself.
+    %   This is an abstract class, so it must be inherited to function.
+    %   The abstract properties and methods must be redifined in the
+    %   subclass, see Line2.m for an example. In general, if you need help 
+    %   for an element see the the help for the subclass itself.
     %
-    % See Also mFEM.elements.Quad4
+    % See Also Quad4
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -62,7 +62,7 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
-        function obj = Element(id, nodes)
+        function obj = Element(varargin)
             %ELEMENT Class constructor.
             %
             % This is an abstract class, it must be inherited by a subclass
@@ -83,16 +83,9 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
             %   Element(id, nodes, 'PropertyName', PropertyValue, ...) 
             %   allows the user to customize the behavior of the element, 
             %   the available properties are listed below.
-            %
-            % Element Property Descriptions
-            %   space
-            %       {'scalar'} | 'vector'  | integer
-            %       Allows the type of FEM space to be set: scalar sets the 
-            %       number of dofs per node to 1, vector  sets it to the 
-            %       no. of space dimension, and  specifing a number sets it
-            %       to that value.
-            if nargin == 2;
-                obj.init(id,nodes);
+
+            if nargin > 0;
+                obj.init(varargin{:});
             end
         end
         
@@ -102,17 +95,13 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
            end
         end
         
-        function init(obj,id,nodes,varargin)
+        function init(obj,id,nodes)
             
-           lab = 1; 
-           if nargin == 4 && isinteger(varargin{1});
-               lab = varargin{1};
-           end
             
            for i = 1:length(obj);
                obj(i).id = id(i);
                obj(i).nodes = nodes(i,:);
-               obj(i).lab = lab;
+               obj(i).lab = labindex;
                obj(i).nodes.addParent(obj(i));
                obj(i).sides = struct('neighbor',[],...
                                      'neighbor_side',[],...
@@ -222,6 +211,5 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         function buildNodess(varargin)
             error('Element:buildElementMap:NotImplemented', 'The ''buildElementMap'' method is not defined for this element, add the method to the parent class (e.g., Quad4.m)');
         end
-
     end
 end

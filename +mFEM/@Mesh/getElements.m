@@ -1,9 +1,13 @@
 function elem = getElements(obj, varargin)
-    %GETELEMENT returns the desired elements
+    %GETELEMENTS returns the desired elements
+    %   Each element is a class, this allows for the extraction of these
+    %   objects using the global id and/or a combination properties. If
+    %   operating in parallel this will perform all the necessary
+    %   communication and gather the elements.
     %
     % Syntax
     %   elem = getElement(id)
-    %   elem = getElement(id,lab)
+    %   elem = getElement(id,'PropertyName',PropertyValue,...)
     %
     % Description
     %   elem = getElement(id) returns an array of elements with the ids
@@ -11,6 +15,20 @@ function elem = getElements(obj, varargin)
     %
     %   elem = getElement(id,lab) operates the same as above but limits the
     %   search to the specified processor given in lab.
+    %
+    % GETELEMENTS Property Descriptions
+    %   Tag
+    %       scalar | char
+    %       Limits the objects returned to only those with the
+    %       supplied tag, the term tag is applied to both those added with
+    %       the addBoundary and addSubdomain commands.
+    %
+    %   Lab
+    %       scalar | vector
+    %       Limits the objects returned to the given processors in
+    %       parallel applications
+    %
+    % See Also addBoundary addSubdomain getNodes
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library

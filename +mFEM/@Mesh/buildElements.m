@@ -32,7 +32,7 @@ function elements = buildElements(type, elem_map, node_map, nodes)
         
         % Create the elements
         elements(n,1) = feval(['mFEM.elements.',type]);
-        elements.init(e_id, no(e_map),labindex);
+        elements.init(e_id, no(e_map));
 % 
 %         % Build the codistributed elements
 %         n_elem = size(elem_map,1);

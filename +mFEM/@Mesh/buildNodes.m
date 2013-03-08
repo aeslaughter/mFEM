@@ -1,4 +1,4 @@
-function nodes = buildNodes(node_map)
+function nodes = buildNodes(node_map,space)
 
     nodes = Composite();
 %     if matlabpool('size') == 0;
@@ -13,12 +13,14 @@ function nodes = buildNodes(node_map)
 %     end
 
 % new method: 1000x1000 quad4 = 8 s
+
+    
     spmd  
         local_map = getLocalPart(node_map);
         id = globalIndices(node_map,1);
         n = size(local_map,1);
         nodes(n,1) = mFEM.elements.base.Node();
-        nodes.init(id,local_map);
+        nodes.init(id,local_map,space);
 %         codist = getCodistributor(node_map);
 %         n_nodes = size(node_map,1);
 %         codist = codistributor1d(1, codist.Partition, [n_nodes,1]);

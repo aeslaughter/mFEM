@@ -1,5 +1,9 @@
 function nodes = getNodes(obj,varargin)
-    %GETNODES Returns spatial position of the nodes for the mesh
+    %GETNODES Returns node objects
+    %   Each node is a class, this allows for the extraction of these node
+    %   objects using the global id and/or a combination properties. If
+    %   operating in parallel this will perform all the necessary
+    %   communication and gather the nodes.
     %
     % Syntax
     %   no = getNodes()
@@ -28,13 +32,7 @@ function nodes = getNodes(obj,varargin)
     %       Limits the node objects returned to the given processors in
     %       parallel applications
     %
-    %   ID
-    %       scalar | vector
-    %       Same as supplied id discussed in description above, this is
-    %       simply an alternative method for supplying the ids. The values
-    %       given in this option will overwrite those supplied directly.
-    %
-    % SEE ALSO ADDBOUNDARY ADDSUBDOMAIN GETELEMENTS
+    % See Also addBoundary addSubdomain getElements
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library

@@ -39,7 +39,8 @@ classdef Node < handle
         coord = [0;0;0];        % column vector of spatial coordinates
         id = uint32([]);        % unique global id
         on_boundary = false;    % true if node is on a boundary
-        n_dim;                  % no. of spatial dimensions
+        n_dim;                  % no. of spatial degrees-of-freedom
+        n_dof;                  % no. of degrees-of-freedom for node
         dof = uint32([]);       % global degrees-of-freedom
         tag = {};               % list of char tags for this node
         lab = uint32([]);       % the processor that holds this node
@@ -48,35 +49,32 @@ classdef Node < handle
     
     % Begin method definitions
     methods
-        function obj = Node(id,x)
-            if nargin == 2;
-            	obj.init(id,x);
+        function obj = Node(varargin)
+            if nargin > 0;
+            	obj.init(varargin{:});
             end
         end
         
         function init(obj,id,x,varargin) 
+            %INIT Initializes the node objects 
             
-           lab = 1; 
+            n_dim = size(x,2);
+            
+            % numeric | 'scalar' | 'vector'
            if nargin == 4 && isinteger(varargin{1});
-               lab = varargin{1};
+               n_dof = varargin{1};
+           elseif nargin == 4 && ischar(varargin{1}) && strcmpi('vector',varargin{1});
+               n_dof = n_dim;
+           else
+               n_dof = 1;
            end
-           
-            if iscell(x);
-                for i = 1:length(obj);
-                    n = length(x{i});
-                    obj(i).id = id(i);
-                    obj(i).n_dim = n;
-                    obj(i).coord(1:n,1) = x{i};
-                    obj(i).lab;
-                end   
-            else
-                n = size(x,2);
-                for i = 1:length(obj);
-                    obj(i).id = id(i);
-                    obj(i).n_dim = n;
-                    obj(i).coord(1:n,1) = x(i,:);
-                    obj(i).lab;
-                end
+            
+            for i = 1:length(obj);
+                obj(i).id = id(i);
+                obj(i).n_dim = n_dim;
+                obj(i).n_dof = n_dof;
+                obj(i).coord(1:n_dim,1) = x(i,:);
+                obj(i).lab = labindex;
             end
         end
         
@@ -91,34 +89,34 @@ classdef Node < handle
            end
         end
         
-        function tf = hasTag(obj,tag)
-            n = length(obj);
-            tf = false(n,1);
-            for i = 1:n;
-                tf(i) = any(strcmp(tag,obj(i).tag));
-            end
-        end
+%         function tf = hasTag(obj,tag)
+%             n = length(obj);
+%             tf = false(n,1);
+%             for i = 1:n;
+%                 tf(i) = any(strcmp(tag,obj(i).tag));
+%             end
+%         end
         
-        function varargout = get(obj, varargin)
-           
-            if nargin == 1
-                if nargout == 1
-                    varargout{1} = obj.coord;
-                else
-                    varargout = num2cell(obj.coord);
-                end
-            
-            elseif isnumeric(varargin{1});
-                varargout{1} = obj.coord(varargin{1});
-                
-            elseif ischar(varargin{1});
-                switch lower(varargin{1});
-                    case 'x'; varargout{1} = obj.coord(1);
-                    case 'y'; varargout{1} = obj.coord(2);
-                    case 'z'; varargout{1} = obj.coord(3);
-                end
-            end  
-        end
+%         function varargout = get(obj, varargin)
+%            
+%             if nargin == 1
+%                 if nargout == 1
+%                     varargout{1} = obj.coord;
+%                 else
+%                     varargout = num2cell(obj.coord);
+%                 end
+%             
+%             elseif isnumeric(varargin{1});
+%                 varargout{1} = obj.coord(varargin{1});
+%                 
+%             elseif ischar(varargin{1});
+%                 switch lower(varargin{1});
+%                     case 'x'; varargout{1} = obj.coord(1);
+%                     case 'y'; varargout{1} = obj.coord(2);
+%                     case 'z'; varargout{1} = obj.coord(3);
+%                 end
+%             end  
+%         end
         
 %         function getDof(obj,varargin)
 %             for i = 1:length(obj);  
@@ -150,17 +148,66 @@ classdef Node < handle
             end
         end
         
-        function setDof(obj,type)
-            for i = 1:length(obj);
-                if strcmpi(type,'vector'); 
-                    n = obj(i).n_dim; 
-                else
-                    n = 1;
+        function dof = setDof(obj,dof)
+            %SETDOF sets the degrees-of-freedom for the node(s)
+            
+            % dof(n,:), n = size(obj)  (implicit)
+            % dof = scalar, strt index (explicit)
+            
+            if isscalar(dof);
+                strt = dof;
+                for i = 1:length(obj);
+                    stop = strt + obj(i).n_dof;
+                    obj(i).dof = strt:stop;
+                    strt = stop + 1;
                 end
-                obj(i).dof = transformDof(obj(i).id,n);
+            elseif size(dof,1) == length(obj);
+                for i = 1:length(obj);
+                    obj(i).dof = dof(i,:);
+                end
             end
         end
         
+        function dof = getDof(obj,varargin)
+            
+            opt.component = [];
+            opt = gatherUserOptions(opt,varargin{:});
+            cmp = opt.component;
+            
+            msgid = 'Node:getDof:InvalidComponent';
+            errmsg = 'The supplied component must be number or ''x'', ''y'', or ''z''.';
+            
+            
+             if iscell(cmp);
+                 for i = 1:length(cmp);
+                     if ischar(cmp{i});
+                         switch lower(cmp{i});
+                             case 'x'; cmp{i} = 1;
+                             case 'y'; cmp{i} = 2;
+                             case 'z'; cmp{i} = 3;
+                             otherwise
+                                error(msgid,errmsg);
+                         end
+                     elseif ~isnumeric(cmp{i});
+                        error(msgid,errmsg);
+                     end
+                 end
+                 cmp = cell2mat(cmp);
+             elseif ~isnumeric(cmp);
+                 error(msgid,errmsg);
+             end
+
+             if isempty(cmp);
+                 dof = {obj.dof};
+                 for i = 1:length(dof);
+                     dof{i} = dof{i}(cmp);
+                 end
+                 dof = cell2mat(dof);
+             else
+                 dof = [obj.dof];   
+             end
+        end
+
         function setBoundaryFlag(obj)
            for i = 1:length(obj);
                obj(i).on_boundary = true;
