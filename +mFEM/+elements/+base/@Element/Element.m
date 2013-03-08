@@ -62,6 +62,8 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
+        dof = getDof(obj,varargin);
+        
         function obj = Element(varargin)
             %ELEMENT Class constructor.
             %
@@ -110,13 +112,17 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
                                      'tag',[]);
            end
         end
+     
         
-        function out = getNodes(obj)
-           n = length(obj);
-           out(n,obj(1).n_nodes) = mFEM.elements.base.Node();
-           for i = 1:n;
-               out(i,:) = obj(i).nodes;
-           end
+        function out = getNodes(obj,varargin)
+           
+
+            out = [obj.nodes];
+%            n = length(obj);
+%            out(n,obj(1).n_nodes) = mFEM.elements.base.Node();
+%            for i = 1:n;
+%                out(i,:) = obj(i).nodes;
+%            end
         end
         
 %         function N = shape(obj, x, varargin)

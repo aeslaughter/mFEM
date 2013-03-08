@@ -11,36 +11,22 @@ function test_Element
 
     mesh = mFEM.Mesh();
     mesh.grid('Quad4',0,3,0,3,3,3);
-    elems = mesh.getElement();
-
-    return;
+    elem = mesh.getElements();
+    node = mesh.getNodes();
     
-%     node_map = [0,0; 1,0; 2,0; 3,0;...
-%                 0,1; 1,1; 2,1; 3,1;...
-%                 0,2; 1,2; 2,2; 3,2;...
-%                 0,3; 1,3; 2,3; 3,3];
-%     node(15) = mFEM.elements.base.Node();
-%     node.init(1:15, node_map);
-% 
-%     elems(9) = mFEM.elements.Quad4();
-%     elems.init(1:4,node([1,2,5,4; 2,3,6,5; 3,4,7,6;... 
-%                          4,5,9,8; 5,6,10,9; 6,7,11,10;... 
-%                          8,9,13,12; 9,10,14,13; 10,11,15,14]; 
-%     elems.findNeighbors();
-
     T = mFEM.Test();
-    T.compare(elems(1).nodes(3),elems(2).nodes(4), 'Elements sharing nodes');
-    T.compare(elems(1).nodes(3),node(5), 'Elements nodes match input nodes');
-    T.compare(elems(1).nodes(4).coord, [0;1;0], 'Element coordinates correct');
+    T.compare(elem(1).nodes(3),elem(2).nodes(4), 'Elements sharing nodes');
+    T.compare(elem(1).nodes(3),node(5), 'Elements nodes match input nodes');
+    T.compare(elem(1).nodes(4).coord, [0;1;0], 'Element coordinates correct');
     T.compare(node(2).coord, [1;0;0], 'Input nodes coordinates correct');
-    T.compare(elems(1).nodes(3).parents, elems, 'Parent test');
+    T.compare(elem(1).nodes(3).parents, elem, 'Parent test');
 
     % Test the neighbors were located
-    testNeighbors(T,elems);
-    testBoundarySides(T,elems);
-    testNodeBoundary(T,node);
+%     testNeighbors(T,elems);
+%     testBoundarySides(T,elems);
+%     testNodeBoundary(T,node);
 
-    delete(elems);
+    delete(elem);
     delete(node);
     clear nodes elems classes;
 end

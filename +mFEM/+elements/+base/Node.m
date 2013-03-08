@@ -180,17 +180,31 @@ classdef Node < handle
             end
         end
         
-        function dof = setDof(obj,dof)
+        function dof = setDof(obj,varargin)
             %SETDOF sets the degrees-of-freedom for the node(s)
-            
+            %
+            % Syntax
+            %   setDof()
+            %   setDof(strt)
+            %   setDof(dof)
+            %
+            % Description
+            %
             % dof(n,:), n = size(obj)  (implicit)
             % dof = scalar, strt index (explicit)
+            
+            if nargin == 2;
+                dof = varargin{1};
+            else
+                dof = 1;
+            end
             
             if isscalar(dof);
                 strt = dof;
                 for i = 1:length(obj);
                     stop = strt + obj(i).n_dof - 1;
                     obj(i).dof = strt:stop;
+                    obj(i).dof
                     strt = stop+1;
                 end
             elseif size(dof,1) == length(obj);

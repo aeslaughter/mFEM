@@ -366,7 +366,7 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             %   dofs for the element subject to the restrictions specified
             %   by the properties, see the descriptions below for details.  
             %
-            % GET_DOF Property Descriptions
+            % GETDOF Property Descriptions
             %   Side
             %       integer
             %       Indicates that only the degrees of freedom for the
@@ -378,8 +378,8 @@ classdef ElementCore < handle & matlab.mixin.Heterogeneous
             %       is generally import for sides. For example, the
             %       following returns the local degrees of freedom for side
             %       number 1 of an element.
-            %           dof = get_dof('Side',1,'local',true) or
-            %           dof = get_dof('Side',1,'-local')
+            %           dof = getDof('Side',1,'local',true) or
+            %           dof = getDof('Side',1,'-local')
             %
             %   Component
             %       scalar | 'x' | 'y' | 'z'

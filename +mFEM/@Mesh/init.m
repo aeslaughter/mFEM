@@ -62,6 +62,7 @@ function init(obj)
        strt = [0,cumsum(ndof)] + 1;  
        nodes.setDof(strt(labindex));
     end
+%     obj.nodes = nodes; % this shouldn't be necessary
     obj.n_dof = sum(ndof{1});
     
 %     obj.dof_partition = ndof;
