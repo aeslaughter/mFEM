@@ -45,7 +45,6 @@ function dof = getDof(obj,varargin)
     %       following are equivlent.
     %           getDof('index',true)
     %           getDof('-index')
-    %       If running in parallel this automatically gathers the dofs.
     %
     %   Gather
     %       true | {false}
@@ -81,6 +80,9 @@ function dof = getDof(obj,varargin)
     
     opt.tag = {};
     opt.component = [];
+    opt.composite = false;
+    opt.gather = false;
+    opt.index = false;
     opt = gatherUserOptions(opt,varargin{:});
 
     node_tag_map = obj.node_tag_map;
@@ -97,6 +99,9 @@ function dof = getDof(obj,varargin)
      cmp = opt.component;
     all_tag = obj.tag;
     
+    composite_flag = opt.composite;
+    index_flag = opt.index;
+    
     spmd
         idx = true(length(nodes),length(tag)+1);
         map = getLocalPart(node_tag_map);
@@ -108,15 +113,35 @@ function dof = getDof(obj,varargin)
                 
         idx = all(idx,2);
 
-        dof = nodes(idx).getDof('Component',cmp)
+        dof(:,1) = nodes(idx).getDof('Component',cmp); 
         
-        
-        
-        
-          
+        % Build index form of dofs
+        if ~composite_flag;
+            part = buildCodistributedPartition(length(dof));
+            codist = codistributor1d(1,part,[sum(part),1]);
+            dof = codistributed.build(dof,codist);
+        end
+            
+        % Build logical subscript array
+        if ~index_flag;
+            ndof = sum([nodes.n_dof]);
+            part = buildCodistributedPartition(ndof);
+            codist = codistributor1d(1,part,[sum(part),1]);
+            subscript = codistributed.false([sum(part),1],codist);
+        end
     end
     
-    dof
+    
+    % Convert from index to subscript
+    if ~index_flag;
+        size(subscript)
+        subscript(dof) = true;
+        dof = subscript;
+    end
+    
+    if ~opt.composite && opt.gather;
+        dof = gather(dof);
+    end
     
     
 end

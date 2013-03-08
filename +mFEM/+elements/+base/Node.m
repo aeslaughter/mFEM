@@ -35,7 +35,7 @@ classdef Node < handle
     %----------------------------------------------------------------------
     
     % Basic read-only properties that are available for user
-    properties (GetAccess = public, SetAccess = ?mFEM.Mesh)
+    properties %(GetAccess = public, SetAccess = ?mFEM.Mesh)
         coord = [0;0;0];        % column vector of spatial coordinates
         id = uint32([]);        % unique global id
         on_boundary = false;    % true if node is on a boundary
@@ -58,28 +58,60 @@ classdef Node < handle
         function init(obj,id,x,varargin) 
             %INIT Initializes the node objects 
             
-            n_dim = size(x,2);
-            
+            ndim = size(x,2);
             % numeric | 'scalar' | 'vector'
-           if nargin == 4 && isinteger(varargin{1});
-               n_dof = varargin{1};
+           if nargin == 4 && isnumeric(varargin{1});
+               ndof = varargin{1};
            elseif nargin == 4 && ischar(varargin{1}) && strcmpi('vector',varargin{1});
-               n_dof = n_dim;
+               ndof = ndim;
            else
-               n_dof = 1;
+               ndof = 1;
            end
-            
-            for i = 1:length(obj);
-                obj(i).id = id(i);
-                obj(i).n_dim = n_dim;
-                obj(i).n_dof = n_dof;
-                obj(i).coord(1:n_dim,1) = x(i,:);
-                obj(i).lab = labindex;
-            end
+             
+ 
+           n = length(obj);
+           x = mat2cell(x',ndim,ones(1,n));
+           ndim = num2cell(repmat(ndim,n,1));
+           ndof = num2cell(repmat(ndof,n,1));
+           proc = num2cell(repmat(labindex,n,1));
+           id = num2cell(id);
+       
+           [obj.id] = id{:};
+           [obj.n_dim] = ndim{:};
+           [obj.n_dof] = ndof{:};
+           [obj.lab] = proc{:};
+           [obj.coord] = x{:};
+
+% Loop was about slower (29s vs. 18s for 1 mil. nodes)
+%             lab = labindex;
+%             for i = 1:length(obj);
+%                 obj(i).id = id(i);
+%                 obj(i).n_dim = n_dim;
+%                 obj(i).n_dof = n_dof;
+%                 obj(i).coord(1:n_dim,1) = x(i,:);
+%                 obj(i).lab = lab;
+%             end
         end
         
         function out = getCoord(obj)
             out = [obj.coord];
+        end
+        
+        function dof = getDof(obj,varargin)
+            
+            opt.component = [];
+            opt = gatherUserOptions(opt,varargin{:});
+            cmp = obj.parseComponentInput(opt.component);
+            
+             if isempty(cmp);
+                 dof = [obj.dof];  
+             else
+                dof = {obj.dof};
+                 for i = 1:length(dof);
+                     dof{i} = dof{i}(cmp);
+                 end
+                 dof = cell2mat(dof); 
+             end
         end
         
         function addTag(obj,tag)
@@ -124,7 +156,7 @@ classdef Node < handle
 %         end
     end
     
-    methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
+    methods %(Access = {?mFEM.elements.base.Element,?mFEM.Mesh)
         function addParent(obj, elem)
             for i = 1:length(obj);
                 idx = length(obj(i).parents);
@@ -157,9 +189,9 @@ classdef Node < handle
             if isscalar(dof);
                 strt = dof;
                 for i = 1:length(obj);
-                    stop = strt + obj(i).n_dof;
+                    stop = strt + obj(i).n_dof - 1;
                     obj(i).dof = strt:stop;
-                    strt = stop + 1;
+                    strt = stop+1;
                 end
             elseif size(dof,1) == length(obj);
                 for i = 1:length(obj);
@@ -167,17 +199,21 @@ classdef Node < handle
                 end
             end
         end
-        
-        function dof = getDof(obj,varargin)
-            
-            opt.component = [];
-            opt = gatherUserOptions(opt,varargin{:});
-            cmp = opt.component;
+
+        function setBoundaryFlag(obj)
+           for i = 1:length(obj);
+               obj(i).on_boundary = true;
+           end
+        end
+    end
+    
+    methods (Static)
+        function cmp = parseComponentInput(cmp)
             
             msgid = 'Node:getDof:InvalidComponent';
             errmsg = 'The supplied component must be number or ''x'', ''y'', or ''z''.';
             
-            
+            if ischar(cmp); cmp = {cmp}; end
              if iscell(cmp);
                  for i = 1:length(cmp);
                      if ischar(cmp{i});
@@ -196,22 +232,6 @@ classdef Node < handle
              elseif ~isnumeric(cmp);
                  error(msgid,errmsg);
              end
-
-             if isempty(cmp);
-                 dof = {obj.dof};
-                 for i = 1:length(dof);
-                     dof{i} = dof{i}(cmp);
-                 end
-                 dof = cell2mat(dof);
-             else
-                 dof = [obj.dof];   
-             end
-        end
-
-        function setBoundaryFlag(obj)
-           for i = 1:length(obj);
-               obj(i).on_boundary = true;
-           end
         end
     end
 end

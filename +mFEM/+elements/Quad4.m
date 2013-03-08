@@ -105,7 +105,6 @@ classdef Quad4 < mFEM.elements.base.Element
                     codist = codistributor1d(1,codistributor1d.unsetPartition,size(node_map));
                     node_map = redistribute(node_map,codist);
                 end
-            
             end
         end
             

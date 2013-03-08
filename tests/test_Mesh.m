@@ -6,7 +6,7 @@ T = mFEM.Test();
 
 % Generate a mesh
 % try
-    mesh = mFEM.Mesh('space','vector','-time');
+    mesh = mFEM.Mesh('space','scalar','-time');
     mesh.grid('Quad4',0,2,0,2,5,5);
 %     mesh.plot([]);
 
@@ -20,7 +20,12 @@ mesh.addBoundary('B','x<1','y<1');
 mesh.addSubdomain('C',{'x>1.5','y>1.5'});
 
 
-mesh.getDof('Tag','A');
+dof1 = mesh.getDof('Tag','A','-index')
+dof2 = mesh.getDof('Tag','A','-gather')
+
+idx(:,1) = 1:mesh.n_dof;
+idx(dof2) == dof1
+
 % mesh.getDof('Tag',{'A','B'});
     
     

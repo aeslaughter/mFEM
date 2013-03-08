@@ -75,7 +75,7 @@ classdef Mesh < handle
     methods (Static)
         nodes = buildNodes(node_map,space);
         elements = buildElements(type,elem_map,node_map,nodes);
-        D = transformDof(d,n);
+%         D = transformDof(d,n);
     end
 end
 

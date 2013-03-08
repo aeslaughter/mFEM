@@ -58,47 +58,12 @@ function init(obj)
     space = obj.options.space;
     n_nodes = obj.n_nodes;
     spmd
-        
-        % testing
-%        if labindex == 2 || labindex == 3;
-%            nodes(3).n_dof = 1;
-%        end
-        
-       labs = 1:numlabs;
-       other = labs(labs ~= labindex);
-       labSend(sum([nodes.n_dof]), other);
-
-       ndof = zeros(1,numlabs);
-       for i = 1:length(other)
-            ndof(other(i)) = labReceive(other(i));
-       end
-       ndof(labindex) = sum([nodes.n_dof]);
-            
+       ndof = buildCodistributedPartition(sum([nodes.n_dof]));
        strt = [0,cumsum(ndof)] + 1;  
-
        nodes.setDof(strt(labindex));
-             
-            
-%         if labindex < numlabs;
-%             labSend(sum([nodes.n_dof]),labindex+1);
-%             %strt = 
-%         end
-%         
-%         if labindex > 1;
-%             n0 = labReceive(labindex-1)
-%         end
-        
-        
-            
-            
-        % Use Node class to set the dofs
-%         dof = nodes.setDof(space);
-        
-        % Build the dof map
-%         codist = codistributor1d(1,codistributor1d.unsetPartition,...
-%             [n_nodes,size(dof,2)]);
-%         dof_map = codistributed.build(dof,codist); 
     end
+    obj.n_dof = sum(ndof{1});
+    
 %     obj.dof_partition = ndof;
 %     obj.dof_map = dof_map; % store in Mesh
     
