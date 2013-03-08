@@ -6,7 +6,9 @@ function findNeighbors(obj)
         neighbors = elem.nodes.getParents(elem);
 
         for s = 1:elem.n_sides;
-            if ~isempty(elem.sides(s).neighbor); continue; end
+            if ~isempty(elem.sides(s).neighbor); 
+                continue; 
+            end
             elem_side = sort(elem_coord(:,elem.side_ids(s,:)),2);
             for j = 1:length(neighbors);
                 neigh = neighbors(j);

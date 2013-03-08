@@ -1,4 +1,4 @@
-function elements = buildElements(type, elem_map, node_map, nodes) 
+function [elements,nodes] = buildElements(type, elem_map, node_map, nodes) 
     %BUILDELEMENTS Create elements from the element map and nodes
     %
     % Syntax

@@ -1,4 +1,4 @@
-function init(obj)
+function [elements,nodes] = init(obj,elements,nodes)
     %INIT (protected) Initializes the mFEM.Mesh object for use
     %   The initilization process does three main tasks: (1) locating
     %   neighboring elements, (2) sets the degrees-of-freedom for nodes,
@@ -33,9 +33,6 @@ function init(obj)
     %----------------------------------------------------------------------
 
     % Gather variables for use
-    nodes    = obj.nodes;
-    elements = obj.elements;
-%     node_map = obj.node_map;
     obj.n_nodes = size(obj.node_map,1);
     obj.n_elements = size(obj.elem_map,1);
     
@@ -48,7 +45,6 @@ function init(obj)
     spmd
         elements.findNeighbors();
     end
-
     % Complete message time message
     if obj.options.time;
         tMessage(ticID);
@@ -64,7 +60,6 @@ function init(obj)
     end
 %     obj.nodes = nodes; % this shouldn't be necessary
     obj.n_dof = sum(ndof{1});
-    
 %     obj.dof_partition = ndof;
 %     obj.dof_map = dof_map; % store in Mesh
     

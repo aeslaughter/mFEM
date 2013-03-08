@@ -99,11 +99,11 @@ classdef Element < handle %& matlab.mixin.Heterogeneous
         
         function init(obj,id,nodes)
             
-            
+           lab = labindex; 
            for i = 1:length(obj);
                obj(i).id = id(i);
                obj(i).nodes = nodes(i,:);
-               obj(i).lab = labindex;
+               obj(i).lab = lab;
                obj(i).nodes.addParent(obj(i));
                obj(i).sides = struct('neighbor',[],...
                                      'neighbor_side',[],...

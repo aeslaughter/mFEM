@@ -70,7 +70,7 @@ function out = gatherComposite(obj,varargin)
  
     % If lab is a scalar, get the values and be done
     if isscalar(opt.lab);
-        out = obj.elements{opt.lab};
+        out = comp{opt.lab};
         if ~all_ids;
             out = out(id);
         end

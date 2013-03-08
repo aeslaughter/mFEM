@@ -106,7 +106,7 @@ classdef Node < handle
              if isempty(cmp);
                  dof = [obj.dof];  
              else
-                dof = {obj.dof};
+                 dof = {obj.dof};
                  for i = 1:length(dof);
                      dof{i} = dof{i}(cmp);
                  end
@@ -204,7 +204,6 @@ classdef Node < handle
                 for i = 1:length(obj);
                     stop = strt + obj(i).n_dof - 1;
                     obj(i).dof = strt:stop;
-                    obj(i).dof
                     strt = stop+1;
                 end
             elseif size(dof,1) == length(obj);

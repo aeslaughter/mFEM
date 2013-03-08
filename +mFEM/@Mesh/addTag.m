@@ -108,6 +108,7 @@ function addTag(obj, tag, type, varargin)
     % Return codistributed maps  to the object
     obj.node_tag_map = node_tag_map;
     obj.elem_tag_map = elem_tag_map;
+%     obj.nodes = nodes;
 end
 
 function [fcn,col,value,use_all] = parseAddTagInput(node_map, varargin)

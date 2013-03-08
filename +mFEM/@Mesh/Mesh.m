@@ -66,7 +66,7 @@ classdef Mesh < handle
     end
     
     methods (Access = protected)
-        init(obj)   
+        [elements,nodes] = init(obj,elements,nodes)   
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
         out = gatherComposite(obj,name,id,tag,lab);
@@ -74,7 +74,7 @@ classdef Mesh < handle
     
     methods (Static)
         nodes = buildNodes(node_map,space);
-        elements = buildElements(type,elem_map,node_map,nodes);
+        [elements,nodes] = buildElements(type,elem_map,node_map,nodes);
 %         D = transformDof(d,n);
     end
 end
