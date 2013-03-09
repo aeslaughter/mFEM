@@ -134,7 +134,6 @@ function dof = getDof(obj,varargin)
     
     % Convert from index to subscript
     if ~index_flag;
-        size(subscript)
         subscript(dof) = true;
         dof = subscript;
     end
@@ -142,8 +141,6 @@ function dof = getDof(obj,varargin)
     if ~opt.composite && opt.gather;
         dof = gather(dof);
     end
-    
-    
 end
     
     

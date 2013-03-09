@@ -1,18 +1,27 @@
 classdef Node < mFEM.elements.base.HideHandle
     %NODE Class for defining node objects
-    % Inludes the general behavior for a finite element node, including the 
-    % node, global degrees-of-freedom.   
+    %   Inludes the general behavior for a finite element node, including 
+    %   coordinates, boundary information, and global degrees-of-freedom.
+    %
+    %   The class is setup to allow for the handling of nodes with varying
+    %   spatial dimensions and no. of degrees-of-freedom per node.
     %
     % Syntax
     %   nodes = mFEM.elements.base.Node(id,coord)
     %   nodes(n) = mFEM.elements.base.Node()
     %
-    % 
-    % Description (todo)
-    %   nodes = mFEM.elements.base.Node(id,coord)
-    %   nodes(n) = mFEM.elements.base.Node()
+    % Description
+    %   nodes = mFEM.elements.base.Node(id,coord) this is the standard
+    %   method for creating nodes individually, which is slow. The id is
+    %   the global identifier (integer) and the coordinates should be a
+    %   column vector of nodal position.
     %
-    % See Also Element
+    %   nodes(n) = mFEM.elements.base.Node() used the empty constructor to
+    %   create an array of elements and then call the init method to setup
+    %   the nodes. This method is significantly faster (order of magnitude)
+    %   than looping with the first method.
+    %
+    % See Also init Element
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -50,200 +59,36 @@ classdef Node < mFEM.elements.base.HideHandle
         parents;                % handles elements with this node
     end
     
-    % Begin method definitions
+    % Public method definitions
     methods
+        init(obj,id,x,varargin); 
+        out = getCoord(obj);
+        dof = getDof(obj,varargin);
+        addTag(obj,tag);
+        
         function obj = Node(varargin)
+            % Class constructor (see help mFEM.elements.base.Node)
             if nargin > 0;
             	obj.init(varargin{:});
             end
         end
-        
-        function init(obj,id,x,varargin) 
-            %INIT Initializes the node objects 
-            
-            ndim = size(x,2);
-            % numeric | 'scalar' | 'vector'
-           if nargin == 4 && isnumeric(varargin{1});
-               ndof = varargin{1};
-           elseif nargin == 4 && ischar(varargin{1}) && strcmpi('vector',varargin{1});
-               ndof = ndim;
-           else
-               ndof = 1;
-           end
-             
-           n = length(obj);
-           x = mat2cell(x',ndim,ones(1,n));
-           ndim = num2cell(repmat(ndim,n,1));
-           ndof = num2cell(repmat(ndof,n,1));
-           proc = num2cell(repmat(labindex,n,1));
-           id = num2cell(id);
-       
-           [obj.id] = id{:};
-           [obj.n_dim] = ndim{:};
-           [obj.n_dof] = ndof{:};
-           [obj.lab] = proc{:};
-           [obj.coord] = x{:};
-        end
-        
-        function out = getCoord(obj)
-            out = [obj.coord];
-        end
-        
-        function dof = getDof(obj,varargin)
-            
-            opt.component = [];
-            opt = gatherUserOptions(opt,varargin{:});
-            cmp = obj.parseComponentInput(opt.component);
-            
-             if isempty(cmp);
-                 dof = [obj.dof];  
-             else
-                 dof = {obj.dof};
-                 for i = 1:length(dof);
-                     dof{i} = dof{i}(cmp);
-                 end
-                 dof = cell2mat(dof); 
-             end
-        end
-        
-        function addTag(obj,tag)
-           for i = 1:length(obj);
-               n = length(obj(i).tag)+1;
-               obj(i).tag{n} = tag;
-           end
-        end
-        
-%         function tf = hasTag(obj,tag)
-%             n = length(obj);
-%             tf = false(n,1);
-%             for i = 1:n;
-%                 tf(i) = any(strcmp(tag,obj(i).tag));
-%             end
-%         end
-        
-%         function varargout = get(obj, varargin)
-%            
-%             if nargin == 1
-%                 if nargout == 1
-%                     varargout{1} = obj.coord;
-%                 else
-%                     varargout = num2cell(obj.coord);
-%                 end
-%             
-%             elseif isnumeric(varargin{1});
-%                 varargout{1} = obj.coord(varargin{1});
-%                 
-%             elseif ischar(varargin{1});
-%                 switch lower(varargin{1});
-%                     case 'x'; varargout{1} = obj.coord(1);
-%                     case 'y'; varargout{1} = obj.coord(2);
-%                     case 'z'; varargout{1} = obj.coord(3);
-%                 end
-%             end  
-%         end
-        
-%         function getDof(obj,varargin)
-%             for i = 1:length(obj);  
-%             end
-%         end
     end
     
+    % Protected methods
     methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
-        function addParent(obj, elem)
-            for i = 1:length(obj);
-                idx = length(obj(i).parents);
-                if idx == 0;
-                    obj(i).parents = elem;
-                else
-                    obj(i).parents(idx+1) = elem;
-                end
-            end
-        end 
-        
-        function resetParents(obj)
-            for i = 1:length(obj);
-                obj(i).parents = [];
-            end
-        end
-
-        function out = getParents(obj,varargin)
-            out = {};
-            for i = 1:length(obj);
-                out = [out,obj(i).parents];
-            end
-            out = unique(out);
-            
-            if nargin == 2;
-                out = out(out~=varargin{1});
-            end
-        end
-        
-        function dof = setDof(obj,varargin)
-            %SETDOF sets the degrees-of-freedom for the node(s)
-            %
-            % Syntax
-            %   setDof()
-            %   setDof(strt)
-            %   setDof(dof)
-            %
-            % Description
-            %
-            % dof(n,:), n = size(obj)  (implicit)
-            % dof = scalar, strt index (explicit)
-            
-            if nargin == 2;
-                dof = varargin{1};
-            else
-                dof = 1;
-            end
-            
-            if isscalar(dof);
-                strt = dof;
-                for i = 1:length(obj);
-                    stop = strt + obj(i).n_dof - 1;
-                    obj(i).dof = strt:stop;
-                    strt = stop+1;
-                end
-            elseif size(dof,1) == length(obj);
-                for i = 1:length(obj);
-                    obj(i).dof = dof(i,:);
-                end
-            end
-        end
-
-        function setBoundaryFlag(obj)
-           for i = 1:length(obj);
-               obj(i).on_boundary = true;
-           end
-        end
+        setDof(obj);
+        setBoundaryFlag(obj);
+        addParent(obj,elem);
+        getParents(obj,varargin)       
+%         function resetParents(obj)
+%             for i = 1:length(obj);
+%                 obj(i).parents = [];
+%             end
+%         end
     end
-    
-    methods (Static)
-        function cmp = parseComponentInput(cmp)
-            
-            msgid = 'Node:getDof:InvalidComponent';
-            errmsg = 'The supplied component must be number or ''x'', ''y'', or ''z''.';
-            
-            if ischar(cmp); cmp = {cmp}; end
-             if iscell(cmp);
-                 for i = 1:length(cmp);
-                     if ischar(cmp{i});
-                         switch lower(cmp{i});
-                             case 'x'; cmp{i} = 1;
-                             case 'y'; cmp{i} = 2;
-                             case 'z'; cmp{i} = 3;
-                             otherwise
-                                error(msgid,errmsg);
-                         end
-                     elseif ~isnumeric(cmp{i});
-                        error(msgid,errmsg);
-                     end
-                 end
-                 cmp = cell2mat(cmp);
-             elseif ~isnumeric(cmp);
-                 error(msgid,errmsg);
-             end
-        end
+   
+    % Static methods
+    methods (Hidden, Static, Access = protected)
+        cmp = parseComponentInput(cmp);
     end
 end
-

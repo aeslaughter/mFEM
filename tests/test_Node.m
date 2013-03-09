@@ -1,14 +1,18 @@
 function test_Node
-    %TEST_NODE Tests the mFEM.elements.base.Node class
-
+    %TEST_NODE Tests the Node class
+    %
+    %     4-----5-----6
+    %     |  1  |  2  |
+    %     1-----2-----3
+    % test basics
     n = 10;   
-    coord = rand(2,n);
+    coord = rand(n,2);
     node(n) = mFEM.elements.base.Node();
     node.init(1:n, coord, 5);
 
-    node.setDof(1);
-    node(9).dof
-    node.getDof('Component',{'x','z',4})
+%     node.setDof(1);
+%     node(9).dof
+%     node.getDof('Component',{'x','z',4})
     
     
 %     n = mFEM.elements.base.Node(1,[1;2;3]);
