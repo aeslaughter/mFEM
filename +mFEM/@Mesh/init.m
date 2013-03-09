@@ -1,15 +1,15 @@
-function setup(obj)
-    %SETUP (protected) Initializes the mFEM.Mesh object for use
+function init(obj)
+    %INIT (protected) Initializes the mFEM.Mesh object for use
     %   The setup process does three main tasks: (1) locating
     %   neighboring elements, (2) sets the degrees-of-freedom for nodes,
     %   and (3) sets up the various tag maps for identifing boundaries and
     %   subdomains.
     %
     % Syntax
-    %   setup()
+    %   init()
     %
     % Description
-    %   setup() prepares the mFEM.Mesh object for use. by locating the
+    %   init() prepares the mFEM.Mesh object for use. by locating the
     %   neighboring elements, setting the degrees-of-freedom for each node
     %
     %----------------------------------------------------------------------
@@ -47,11 +47,12 @@ function setup(obj)
         ticID = tMessage('Locating neighbor elements...');
     end
 
-    % Perform neighbor location, in parallel
+    % Perform neighbor location, in parallel. This is done within the
+    % element class for speed reasons.
     spmd
         elements.findNeighbors();
     end
-    
+
     % Complete message time message
     if obj.options.time;
         tMessage(ticID);
@@ -68,7 +69,11 @@ function setup(obj)
     
     % Set the total degrees-of-freedom for the mesh
     obj.n_dof = sum(ndof{1});
-
+    
+    % Update the Mesh object variables
+    obj.nodes = nodes;
+    obj.elements = elements;    
+    
     % The following code initializes the tag maps for the element and 
     % nodes, in parallel. Each map is a codistributed sparse logical 
     % matrix.

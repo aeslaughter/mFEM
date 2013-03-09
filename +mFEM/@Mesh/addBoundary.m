@@ -47,9 +47,9 @@ function addBoundary(obj, id, varargin)
     %   ADDSUBDOMAIN
 
     % Check if system is initialized
-    if ~obj.initialized;
-        error('FEmesh:addBoundary:NonInitializedMesh',...
-            'The FEmesh object must be initialized');
+    if obj.initialized;
+        warning('Mesh:addBoundary:MeshInitialized',...
+            'The Mesh was previously initailized, for these tags to be applied the init() method must be called again.');
     end
 
     % Special case, tag all untagged

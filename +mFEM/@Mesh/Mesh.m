@@ -5,7 +5,7 @@ classdef Mesh < handle
     % mention dimension independance, is possible to mix elements of
     % different dimensions (not tested)
     
-    properties %(Access = protected)
+    properties (GetAccess = public, SetAccess = protected)
         elements = Composite();
         nodes = Composite(); 
         n_nodes = uint32([]);                
@@ -14,7 +14,7 @@ classdef Mesh < handle
         options = struct('time', false, 'space', 'scalar');
     end
     
-    properties (Access = protected)
+    properties (Hidden, Access = protected)
         node_map = Composite();
         elem_map = Composite();
         elem_type = Composite();
@@ -27,6 +27,7 @@ classdef Mesh < handle
     end
     
     methods
+        el = createElement(obj,type,nodes);
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
@@ -38,48 +39,15 @@ classdef Mesh < handle
         function obj = Mesh(varargin)
             obj.options = gatherUserOptions(obj.options, varargin{:});  
         end
-        
-        function delete(obj)
-            nodes = obj.nodes;
-            elements = obj.elements;
-            spmd
-                nodes.delete();
-                elements.delete();
-            end
-        end
-        
-        function node = createNode(obj, x)
-            id = length(obj.nodes) + 1;
-            node = mFEM.elements.base.Node(id,x);     
-            obj.nodes{id} = node; 
-        end
-        
-        function elem = createElement(obj, type, nodes)
-            
-            if isnumeric(nodes);
-                nodes = obj.nodes(nodes);
-            end
-            
-            id = length(obj.elements) + 1;
-            elem = feval(['mFEM.elements.',type],id,nodes);
-            obj.elements{id} = elem;
-        end
     end
     
-    methods (Access = protected)
-        setup(obj);
-        init(obj);   
+    methods (Hidden, Access = protected)
+        init(obj);
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
         out = gatherComposite(obj,name,id,tag,lab);
         nodes = buildNodes(obj);
         [elements, nodes] = buildElements(obj,nodes);
-    end
-    
-    methods (Static)
-        
-
-%         D = transformDof(d,n);
     end
 end
 

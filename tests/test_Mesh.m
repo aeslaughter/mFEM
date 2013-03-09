@@ -14,26 +14,25 @@ function T = test_Mesh
 
     % Generate a mesh
     % try
-        mesh = mFEM.Mesh('space','scalar','-time');
+        mesh = mFEM.Mesh('space',3,'-time');
         mesh.grid('Quad4',0,3,0,3,3,3);
-    %     mesh.plot([]);
+%         mesh.plot([]);
 
     % catch err
     %     T.caught(err);
     %     return;
     % end
 % 
-%     mesh.addBoundary('A','top','right');    
-%     mesh.addBoundary('B','x<1','y<1');
-%     mesh.addSubdomain('C',{'x>1.5','y>1.5'});
-%     % add.init()
-% 
-%     no = mesh.getNodes();
-%     el = mesh.getElements();
-%     
-% 
-%     no(4)
-%     el(3).nodes(2)
+    mesh.addBoundary('A','top','right');    
+    mesh.addBoundary('B','x<1','y<1');
+    mesh.addSubdomain('C',{'x>1.5','y>1.5'});
+%     mesh.init()
+
+    no = mesh.getNodes();
+    el = mesh.getElements();
+    no(4)
+    el(3).nodes(2)
+    el(3).sides(2)
 
 
 
@@ -45,8 +44,6 @@ function T = test_Mesh
 % idx(dof2) == dof1;
 
 % mesh.getDof('Tag',{'A','B'});
-    
-    
 
 % Test neighbor finding (test_Element has more extensive testing of this)
 

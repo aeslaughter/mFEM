@@ -1,4 +1,4 @@
-classdef Node < handle
+classdef Node < mFEM.elements.base.HideHandle
     %NODE Class for defining node objects
     % Inludes the general behavior for a finite element node, including the 
     % node, global degrees-of-freedom.   
@@ -12,7 +12,7 @@ classdef Node < handle
     %   nodes = mFEM.elements.base.Node(id,coord)
     %   nodes(n) = mFEM.elements.base.Node()
     %
-    % See Also mFEM.elements.base.Element
+    % See Also Element
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -35,7 +35,7 @@ classdef Node < handle
     %----------------------------------------------------------------------
     
     % Basic read-only properties that are available for user
-    properties %(GetAccess = public, SetAccess = ?mFEM.Mesh)
+    properties (GetAccess = public, SetAccess = ?mFEM.Mesh)
         coord = [0;0;0];        % column vector of spatial coordinates
         id = uint32([]);        % unique global id
         on_boundary = false;    % true if node is on a boundary
@@ -44,7 +44,10 @@ classdef Node < handle
         dof = uint32([]);       % global degrees-of-freedom
         tag = {};               % list of char tags for this node
         lab = uint32([]);       % the processor that holds this node
-        parents;                % handles of elements with this node
+    end
+    
+    properties (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
+        parents;                % handles elements with this node
     end
     
     % Begin method definitions
@@ -68,7 +71,6 @@ classdef Node < handle
                ndof = 1;
            end
              
- 
            n = length(obj);
            x = mat2cell(x',ndim,ones(1,n));
            ndim = num2cell(repmat(ndim,n,1));
@@ -81,16 +83,6 @@ classdef Node < handle
            [obj.n_dof] = ndof{:};
            [obj.lab] = proc{:};
            [obj.coord] = x{:};
-
-% Loop was about slower (29s vs. 18s for 1 mil. nodes)
-%             lab = labindex;
-%             for i = 1:length(obj);
-%                 obj(i).id = id(i);
-%                 obj(i).n_dim = n_dim;
-%                 obj(i).n_dof = n_dof;
-%                 obj(i).coord(1:n_dim,1) = x(i,:);
-%                 obj(i).lab = lab;
-%             end
         end
         
         function out = getCoord(obj)
@@ -156,7 +148,7 @@ classdef Node < handle
 %         end
     end
     
-    methods %(Access = {?mFEM.elements.base.Element,?mFEM.Mesh)
+    methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
         function addParent(obj, elem)
             for i = 1:length(obj);
                 idx = length(obj(i).parents);
@@ -167,6 +159,12 @@ classdef Node < handle
                 end
             end
         end 
+        
+        function resetParents(obj)
+            for i = 1:length(obj);
+                obj(i).parents = [];
+            end
+        end
 
         function out = getParents(obj,varargin)
             out = {};

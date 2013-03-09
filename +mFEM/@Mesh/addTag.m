@@ -4,6 +4,10 @@ function addTag(obj, tag, type, varargin)
     %   function, the user should refer to the addBoundary or addSubdomain
     %   functions for adding tags.
     %
+    %   ADDTAG only interacts with the node_tag_map, the elem_tag_map is
+    %   updated when the init() method is called, which should be done
+    %   after all tags are added.
+    %
     % Syntax
     %    addTag(tag, type, FuncString,...)
     %    addTag(tag, type, FuncCell)
@@ -46,7 +50,7 @@ function addTag(obj, tag, type, varargin)
     nodes = obj.nodes;                  
     node_map = obj.node_map;            
     node_tag_map = obj.node_tag_map;
-    elem_tag_map = obj.elem_tag_map;
+%     elem_tag_map = obj.elem_tag_map;
     
     % Convert numeric tags to strings
     if isnumeric(tag); 
@@ -85,7 +89,7 @@ function addTag(obj, tag, type, varargin)
         end
         
         % Apply the nodal tags
-        nodes(n_idx).addTag(tag);
+       nodes(n_idx).addTag(tag);
         
         % Update the node tag map
         gi = globalIndices(node_tag_map,1);
@@ -108,7 +112,7 @@ function addTag(obj, tag, type, varargin)
     % Return codistributed maps  to the object
     obj.node_tag_map = node_tag_map;
     obj.elem_tag_map = elem_tag_map;
-%     obj.nodes = nodes;
+    obj.nodes = nodes;
 end
 
 function [fcn,col,value,use_all] = parseAddTagInput(node_map, varargin)

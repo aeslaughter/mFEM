@@ -30,7 +30,7 @@ function grid(obj, type, varargin)
     end
 
     % Setup the Mesh object
-    obj.setup();
+    obj.init();
 end
 
 function [in,codist] = createCodistributed(in)

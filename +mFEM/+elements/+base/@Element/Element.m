@@ -1,4 +1,4 @@
-classdef Element < handle %& matlab.mixin.Heterogeneous
+classdef Element < mFEM.elements.base.HideHandle
     %ELEMENT Base class for defining elements.
     %   Inludes the general behavior of an element, including the node 
     %   locations, id, shape functions, etc...

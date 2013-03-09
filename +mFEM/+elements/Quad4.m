@@ -117,7 +117,7 @@ classdef Quad4 < mFEM.elements.base.Element
                 for j = 1:yn;
                     for i = 1:xn;
                         k = k + 1;
-                        elem_map(k,:) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
+                        elem_map(k,[1,4,3,2]) = [id(i,j),id(i,j+1),id(i+1,j+1),id(i+1,j)];
                     end
                 end
                 
