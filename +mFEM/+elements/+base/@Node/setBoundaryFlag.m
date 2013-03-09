@@ -1,5 +1,5 @@
 function setBoundaryFlag(obj)
-    %SETBOUNDARYFLAG Sets the boundary flag to true for the elements
+    %SETBOUNDARYFLAG Sets the boundary flag to true for the nodes
     %   Each node has a true|false flag indicating if it is on a boundary,
     %   which is defined whether or not it a part of a shared side. This
     %   flag is set by the Element class.
@@ -31,6 +31,9 @@ function setBoundaryFlag(obj)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-    t = num2cell(true(length(obj),1));    
-    [obj.on_boundary] = t;
+    h = reshape(obj,numel(obj),1);
+    t = num2cell(true(size(h)));
+    if ~isempty(h);
+        [h.on_boundary] = t{:};
+    end
 end

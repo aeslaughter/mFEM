@@ -3,7 +3,7 @@ classdef Mesh < handle
     %   Detailed explanation goes here
     %
     % mention dimension independance, is possible to mix elements of
-    % different dimensions (not tested)
+    % different dimensions and n dofs (not tested)
     
     properties (GetAccess = public, SetAccess = protected)
         elements = Composite();

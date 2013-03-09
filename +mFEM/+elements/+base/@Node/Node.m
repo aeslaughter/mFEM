@@ -76,10 +76,10 @@ classdef Node < mFEM.elements.base.HideHandle
     
     % Protected methods
     methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})
-        setDof(obj);
+        setDof(obj,varargin);
         setBoundaryFlag(obj);
         addParent(obj,elem);
-        getParents(obj,varargin)       
+        elem = getParents(obj,varargin);       
 %         function resetParents(obj)
 %             for i = 1:length(obj);
 %                 obj(i).parents = [];
