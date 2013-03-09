@@ -3,22 +3,66 @@ classdef Test < handle
     %   Detailed explanation goes here
     
     properties
-        name;
         results = [];
+        handle
+        err = {};
+        options = struct('throw',false,'name','','type','class',...
+            'handle',[]);
+    end
+    
+    properties (Hidden, Access = private)
+        ticID;  
     end
     
     methods
         function obj = Test(varargin)
-            if nargin == 1;
+            
+            obj.options = gatherUserOptions(obj.options,varargin{:});
+            obj.handle = obj.options.handle;
+            
+            if strcmp(obj.options.type,'filename');
                 in = varargin{1};
                 idx = regexp(in,'(?<=_).*');
-                obj.name = in(idx:end);
-                disp(['Testing ', obj.name]);
+                obj.options.name = in(idx:end);
             end
+            disp(['Testing ', obj.options.name,' Class:']);
+            obj.ticID = tic;
         end
 
+        function delete(obj)
+            msg = sprintf(' Completed in %f sec.',toc(obj.ticID));
+            disp(msg);    
+        end
+        
+        function varargout = eval(obj,method,input,varargin)
+            
+            opt.throw = obj.options.throw;
+            opt.nout = 0;
+            opt = gatherUserOptions(opt,varargin{:});
+            
+            
+           try
+                if opt.nout == 0;
+                    obj.handle.(method)(input{:});
+                else
+                    [varargout{1:opt.nout}] = obj.handle.(method)(input{:});
+                end
+                
+                msg = sprintf('  %s: The %s method was evaluated',obj.options.name,method);
+                obj.printResult(msg,true);
+                
+           catch err
+                obj.err{end+1} = err;
+                if opt.throw; rethrow(err); end
+                msg = sprintf('  %s: The %s method produced an error: %s',obj.options.name,method,err.identifier);
+                obj.printResult(msg,false);
+           end
+        end
+        
+        
         function caught(obj,err)
-            msg = [obj.name, ' Error: ', err.identifier];
+           msg = sprintf('  %s: Caught error: %s',obj.options.name,err.identifier);
+
             obj.printResult(msg,false); 
         end
         
