@@ -37,6 +37,8 @@ classdef Element < mFEM.elements.base.HideHandle
         sides;                  % structure of side information
         tag = {};               % list of char tags for this element
         lab;                    % the processor that holds this element
+        n_dof;                  % total no. of dofs associated with element
+        dof;                    % dofs for the element, in order of nodes
         nodes =...              % node objects for this element
             mFEM.elements.base.Node.empty();
     end
@@ -113,10 +115,14 @@ classdef Element < mFEM.elements.base.HideHandle
            end
         end
      
+        function setDof(obj)
+            for i = 1:length(obj);
+                obj(i).dof = [obj(i).nodes.dof];
+            	obj(i).n_dof = sum([obj(i).nodes.n_dof]);
+            end
+        end
         
         function out = getNodes(obj,varargin)
-           
-
             out = [obj.nodes];
 %            n = length(obj);
 %            out(n,obj(1).n_nodes) = mFEM.elements.base.Node();

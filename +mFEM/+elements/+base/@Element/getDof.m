@@ -33,13 +33,21 @@ function dof = getDof(obj, varargin)
     %       multipe dof per node elements like the Beam element.
 
     % Set default options and gather the options
-    options.side = [];
-    options.local = false;
-    options.component = [];
-    opt = gatherUserOptions(options, varargin{:});
+    opt.side = [];
+    opt.local = false;
+    opt.component = [];
+    opt = gatherUserOptions(opt, varargin{:});
     
-    glbl = [obj.nodes.dof]
-    local = 1:length(glbl)
+    % Local only operates on single element
+    if opt.local && length(obj) > 1;
+        error('Element:getDof:InvalidUseOfLocal','The local property only functions on a single element');
+    elseif opt.local
+        glbl = obj.dof; % all dofs, global
+        x = obj.nodes.getDof('Component',opt.component); % desired dofs
+        ix = ismember(glbl,x);     % location in glbl of desired dofs
+        lcl = 1:length(obj.dof);   % local dofs
+        dof = lcl(ix);             % desired local dofs
+    end
     
     
     

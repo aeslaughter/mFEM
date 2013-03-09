@@ -58,13 +58,14 @@ function init(obj)
         tMessage(ticID);
     end
     
-    % Set the nodal degrees-of-freedom, in parallel
+    % Set the nodal and elements degrees-of-freedom, in parallel
     space = obj.options.space;
     n_nodes = obj.n_nodes;
     spmd
        ndof = buildCodistributedPartition(sum([nodes.n_dof]));
        strt = [0,cumsum(ndof)] + 1;  
        nodes.setDof(strt(labindex));
+       elements.setDof();
     end
     
     % Set the total degrees-of-freedom for the mesh
