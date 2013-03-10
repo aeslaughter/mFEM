@@ -122,16 +122,16 @@ classdef Gauss < handle
             %           [qp,w] = rules('cell',true)
             
             % Gather the options
-            options.cell = false;
-            options = gatherUserOptions(options, varargin{:});
+            opt.cell = false;
+            opt = gatherUserOptions(opt, varargin{:});
 
             % Call the appropriate methods to build the quadrature rules
-            switch lower(obj.opt.type)
+            switch lower(obj.type)
                 case {'line','quad','hex'};
-                     [qp, w] = obj.rect_rules(obj.opt.order);
+                     [qp, w] = obj.rect_rules(obj.order);
                     
                 case 'tri';
-                     [qp, w] = obj.tri_rules(obj.opt.order);
+                     [qp, w] = obj.tri_rules(obj.order);
                      
                 case 'tet';
                     error('Not yet supported');
@@ -141,7 +141,7 @@ classdef Gauss < handle
             end
             
             % Create the cell style output
-            if options.cell;
+            if opt.cell;
                 [qp, w] = obj.cell_rules(qp,w);
             end
         end

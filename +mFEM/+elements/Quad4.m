@@ -10,8 +10,8 @@ classdef Quad4 < mFEM.elements.base.Element
     %  (-1,-1)    (1)    (1,-1)
     %
     %----------------------------------------------------------------------
-    %  mFEM: An Object-Oriented MATLAB Finite Element Library
-    %  Copyright (C) 2012 Andrew E Slaughter
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
+    %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
     %  it under the terms of the GNU General Public License as published by
@@ -24,20 +24,20 @@ classdef Quad4 < mFEM.elements.base.Element
     %  GNU General Public License for more details.
     % 
     %  You should have received a copy of the GNU General Public License
-    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
     properties (Constant)
-        n_nodes = 4;
-        n_sides = 4;
-        n_dim = 2;
+%         n_nodes = 4;
+%         n_sides = 4;
+%         n_dim = 2;
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
-%         side_type = 'Line2';                % side is 2-node line element
-%         quad = ...                          % quadrature rules
-%             mFEM.Gauss('order', 2, 'type', 'quad');    
+        side_type = 'Line2';                % side is 2-node line element
+        quad = ...                          % quadrature rules
+            mFEM.Gauss(2, 'quad');    
 
 %         cell = [1,1; 1,2; 2,2; 2,1];     
     end

@@ -1,36 +1,36 @@
-%% Example 1a: Reproduces Example 5.1 of Fish & Belytschko (2007)
-% This example uses manually assembly of the finite element stiffness
-% matrix and force vector for a 1D problem.
-% 
-% Syntax
-%   example1a
-%   example1a(n)
-%
-% Description
-%   example1a runs example exactly as done in textbook, with two elements
-%   example1a(n) runs the example with n number of elements
-%
-% See also EXAMPLE1B EXAMPLE1C
-%
-%----------------------------------------------------------------------
-%  mFEM: An Object-Oriented MATLAB Finite Element Library
-%  Copyright (C) 2012 Andrew E Slaughter
-% 
-%  This program is free software: you can redistribute it and/or modify
-%  it under the terms of the GNU General Public License as published by
-%  the Free Software Foundation, either version 3 of the License, or
-%  (at your option) any later version.
-% 
-%  This program is distributed in the hope that it will be useful,
-%  but WITHOUT ANY WARRANTY; without even the implied warranty of
-%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-%  GNU General Public License for more details.
-% 
-%  You should have received a copy of the GNU General Public License
-%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-%
-%  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
-%----------------------------------------------------------------------
+    %% Example 1a: Reproduces Example 5.1 of Fish & Belytschko (2007)
+    % This example uses manually assembly of the finite element stiffness
+    % matrix and force vector for a 1D problem.
+    % 
+    % Syntax
+    %   example1a
+    %   example1a(n)
+    %
+    % Description
+    %   example1a runs example exactly as done in textbook, with two elements
+    %   example1a(n) runs the example with n number of elements
+    %
+    % See also EXAMPLE1B EXAMPLE1C
+    %
+    %----------------------------------------------------------------------
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
+    %  Copyright (C) 2013 Andrew E Slaughter
+    % 
+    %  This program is free software: you can redistribute it and/or modify
+    %  it under the terms of the GNU General Public License as published by
+    %  the Free Software Foundation, either version 3 of the License, or
+    %  (at your option) any later version.
+    % 
+    %  This program is distributed in the hope that it will be useful,
+    %  but WITHOUT ANY WARRANTY; without even the implied warranty of
+    %  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    %  GNU General Public License for more details.
+    % 
+    %  You should have received a copy of the GNU General Public License
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
+    %
+    %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
+    %----------------------------------------------------------------------
 
 %% Initilization
 % Functin declaration
@@ -51,9 +51,8 @@ mesh = Mesh();
 mesh.grid('Line2',0,4,nel); 
 
 %% Label The Boundaries
-mesh.addTag('essential','left');    % T = 0 boundary (essential)    
-mesh.addTag('flux','right');        % q = 20 boundary   
-return;
+mesh.addBoundary('essential','left');    % T = 0 boundary (essential)    
+mesh.addBoundary('flux','right');        % q = 20 boundary   
 
 %% Define the constants for the problem
 k = 2;          % thermal conductivity 
@@ -69,30 +68,29 @@ f = zeros(mesh.n_dof, 1);
 %% Manual Assembly
 % Create the stiffness matrix and force vector by looping over the
 % elements, which in this case is a single element.
+elem = mesh.getElements('-gather');
 for e = 1:mesh.n_elements;
-    
-    % Extract the current element from the mesh object
-    elem = mesh.element(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi) elem.shapeDeriv([]);
-    N = @(xi) elem.shape(xi);
+    B = @(xi) elem(e).shapeDeriv([]);
+    N = @(xi) elem(e).shape(xi);
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
-    Ke = zeros(elem.n_dof);
-    fe = zeros(elem.n_dof,1);
+    Ke = zeros(elem(e).n_dof);
+    fe = zeros(elem(e).n_dof,1);
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
+    [qp,W] = elem(e).quad.rules()
     for i = 1:length(qp);
 
         % Account for the source term
         fe = fe + W(i)*N(qp(i))'*b*elem.detJ([]);
         
         % Build stiffness matrix
-        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem.detJ([]);
+        Ke = Ke + W(i)*B(qp{i})'*k*A*B(qp(i))*elem.detJ([]);
     end
     
     % Loop throught the sides of the element, if the side has the boundary

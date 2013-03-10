@@ -25,12 +25,10 @@ classdef Line2 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     properties (Constant)
-        n_nodes = 2;
-        n_sides = 2;
-        side_ids = [1; 2];                % local dofs of the "sides"
-%         side_type = 'Point';            % sides are points
-%         quad = ...                      % instance of Gauss quadrature class
-%             mFEM.Gauss('Order', 1, 'Type', 'line');    
+        side_ids = [1; 2];              % local dofs of "sides"
+        side_type = 'Point';            % sides are Point
+        quad = mFEM.Gauss(1, 'line');   % Gauss quadrature class
+               
     end
     
     methods     

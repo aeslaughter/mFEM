@@ -38,23 +38,25 @@ classdef Element < mFEM.elements.base.HideHandle
     %----------------------------------------------------------------------
 
     % Basic read-only properties that are available for user
-    properties (GetAccess = public, SetAccess = ?mFEM.Mesh)
+    properties %(GetAccess = public, SetAccess = {?mFEM.Mesh,?mFEM.elements.base.Element})
         id = uint32([]);        % unique global id
         on_boundary = false;    % true when element touches a border
         sides;                  % structure of side information
         tag = {};               % list of char tags for this element
         n_dof;                  % total no. of dofs associated with element
         dof;                    % dofs for the element, in order of nodes
+        n_sides;                % no. of sides for this element
+        n_nodes;                % no. of nodes for this element
+        n_dim;                  % no. of spatial dimensions for this element     
         nodes =...              % node objects for this element
             mFEM.elements.base.Node.empty();
     end
     
     % Constants that must be defined by inhering class (e.g., Quad4)
     properties (Abstract, Constant, Access = public)
-        side_ids; % map that defines which nodes comprise each side    
-        n_sides;  % no. of sides for this element
-        n_nodes;  % no. of nodes for this element
-        n_dim;    % no. of spatial dimensions for this element
+        side_ids;   % map that defines which nodes comprise each side  
+        side_type;  % name of element for sides
+        quad;       % Gauss quadrature rules to utilize
     end
 
     properties (Access = ?mFEM.Mesh)
