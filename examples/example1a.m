@@ -83,61 +83,59 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
-    [qp,W] = elem(e).quad.rules()
+    [qp,W] = elem(e).quad.rules();
     for i = 1:length(qp);
 
         % Account for the source term
-        fe = fe + W(i)*N(qp(i))'*b*elem.detJ([]);
+        fe = fe + W(i)*N(qp(i))'*b*elem(e).detJ([]);
         
         % Build stiffness matrix
-        Ke = Ke + W(i)*B(qp{i})'*k*A*B(qp(i))*elem.detJ([]);
+        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem(e).detJ([]);
     end
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 2 (right), then add the prescribed flux term to force vector,
     % which for 1D elements is an evaluation at a single point so it
     % requires no integration.
-    for s = 1:elem.n_sides; 
-        if any(elem.side(s).boundary_id == 2);
-            side = elem.buildSide(s);
-            dof = elem.getDof('Side', s, '-local');
-            fe(dof) = fe(dof) + -q_bar*A*side.shape([])';  
-            delete(side);
-        end
+    [~,sid] = elem(e).hasTag('flux');
+    for s = 1:length(sid); 
+        dof = elem(e).getDof('Side',sid(s),'-local');
+        fe(dof) = fe(dof) + -q_bar*A;  
     end   
     
     % Add the local stiffness and force to the global 
     % (this method is slow, see example5 for faster method)
-    dof = elem.getDof();   
+    dof = elem(e).getDof();
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
 
+K
+f
 
 %% Define Variables for Essential and Non-essential Degrees-of-freedom
-ess = mesh.getDof('Boundary', 1);  % 1
+ess = mesh.getDof('Tag', 'flux');  % 1
 non = ~ess;                         % 2,3
 
 %% Solve for the Temperatures
 T = zeros(size(f));         % initialize the temperature vector
 T(ess) = T_bar;             % apply essential boundary condtions
 T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
+T
 
+return;
 %% Compute the Temperature Gradients
 % Loop through the elements
 for e = 1:mesh.n_elements;
     
-    % Extract the current element from the mesh object
-    elem = mesh.element(e);
-    
     % Collect the local values of T
-    d(:,1) = T(elem.getDof());
+    d(:,1) = T(elem(e).getDof());
     
     % Compute the temperature gradient at the gauss point, store the value
     % twice for each element for creating graph, TGx is the node locations
     % used for plotting
     TG(1:2,e) = B(qp(1))*d;
-    TGx(1:2,e) = elem.nodes;
+    TGx(1:2,e) = elem(e).nodes.getCoord();
 
 end    
 

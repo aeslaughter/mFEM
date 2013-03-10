@@ -112,8 +112,12 @@ function dof = getDof(obj,varargin)
         end
                 
         idx = all(idx,2);
-
-        dof(:,1) = nodes(idx).getDof('Component',cmp); 
+        
+        if any(idx); 
+            dof(:,1) = nodes(idx).getDof('Component',cmp); 
+        else
+            dof(:,1) = idx; 
+        end
         
         % Build index form of dofs
         if ~composite_flag;
@@ -121,7 +125,7 @@ function dof = getDof(obj,varargin)
             codist = codistributor1d(1,part,[sum(part),1]);
             dof = codistributed.build(dof,codist);
         end
-            
+
         % Build logical subscript array
         if ~index_flag;
             ndof = sum([nodes.n_dof]);
@@ -131,14 +135,13 @@ function dof = getDof(obj,varargin)
         end
     end
     
-    
     % Convert from index to subscript
     if ~index_flag;
         subscript(dof) = true;
         dof = subscript;
     end
     
-    if ~opt.composite && opt.gather;
+    if matlabpool('size') == 0 || (~opt.composite && opt.gather);
         dof = gather(dof);
     end
 end

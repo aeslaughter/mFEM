@@ -94,23 +94,27 @@ function addTag(obj, tag, type, varargin)
         end
         
         % Apply the nodal tags
-       nodes(n_idx).addTag(tag);
+        nodes(n_idx).addTag(tag);
         
         % Update the node tag map
         gi = globalIndices(node_tag_map,1);
         node_tag_map(gi,cnt) = n_idx;
 
         % Extract elements from node parents, limit to current lab
-        elem = unique([nodes(n_idx).parents]);
+        elem = [nodes(n_idx).parents];
         if ~isempty(elem);
-            
-            % Add tags to elements           
-            e_idx = [elem.lab]==labindex;
-            elem(e_idx).addTag(tag,type);
+            [~,ix] = unique([elem.id]);
+            elem = elem(ix);
+            if ~isempty(elem);
 
-            % Update the element map
-            gi = [elem(e_idx).id];
-            elem_tag_map(gi,cnt) = e_idx;
+                % Add tags to elements           
+                e_idx = [elem.lab]==labindex;
+                elem(e_idx).addTag(tag,type);
+
+                % Update the element map
+                gi = [elem(e_idx).id];
+                elem_tag_map(gi,cnt) = e_idx;
+            end
         end
     end
     

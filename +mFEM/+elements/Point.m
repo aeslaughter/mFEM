@@ -22,8 +22,8 @@ classdef Point < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     properties (SetAccess = protected, GetAccess = public)    
-        n_sides = [];                   % no. "sides" (nodes are sides in 1D)
-        side_dof = [];                  % local dofs of the "sides"
+        n_dim = 0;
+        side_ids = [];                  % local dofs of the "sides"
         side_type = '';                 % 1D elements do not have side elements
         quad = [];                      % Instance of Gauss quadrature class
     end
@@ -46,7 +46,6 @@ classdef Point < mFEM.elements.base.Element
         function B = gradBasis(obj, varargin) 
             % Gradient of shape functions
             error('Point:gradBasis', 'Not defined for Point element');
-            B = inv(obj.jacobian()) * obj.local_grad_basis;
         end
              
         function J = jacobian(obj, varargin)

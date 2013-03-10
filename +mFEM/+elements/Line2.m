@@ -5,7 +5,7 @@ classdef Line2 < mFEM.elements.base.Element
     %         1---------2
     %
     %----------------------------------------------------------------------
-    %  mFEM: An Object-Oriented MATLAB Finite Element Library
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
     %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ classdef Line2 < mFEM.elements.base.Element
     %  GNU General Public License for more details.
     % 
     %  You should have received a copy of the GNU General Public License
-    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
@@ -27,8 +27,8 @@ classdef Line2 < mFEM.elements.base.Element
     properties (Constant)
         side_ids = [1; 2];              % local dofs of "sides"
         side_type = 'Point';            % sides are Point
-        quad = mFEM.Gauss(1, 'line');   % Gauss quadrature class
-               
+        quad = mFEM.Gauss(1, 'line');   % Gauss quadrature class       
+        n_dim = 1;                      % 1D space
     end
     
     methods     
@@ -46,32 +46,33 @@ classdef Line2 < mFEM.elements.base.Element
         end
         
         % Define the size function
-%         function L = size(obj)
-%         	L = norm(diff(obj.nodes,1));
-%         end
+        function L = size(obj)
+            L = norm(diff(obj.nodes.getCoord(),1));
+        end
     end
     
     methods (Access = protected)          
-%         function N = basis(~, xi)
-%             % Returns a row vector of local shape functions
-%             N(1) = 1/2*(1 - xi);
-%             N(2) = 1/2*(1 + xi);
-%         end
-% 
-%         function B = gradBasis(obj, varargin) 
-%             % Gradient of shape functions
-%             B = inv(obj.jacobian()) * obj.localGradBasis();
-%         end
-%              
-%         function J = jacobian(obj, varargin)
-%             % Returns the jacobian matrix (1/2 the length)
-%             J = 1/2 * obj.size();                 
-%         end
-%         
-%         function GN = localGradBasis(obj, varargin)
-%             % Returns shape function derivatives in terms of xi
-%             GN = [-1/2, 1/2];
-%         end
+        function N = basis(~, xi)
+            % Returns a row vector of local shape functions
+            N(1) = 1/2*(1 - xi);
+            N(2) = 1/2*(1 + xi);
+        end
+
+        function B = gradBasis(obj, varargin) 
+            % Gradient of shape functions
+            B = inv(obj.jacobian()) * obj.localGradBasis();
+%             B = obj.localGradBasis()\obj.jacobian();
+        end
+             
+        function J = jacobian(obj, varargin)
+            % Returns the jacobian matrix (1/2 the length)
+            J = 1/2 * obj.size();                 
+        end
+        
+        function GN = localGradBasis(~, varargin)
+            % Returns shape function derivatives in terms of xi
+            GN = [-1/2, 1/2];
+        end
     end
     
     methods (Static)

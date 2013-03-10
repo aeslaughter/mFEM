@@ -31,15 +31,10 @@ classdef Quad4 < mFEM.elements.base.Element
     
     % Define the inherited abstract properties
     properties (Constant)
-%         n_nodes = 4;
-%         n_sides = 4;
-%         n_dim = 2;
         side_ids = [1,2; 2,3; 3,4; 4,1];    % define the side dofs 
         side_type = 'Line2';                % side is 2-node line element
-        quad = ...                          % quadrature rules
-            mFEM.Gauss(2, 'quad');    
-
-%         cell = [1,1; 1,2; 2,2; 2,1];     
+        quad = mFEM.Gauss(2, 'quad');       % quadrature rules 
+        n_dim = 2;                          % 2D space
     end
 
     % Define the Quad4 constructor
@@ -52,45 +47,45 @@ classdef Quad4 < mFEM.elements.base.Element
     
     % Define the inherited abstract methods (protected)
     methods (Access = protected)      
-%         function N = basis(~, x)
-%             %BASIS Returns a row vector of local shape functions
-% 
-%             % Define xi and eta from vector input
-%             xi = x(1);
-%             eta = x(2);
-%             
-%             % Compute the shape function vector
-%             N(1) = 1/4*(1-xi)*(1-eta);
-%             N(2) = 1/4*(1+xi)*(1-eta);
-%             N(3) = 1/4*(1+xi)*(1+eta);
-%             N(4) = 1/4*(1-xi)*(1+eta);
-%         end
-%         
-%         function GN = localGradBasis(~, x)
-%             %LOCALGRADBASIS gradient, in xi and eta, of shape functions
-%             
-%             % Define xi and eta from vector input
-%             xi = x(1);
-%             eta = x(2);
-%             
-%             % Compute gradient
-%             GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
-%                       xi-1, -xi-1, 1+xi, 1-xi];
-%         end
-%         
-%         function B = gradBasis(obj, x) 
-%             %GRADBASIS Gradient of shape functions
-%                         
-%             % Compute the gradient of bais in x,y
-%             B = inv(obj.jacobian(x)) * obj.localGradBasis(x);
-%         end
-%         
-%         function J = jacobian(obj, x)
-%             %JACOBIAN Returns the jacobian matrix  
-%                         
-%             % Compute the Jacobian
-%             J = obj.localGradBasis(x)*obj.nodes;                 
-%         end
+        function N = basis(~, x)
+            %BASIS Returns a row vector of local shape functions
+
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute the shape function vector
+            N(1) = 1/4*(1-xi)*(1-eta);
+            N(2) = 1/4*(1+xi)*(1-eta);
+            N(3) = 1/4*(1+xi)*(1+eta);
+            N(4) = 1/4*(1-xi)*(1+eta);
+        end
+        
+        function GN = localGradBasis(~, x)
+            %LOCALGRADBASIS gradient, in xi and eta, of shape functions
+            
+            % Define xi and eta from vector input
+            xi = x(1);
+            eta = x(2);
+            
+            % Compute gradient
+            GN = 1/4*[eta-1, 1-eta, 1+eta, -eta-1;
+                      xi-1, -xi-1, 1+xi, 1-xi];
+        end
+        
+        function B = gradBasis(obj, x) 
+            %GRADBASIS Gradient of shape functions
+                        
+            % Compute the gradient of bais in x,y
+            B = inv(obj.jacobian(x)) * obj.localGradBasis(x);
+        end
+        
+        function J = jacobian(obj, x)
+            %JACOBIAN Returns the jacobian matrix  
+                        
+            % Compute the Jacobian
+            J = obj.localGradBasis(x)*obj.nodes;                 
+        end
     end
     
     methods (Static)

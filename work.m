@@ -1,8 +1,13 @@
 function work
 
+mesh = mFEM.Mesh();
+mesh.grid('Line2',0,1,2);
+elem = mesh.getElements(1,'-gather');
+mesh.addBoundary('test','right');
 
-no(4) = mFEM.elements.base.Node();
-no.init(1:4,rand(4,2));
+elem.shape(0)
+elem.shapeDeriv(0)
 
-elem = mFEM.elements.Quad4(1,no);
-
+delete(mesh)
+delete(elem)
+clear mesh elem clear

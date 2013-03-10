@@ -60,17 +60,5 @@ function nodes = getNodes(obj,varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    % Collect the options
-    opt.gather = false;
-    opt.lab = [];
-    opt.tag = [];
-    opt = gatherUserOptions(opt,varargin{:});
-    
-    % Collect and gather the nodes
-    if opt.gather || ~isempty(opt.lab);
-        nodes = obj.gatherComposite('lab',opt.lab,'tag',opt.tag...
-            ,'name','nodes');
-    else
-        nodes = obj.nodes;
-    end    
+    nodes = obj.gatherComposite(varargin{:},'name','nodes');
 end

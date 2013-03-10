@@ -6,8 +6,9 @@ function elem = getElements(obj, varargin)
     %   communication and gather the elements.
     %
     % Syntax
-    %   elem = getElement(id)
-    %   elem = getElement(id,'PropertyName',PropertyValue,...)
+    %   elem = getElements()
+    %   elem = getElements(id)
+    %   elem = getElements(id,'PropertyName',PropertyValue,...)
     %
     % Description
     %   elem = getElement(id) returns an array of elements with the ids
@@ -55,18 +56,6 @@ function elem = getElements(obj, varargin)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %---------------------------------------------------------------------
-    
-    % Collect the options
-    opt.gather = false;
-    opt.lab = [];
-    opt.tag = [];
-    opt = gatherUserOptions(opt,varargin{:});
-    
-    % Collect and gather the nodes
-    if opt.gather || ~isempty(opt.lab);
-        elem = obj.gatherComposite('lab',opt.lab,'tag',opt.tag...
-            ,'name','elements');
-    else
-        elem = obj.elements;
-    end  
+
+    elem = obj.gatherComposite(varargin{:},'name','elements');
 end

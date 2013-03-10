@@ -1,11 +1,11 @@
 function plot(obj, data, varargin)
 
     % Check if system is initialized
-    if ~obj.initialized;
-        error('Mesh:plot:NonInitializedMesh',...
-            'The Mesh object must be initialized for plotting');
-    end
-    
+%     if ~obj.initialized;
+%         error('Mesh:plot:NonInitializedMesh',...
+%             'The Mesh object must be initialized for plotting');
+%     end
+ 
     opt.data = data;
     
     if isempty(opt.data);
@@ -27,6 +27,11 @@ function plot(obj, data, varargin)
         for e = 1:length(local);
             elem = local(e);
             vert = elem.nodes.getCoord();
+            
+            if elem.n_dim == 1;
+                vert = [vert; zeros(size(vert))];
+            end
+            
             face = elem.side_ids;
             p(i) = patch('Vertices',vert','Faces',face);
 

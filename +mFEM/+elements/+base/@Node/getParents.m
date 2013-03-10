@@ -38,7 +38,8 @@ function out = getParents(obj,varargin)
 
     % Get the list of parents
     out = [obj.parents];
-    out = unique(out);
+    [~,ix] = unique([out.id]);
+    out = out(ix);
 
     % Exclude the supplied element, if present
     if nargin == 2;

@@ -37,7 +37,13 @@ function out = gatherComposite(obj,varargin)
     %   Lab
     %       scalar | vector
     %       Limits the objects returned to the given processors in
-    %       parallel applications
+    %       parallel applications, the objects are automatically gathered
+    %       to the calling lab.
+    %
+    %   Gather
+    %       {false} | true
+    %       If true the objects stored in parallel are gathered to the
+    %       calling lab.
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -59,6 +65,7 @@ function out = gatherComposite(obj,varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+    
     % Gather the input and extract the desired objects
     [comp,map,id,all_ids,opt] = ...
         parseGatherCompositeInput(obj, varargin{:});
@@ -117,9 +124,13 @@ function out = gatherComposite(obj,varargin)
     end
     
     % Build the output vector
-    out = comp{lab(1)};
-    for i = 2:length(lab);
-        out = [out;comp{lab(i)}];
+    if opt.gather
+        out = comp{lab(1)};
+        for i = 2:length(lab);
+            out = [out;comp{lab(i)}];
+        end
+    else
+        out = comp;
     end
 end
 
@@ -156,6 +167,7 @@ function [comp,map,id,all_ids,opt] = ...
     opt.tag = {};
     opt.lab = [];
     opt.name = '';
+    opt.gather = false;
     opt = gatherUserOptions(opt,properties{:});
     
     % Extract the data to work with
