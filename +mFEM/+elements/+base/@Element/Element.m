@@ -79,7 +79,7 @@ classdef Element < mFEM.elements.base.HideHandle
         init(obj,id,nodes);
         dof = getDof(obj,varargin);
         nodes = getNodes(obj,varargin);
-        delete(obj);
+%         delete(obj);
 
         function obj = Element(varargin)
             %ELEMENT Class constructor.

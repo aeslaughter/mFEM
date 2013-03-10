@@ -41,5 +41,7 @@ function init(obj,id,nodes)
                          'on_boundary',...
                          num2cell(true(obj(i).n_sides,1)),...
                          'tag',[]);
+        obj(i).dof = [obj(i).nodes.dof];
+        obj(i).n_dof = sum([obj(i).nodes.n_dof]);
     end
 end

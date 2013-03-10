@@ -51,10 +51,10 @@ function init(obj)
     % Build the elements
     [elements,nodes] = obj.buildElements(nodes);
     
-    % Set the element dofs, in parallel
-    spmd
-        elements.setDof();
-    end
+%     % Set the element dofs, in parallel
+%     spmd
+%         elements.setDof();
+%     end
     
     % Display message time for finding neighbors, if desired
     if obj.options.time;
