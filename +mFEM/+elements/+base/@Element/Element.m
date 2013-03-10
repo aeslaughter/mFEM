@@ -74,8 +74,11 @@ classdef Element < mFEM.elements.base.HideHandle
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
+        init(obj);
         dof = getDof(obj,varargin);
-        
+        nodes = getNodes(obj,varargin);
+        delete(obj);
+
         function obj = Element(varargin)
             %ELEMENT Class constructor.
             %
@@ -103,42 +106,13 @@ classdef Element < mFEM.elements.base.HideHandle
             end
         end
         
-        function delete(obj)
-           for i = 1:length(obj);
-              delete(obj(i).nodes); 
-           end
-        end
+
         
-        function init(obj,id,nodes)
-           lab = labindex; 
-           for i = 1:length(obj);
-               obj(i).id = id(i);
-               obj(i).nodes = nodes(i,:);
-               obj(i).lab = lab;
-               obj(i).nodes.addParent(obj(i));
-               obj(i).sides = struct('neighbor',[],...
-                                     'neighbor_side',[],...
-                                     'on_boundary',...
-                                     num2cell(true(obj(i).n_sides,1)),...
-                                     'tag',[]);
-           end
-        end
+
      
-        function setDof(obj)
-            for i = 1:length(obj);
-                obj(i).dof = [obj(i).nodes.dof];
-            	obj(i).n_dof = sum([obj(i).nodes.n_dof]);
-            end
-        end
+
         
-        function out = getNodes(obj,varargin)
-            out = [obj.nodes];
-%            n = length(obj);
-%            out(n,obj(1).n_nodes) = mFEM.elements.base.Node();
-%            for i = 1:n;
-%                out(i,:) = obj(i).nodes;
-%            end
-        end
+
         
 %         function N = shape(obj, x, varargin)
 %             %SHAPE Returns the shape functions
@@ -223,6 +197,7 @@ classdef Element < mFEM.elements.base.HideHandle
     methods %(Access = ?mFEM.Mesh)
          findNeighbors(obj);
          addTag(obj,tag,type);
+         setDof(obj);
     end
 
     methods (Static)

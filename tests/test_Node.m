@@ -36,7 +36,7 @@ function T = test_Node(varargin)
         node(n) = mFEM.elements.base.Node();
     catch err
         T.caught(err);
-        return;
+        return
     end
 
     % Intialize the nodes
