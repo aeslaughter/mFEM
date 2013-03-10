@@ -57,7 +57,7 @@ classdef Element < mFEM.elements.base.HideHandle
         n_dim;    % no. of spatial dimensions for this element
     end
 
-    properties (Access = protected)
+    properties (Access = ?mFEM.Mesh)
         lab;                    % the processor that holds this element
     end
     
@@ -74,7 +74,7 @@ classdef Element < mFEM.elements.base.HideHandle
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
-        init(obj);
+        init(obj,id,nodes);
         dof = getDof(obj,varargin);
         nodes = getNodes(obj,varargin);
         delete(obj);
@@ -105,14 +105,6 @@ classdef Element < mFEM.elements.base.HideHandle
                 obj.init(varargin{:});
             end
         end
-        
-
-        
-
-     
-
-        
-
         
 %         function N = shape(obj, x, varargin)
 %             %SHAPE Returns the shape functions
