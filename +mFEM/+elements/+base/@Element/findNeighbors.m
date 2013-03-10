@@ -9,6 +9,9 @@ function findNeighbors(obj)
             if ~isempty(elem.sides(s).neighbor); 
                 continue; 
             end
+%             elem_coord
+%             elem.side_ids
+%             s
             elem_side = sort(elem_coord(:,elem.side_ids(s,:)),2);
             for j = 1:length(neighbors);
                 neigh = neighbors(j);

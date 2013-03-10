@@ -8,6 +8,13 @@ classdef Element < mFEM.elements.base.HideHandle
     %   subclass, see Line2.m for an example. In general, if you need help 
     %   for an element see the the help for the subclass itself.
     %
+    %   IMPORTANT: The nodes stored by the element are copies of the nodes
+    %   stored in the mFEM.Mesh property. If node operations are performed
+    %   (i.e., addBoundary or addSubdomain) the update() method of the Mesh
+    %   class must be called for those changes to be reflected on the
+    %   element copies. This only affects parallel operations where the
+    %   elements contain nodes from other processors.
+    %
     % See Also Quad4
     %
     %----------------------------------------------------------------------
@@ -36,7 +43,6 @@ classdef Element < mFEM.elements.base.HideHandle
         on_boundary = false;    % true when element touches a border
         sides;                  % structure of side information
         tag = {};               % list of char tags for this element
-        lab;                    % the processor that holds this element
         n_dof;                  % total no. of dofs associated with element
         dof;                    % dofs for the element, in order of nodes
         nodes =...              % node objects for this element
@@ -51,6 +57,10 @@ classdef Element < mFEM.elements.base.HideHandle
         n_dim;    % no. of spatial dimensions for this element
     end
 
+    properties (Access = protected)
+        lab;                    % the processor that holds this element
+    end
+    
     % Abstract Methods (protected)
     % (the user must redfine these in subclasse, e.g. Line2)
 %     methods (Abstract, Access = protected)
@@ -100,7 +110,6 @@ classdef Element < mFEM.elements.base.HideHandle
         end
         
         function init(obj,id,nodes)
-            
            lab = labindex; 
            for i = 1:length(obj);
                obj(i).id = id(i);

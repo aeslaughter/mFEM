@@ -39,20 +39,26 @@ function dof = getDof(obj, varargin)
     opt = gatherUserOptions(opt, varargin{:});
     
     % Local only operates on single element
-    if opt.local && length(obj) > 1;
-        error('Element:getDof:InvalidUseOfLocal','The local property only functions on a single element');
-    elseif opt.local
-        glbl = obj.dof; % all dofs, global
-        x = obj.nodes.getDof('Component',opt.component); % desired dofs
-        ix = ismember(glbl,x);     % location in glbl of desired dofs
+    if (~isempty(opt.side) || opt.local) && length(obj) > 1;
+        error('Element:getDof:InvalidUseOfLocal','The local and side properties only functions on a single element');
+    end
+    
+    % Determine the nodes to operate on
+    if ~isempty(opt.side);
+        nodes = obj.nodes(obj.side_ids(opt.side,:));
+    else
+        nodes = [obj.nodes];
+    end
+    
+    % Extract the dofs
+    dof = nodes.getDof('Component',opt.component); % desired dofs
+    
+    % Covert the global, to local if desried
+    if opt.local
+        glbl = obj.dof;            % all dofs, global
+        ix = ismember(glbl,dof);   % location in glbl of desired dofs
         lcl = 1:length(obj.dof);   % local dofs
         dof = lcl(ix);             % desired local dofs
     end
-    
-    
-    
-    
-    
-    
-    
+end
     

@@ -1,24 +1,47 @@
-function test_Element
+function T = test_Element(varargin)
+    %TEST_ELEMENT Tests the general behavior of an element
+    %   The following is the mesh that is used for the testing, which runs
+    %   the non-shape function related methods of the Element class, using
+    %   the Quad4 element.
     %
-    %     13---14----15---16
-    %     |  7  |  8  |  9 |
-    %     9----10----11---12
-    %     |  4  |  5  |  6 | 
     %     5-----6-----7----8
     %     |  1  |  2  |  3 | 
     %     1-----2-----3----4
+    %
+    % Lab 1: Nodes = [1,2,3,4]; Elements = [1,2];
+    % Lab 2: Nodes = [5,6,7,8]; Elements = [3]
 
+    % Create the test object
+    T = mFEM.Test('Name','Element',varargin{:});
+    
+    % Start a parallel operation
+    if matlabpool('size') == 0;
+        matlabpool(2);
+    end
+    
+    % Create the mesh
+    try
+        mesh = mFEM.Mesh('Space','Vector');
+        mesh.grid('Quad4',0,3,0,3,3,1);  
+        mesh.addBoundary('1','bottom');
+        mesh.update();
+    catch err
+        T.caught(err);
+        return
+    end
+    
+    N1 = mesh.getNodes('lab',1);
+    N2 = mesh.getNodes('lab',2);
+    E1 = mesh.getElements('lab',1);
+    E2 = mesh.getElements('lab',2);
 
-    mesh = mFEM.Mesh('space','vector');
-    mesh.grid('Quad4',0,3,0,3,3,3);
-    elem = mesh.getElements();
+    E2(1).nodes(1) % node from element not updated off proc
+    E1(2).nodes(2)
     
-    elem(5).getDof('-local','component','y')
+%     E1(1).nodes(1)
+%     N1(1)
     
     
-%     node = mesh.getNodes();
-%     
-%     T = mFEM.Test();
 %     T.compare(elem(1).nodes(3),elem(2).nodes(4), 'Elements sharing nodes');
 %     T.compare(elem(1).nodes(3),node(5), 'Elements nodes match input nodes');
 %     T.compare(elem(1).nodes(4).coord, [0;1;0], 'Element coordinates correct');
@@ -29,8 +52,8 @@ function test_Element
 %     testNeighbors(T,elems);
 %     testBoundarySides(T,elems);
 %     testNodeBoundary(T,node);
-
-    delete(elem);
+% 
+%     delete(elem);
 
     clear nodes elems classes;
 end

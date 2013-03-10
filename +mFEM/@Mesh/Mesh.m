@@ -31,6 +31,7 @@ classdef Mesh < handle
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
+        update(obj);
         el = getElements(obj,varargin);
         no = getNodes(obj,varargin);
         dof = getDof(obj,varargin);
@@ -45,9 +46,12 @@ classdef Mesh < handle
         init(obj);
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
-        out = gatherComposite(obj,name,id,tag,lab);
+        out = gatherComposite(obj,varargin);
         nodes = buildNodes(obj);
         [elements, nodes] = buildElements(obj,nodes);
     end
+    
+    methods (Hidden, Static, Access = protected)
+        no = getOffLabNodes(e_map, node_map, nodes)
+    end
 end
-

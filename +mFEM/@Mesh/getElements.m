@@ -26,7 +26,13 @@ function elem = getElements(obj, varargin)
     %   Lab
     %       scalar | vector
     %       Limits the objects returned to the given processors in
-    %       parallel applications
+    %       parallel applications, the objects are automatically gathered
+    %       to the calling lab.
+    %
+    %   Gather
+    %       {false} | true
+    %       If true the objects stored in parallel are gathered to the
+    %       calling lab.
     %
     % See Also addBoundary addSubdomain getNodes
     %
@@ -50,6 +56,17 @@ function elem = getElements(obj, varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %---------------------------------------------------------------------
     
-    % Collect the elements
-    elem = obj.gatherComposite(varargin{:},'name','elements'); 
+    % Collect the options
+    opt.gather = false;
+    opt.lab = [];
+    opt.tag = [];
+    opt = gatherUserOptions(opt,varargin{:});
+    
+    % Collect and gather the nodes
+    if opt.gather || ~isempty(opt.lab);
+        elem = obj.gatherComposite('lab',opt.lab,'tag',opt.tag...
+            ,'name','elements');
+    else
+        elem = obj.elements;
+    end  
 end

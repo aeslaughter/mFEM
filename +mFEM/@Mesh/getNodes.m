@@ -23,14 +23,20 @@ function nodes = getNodes(obj,varargin)
     % GETNODES Property Descriptions
     %   Tag
     %       scalar | char
-    %       Limits the node objects returned to only those with the
+    %       Limits the objects returned to only those with the
     %       supplied tag, the term tag is applied to both those added with
     %       the addBoundary and addSubdomain commands.
     %
     %   Lab
     %       scalar | vector
-    %       Limits the node objects returned to the given processors in
-    %       parallel applications
+    %       Limits the objects returned to the given processors in
+    %       parallel applications, the objects are automatically gathered
+    %       to the calling lab.
+    %
+    %   Gather
+    %       {false} | true
+    %       If true the objects stored in parallel are gathered to the
+    %       calling lab.
     %
     % See Also addBoundary addSubdomain getElements
     %
@@ -54,6 +60,17 @@ function nodes = getNodes(obj,varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    % Collect the nodes
-    nodes = obj.gatherComposite(varargin{:},'name','nodes');
+    % Collect the options
+    opt.gather = false;
+    opt.lab = [];
+    opt.tag = [];
+    opt = gatherUserOptions(opt,varargin{:});
+    
+    % Collect and gather the nodes
+    if opt.gather || ~isempty(opt.lab);
+        nodes = obj.gatherComposite('lab',opt.lab,'tag',opt.tag...
+            ,'name','nodes');
+    else
+        nodes = obj.nodes;
+    end    
 end

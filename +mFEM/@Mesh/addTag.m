@@ -57,6 +57,11 @@ function addTag(obj, tag, type, varargin)
         tag = num2str(tag); 
     end
     
+    % Account for single text input, make it a cell
+    if length(varargin) == 1 && ischar(varargin{1});
+        varargin{1} = varargin(1);
+    end
+    
     % Append the tag to the complete list of tags and return the count
     obj.tag{end+1} = tag;
     cnt = length(obj.tag); % location in tag maps

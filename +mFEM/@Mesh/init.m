@@ -32,15 +32,29 @@ function init(obj)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+    % Set no. of nodes and elements
+    obj.n_nodes = size(obj.node_map,1);
+    obj.n_elements = size(obj.elem_map,1);   
+    
     % Build the nodes
     nodes = obj.buildNodes();
+
+    % Set the nodal degrees-of-freedom, in parallel
+    space = obj.options.space;
+    n_nodes = obj.n_nodes;
+    spmd
+       ndof = buildCodistributedPartition(sum([nodes.n_dof]));
+       strt = [0,cumsum(ndof)] + 1;  
+       nodes.setDof(strt(labindex));
+    end
     
     % Build the elements
     [elements,nodes] = obj.buildElements(nodes);
     
-    % Set no. of nodes and elements
-    obj.n_nodes = size(obj.node_map,1);
-    obj.n_elements = size(obj.elem_map,1);
+    % Set the element dofs, in parallel
+    spmd
+        elements.setDof();
+    end
     
     % Display message time for finding neighbors, if desired
     if obj.options.time;
@@ -56,16 +70,6 @@ function init(obj)
     % Complete message time message
     if obj.options.time;
         tMessage(ticID);
-    end
-    
-    % Set the nodal and elements degrees-of-freedom, in parallel
-    space = obj.options.space;
-    n_nodes = obj.n_nodes;
-    spmd
-       ndof = buildCodistributedPartition(sum([nodes.n_dof]));
-       strt = [0,cumsum(ndof)] + 1;  
-       nodes.setDof(strt(labindex));
-       elements.setDof();
     end
     
     % Set the total degrees-of-freedom for the mesh
