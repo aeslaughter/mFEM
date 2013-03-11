@@ -7,6 +7,7 @@ function plot(obj, data, varargin)
 %     end
  
     opt.data = data;
+    opt.shownodes = false;
     
     if isempty(opt.data);
         opt.labelelements = true;
@@ -17,23 +18,26 @@ function plot(obj, data, varargin)
     end
     opt = gatherUserOptions(opt,varargin{:});
 
-    p = zeros(length(obj.elements),1);
 
-    figure; hold on;
     elements = gather(obj.elements);
-    
+
+    hfig = gcf;
+    set(hfig,'NextPlot','add');
+    k = 0;
     for i = 1:length(elements);
         local = elements{i};
         for e = 1:length(local);
+            k = k + 1;
             elem = local(e);
             vert = elem.nodes.getCoord();
-            
-            if elem.n_dim == 1;
-                vert = [vert; zeros(size(vert))];
-            end
-            
+
             face = elem.side_ids;
-            p(i) = patch('Vertices',vert','Faces',face);
+            p(k) = patch('Vertices',vert','Faces',face);
+            
+            if ~isempty(opt.data);
+                opt.data
+                set(p(k),'FaceVertexCdata',opt.data);
+            end
 
             if opt.labelelements;
                 cntr = num2cell(mean(vert',1));
@@ -50,6 +54,11 @@ function plot(obj, data, varargin)
                         'BackgroundColor','b','HorizontalAlignment','center');
                 end
             end
+        end
+        
+        if opt.shownodes;
+            set(p,'Marker','o','MarkerEdgeColor','k');
+            
         end
     end
 end

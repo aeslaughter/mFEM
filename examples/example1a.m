@@ -1,3 +1,4 @@
+function T = example1a(varargin) 
     %% Example 1a: Reproduces Example 5.1 of Fish & Belytschko (2007)
     % This example uses manually assembly of the finite element stiffness
     % matrix and force vector for a 1D problem.
@@ -32,134 +33,125 @@
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-%% Initilization
-% Functin declaration
-function T = example1a(varargin)
+    % Import the mFEM libraries
+    import mFEM.* elements.*;
 
-% Import the mFEM libraries
-import mFEM.* elements.*;
-
-% Parse optional input
-nel = 2;
-if nargin == 1 && isnumeric(varargin{1}); 
-    nel = varargin{1};
-end
-    
-%% Create a Mesh Object 
-% Build mesh of 2-node linear elemnts from 0 to 4
-mesh = Mesh();
-mesh.grid('Line2',0,4,nel); 
-
-%% Label The Boundaries
-mesh.addBoundary('essential','left');    % T = 0 boundary (essential)    
-mesh.addBoundary('flux','right');        % q = 20 boundary   
-
-%% Define the constants for the problem
-k = 2;          % thermal conductivity 
-A = 0.1;        % cross sectional area
-b = 5;          % heat source (defined over entire domain)
-q_bar = 5;      % right boundary prescribed heat flux
-T_bar = 0;      % known temperatures
-
-%% Initilize Stiffness Matrix and Force Vector
-K = sparse(mesh.n_dof, mesh.n_dof);
-f = zeros(mesh.n_dof, 1);
-
-%% Manual Assembly
-% Create the stiffness matrix and force vector by looping over the
-% elements, which in this case is a single element.
-elem = mesh.getElements('-gather');
-for e = 1:mesh.n_elements;
-    
-    % Define short-hand function handles for the element shape functions
-    % and shape function derivatives
-    B = @(xi) elem(e).shapeDeriv([]);
-    N = @(xi) elem(e).shape(xi);
-
-    % Initialize the stiffness matrix (K) and the force vector (f), for
-    % larger systems K should be sparse.
-    Ke = zeros(elem(e).n_dof);
-    fe = zeros(elem(e).n_dof,1);
-    
-    % Loop over the quadrature points in the two dimensions to perform the
-    % numeric integration
-    [qp,W] = elem(e).quad.rules();
-    for i = 1:length(qp);
-
-        % Account for the source term
-        fe = fe + W(i)*N(qp(i))'*b*elem(e).detJ([]);
-        
-        % Build stiffness matrix
-        Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem(e).detJ([]);
+    % Parse optional input
+    nel = 2;
+    if nargin == 1 && isnumeric(varargin{1}); 
+        nel = varargin{1};
     end
-    
-    % Loop throught the sides of the element, if the side has the boundary
-    % id of 2 (right), then add the prescribed flux term to force vector,
-    % which for 1D elements is an evaluation at a single point so it
-    % requires no integration.
-    [~,sid] = elem(e).hasTag('flux');
-    for s = 1:length(sid); 
-        dof = elem(e).getDof('Side',sid(s),'-local');
-        fe(dof) = fe(dof) + -q_bar*A;  
-    end   
-    
-    % Add the local stiffness and force to the global 
-    % (this method is slow, see example5 for faster method)
-    dof = elem(e).getDof();
-    K(dof, dof) = K(dof, dof) + Ke;
-    f(dof) = f(dof) + fe;
-end
 
-K
-f
+    %% Create a Mesh Object 
+    % Build mesh of 2-node linear elemnts from 0 to 4
+    mesh = Mesh();
+    mesh.grid('Line2',0,4,nel); 
 
-%% Define Variables for Essential and Non-essential Degrees-of-freedom
-ess = mesh.getDof('Tag', 'flux');  % 1
-non = ~ess;                         % 2,3
+    %% Label The Boundaries
+    mesh.addBoundary('essential','left');    % T = 0 boundary (essential)    
+    mesh.addBoundary('flux','right');        % q = 20 boundary  
+    mesh.update();
 
-%% Solve for the Temperatures
-T = zeros(size(f));         % initialize the temperature vector
-T(ess) = T_bar;             % apply essential boundary condtions
-T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
-T
+    %% Define the constants for the problem
+    k = 2;          % thermal conductivity 
+    A = 0.1;        % cross sectional area
+    b = 5;          % heat source (defined over entire domain)
+    q_bar = 5;      % right boundary prescribed heat flux
+    T_bar = 0;      % known temperatures
 
+    %% Initilize Stiffness Matrix and Force Vector
+    K = sparse(mesh.n_dof, mesh.n_dof);
+    f = zeros(mesh.n_dof, 1);
+
+    %% Manual Assembly
+    % Create the stiffness matrix and force vector by looping over the
+    % elements, which in this case is a single element.
+    elem = mesh.getElements('-gather');
+    for e = 1:mesh.n_elements;
+
+        % Define short-hand function handles for the element shape functions
+        % and shape function derivatives
+        B = @(xi) elem(e).shapeDeriv([]);
+        N = @(xi) elem(e).shape(xi);
+
+        % Initialize the stiffness matrix (K) and the force vector (f), for
+        % larger systems K should be sparse.
+        Ke = zeros(elem(e).n_dof);
+        fe = zeros(elem(e).n_dof,1);
+
+        % Loop over the quadrature points in the two dimensions to perform the
+        % numeric integration
+        [qp,W] = elem(e).quad.rules();
+        for i = 1:length(qp);
+
+            % Account for the source term
+            fe = fe + W(i)*N(qp(i))'*b*elem(e).detJ([]);
+
+            % Build stiffness matrix
+            Ke = Ke + W(i)*B(qp(i))'*k*A*B(qp(i))*elem(e).detJ([]);
+        end
+
+        % Loop throught the sides of the element, if the side has the boundary
+        % id of 2 (right), then add the prescribed flux term to force vector,
+        % which for 1D elements is an evaluation at a single point so it
+        % requires no integration.
+        [~,sid] = elem(e).hasTag('flux');
+        for s = 1:length(sid); 
+            dof = elem(e).getDof('Side',sid(s),'-local');
+            fe(dof) = fe(dof) + -q_bar*A;  
+        end   
+
+        % Add the local stiffness and force to the global 
+        % (this method is slow, see example5 for faster method)
+        dof = elem(e).getDof();
+        K(dof, dof) = K(dof, dof) + Ke;
+        f(dof) = f(dof) + fe;
+    end
+
+    %% Define Variables for Essential and Non-essential Degrees-of-freedom
+    ess = mesh.getDof('Tag', 'essential');   % 1
+    non = ~ess;                              % 2,3
+
+    %% Solve for the Temperatures
+    T = zeros(size(f));         % initialize the temperature vector
+    T(ess) = T_bar;             % apply essential boundary condtions
+    T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
+
+    %% Compute the Temperature Gradients
+    % Loop through the elements
+    for e = 1:mesh.n_elements;
+
+        % Collect the local values of T
+        d(:,1) = T(elem(e).getDof());
+
+        % Compute the temperature gradient at the gauss point, store the value
+        % twice for each element for creating graph, TGx is the node locations
+        % used for plotting
+%         TG(:,e) = B(qp(1))*d;
+%         TGx(:,e) = elem(e).nodes.getCoord();
+    end    
+
+    %% Generate Figure for T and TG Solutions
+
+    % Create Exact Solutions
+    x0 = 0:0.1:4;
+    Tex = -12.5*x0.^2 + 97.5*x0;
+    TGex = -25*x0 + 97.5;
+
+    % Initilize the figure
+    figure('Color','w','Name','Example 1 Results');
+
+    % Create Temperature Plot
+    h = subplot(2,1,1); hold on;
+    mesh.plot(T,'ShowNodes',true);
+%     plot(h,x0,Tex,'k-','LineWidth',1);
+%     legend({'FEM','Exact'},'location','best');
+%     xlabel('x (m)','interpreter','tex');
+%     ylabel('Temperature (\circC)','interpreter','tex');
 return;
-%% Compute the Temperature Gradients
-% Loop through the elements
-for e = 1:mesh.n_elements;
-    
-    % Collect the local values of T
-    d(:,1) = T(elem(e).getDof());
-    
-    % Compute the temperature gradient at the gauss point, store the value
-    % twice for each element for creating graph, TGx is the node locations
-    % used for plotting
-    TG(1:2,e) = B(qp(1))*d;
-    TGx(1:2,e) = elem(e).nodes.getCoord();
-
-end    
-
-%% Generate Figure for T and TG Solutions
-
-% Create Exact Solutions
-x0 = 0:0.1:4;
-Tex = -12.5*x0.^2 + 97.5*x0;
-TGex = -25*x0 + 97.5;
-
-% Initilize the figure
-figure('Color','w','Name','Example 1 Results');
-
-% Create Temperature Plot
-h = subplot(2,1,1);
-mesh.plot(T,'ShowNodes',true); hold on;
-plot(h,x0,Tex,'k-','LineWidth',1);
-legend({'FEM','Exact'},'location','best');
-xlabel('x (m)','interpreter','tex');
-ylabel('Temperature (\circC)','interpreter','tex');
-
-% Create TG Plot
-h = subplot(2,1,2);
-plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);
-legend({'Exact','FEM'},'location','best');
-xlabel('x (m)','interpreter','tex');
-ylabel('Temp. Gradient (\circC/m)','interpreter','tex');
+    % Create TG Plot
+    h = subplot(2,1,2);
+    plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);
+    legend({'Exact','FEM'},'location','best');
+    xlabel('x (m)','interpreter','tex');
+    ylabel('Temp. Gradient (\circC/m)','interpreter','tex');

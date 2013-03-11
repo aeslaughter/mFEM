@@ -57,7 +57,7 @@ function addTag(obj,tag,varargin)
 
         % Loop through sides, mark side if dofs match
         for s = 1:length(s_id);
-            obj(i).sides(s).tag{end+1} = tag;
+            obj(i).sides(s_id(s)).tag{end+1} = tag;
         end    
     end
 end

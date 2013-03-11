@@ -72,16 +72,21 @@ function init(obj,id,x,varargin)
     % Setting the properties of the nodes is faster when set using the
     % bracket notation avaiable for structs and classes. This requires that
     % the input be put into a cell.
-    x = mat2cell(x',ndim,ones(1,n));        % node coordinates
-    ndim = num2cell(repmat(ndim,n,1));      % no. of space dim.
-    ndof = num2cell(repmat(ndof,n,1));      % no. of dofs per node
+%     x = mat2cell(x',ndim,ones(1,n));        % node coordinates
+    n_dim = num2cell(repmat(ndim,n,1));      % no. of space dim.
+    n_dof = num2cell(repmat(ndof,n,1));      % no. of dofs per node
     proc = num2cell(repmat(labindex,n,1));  % the processor
     id = num2cell(id);                      % global id
 
     % Pass the input to the objects
     [obj.id] = id{:};
-    [obj.n_dim] = ndim{:};
-    [obj.n_dof] = ndof{:};
+    [obj.n_dim] = n_dim{:};
+    [obj.n_dof] = n_dof{:};
     [obj.lab] = proc{:};
-    [obj.coord] = x{:};
+    %[obj.coord] = x{:};    
+    
+    % Loop through nodes and assign coordinates (req. for padding zeros)
+    for i = 1:n;
+        obj(i).coord(1:ndim) = x(i,:);
+    end
 end
