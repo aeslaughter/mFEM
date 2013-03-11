@@ -11,9 +11,6 @@ T.compare(kern1.eval(),0.1, 'Constant creation, numeric input');
 % Evaluate the results
 kern2 = mFEM.kernels.Constant('D','0.2');
 T.compare(kern2.eval(),0.2, 'Constant creation, text input');
-
-% Done
-delete(T);
 end
 
 

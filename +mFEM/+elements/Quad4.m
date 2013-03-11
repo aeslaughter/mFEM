@@ -35,6 +35,7 @@ classdef Quad4 < mFEM.elements.base.Element
         side_type = 'Line2';                % side is 2-node line element
         quad = mFEM.Gauss(2, 'quad');       % quadrature rules 
         n_dim = 2;                          % 2D space
+        n_nodes = 4;                        % no. of nodes
     end
 
     % Define the Quad4 constructor
@@ -84,7 +85,7 @@ classdef Quad4 < mFEM.elements.base.Element
             %JACOBIAN Returns the jacobian matrix  
                         
             % Compute the Jacobian
-            J = obj.localGradBasis(x)*obj.nodes;                 
+            J = obj.localGradBasis(x)*obj.nodes.getCoord()';                 
         end
     end
     

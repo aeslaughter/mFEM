@@ -15,8 +15,8 @@ classdef Mesh < handle
     end
     
     properties (Hidden, Access = protected)
-        node_map = Composite();
-        elem_map = Composite();
+        node_map = [];
+        elem_map = uint32([]);
         elem_type = Composite();
         initialized = false;
         node_map_codist;
@@ -27,7 +27,9 @@ classdef Mesh < handle
     end
     
     methods
-        el = createElement(obj,type,nodes);
+        createNode(obj,x);
+        createElement(obj,type,nodes);       
+        init(obj);
         grid(obj,varargin);
         addBoundary(obj,id,varargin);
         addSubdomain(obj,id,varargin);
@@ -43,7 +45,7 @@ classdef Mesh < handle
     end
     
     methods (Hidden, Access = protected)
-        init(obj);
+
         addTag(obj, id, type, varargin)
         idEmptyBoundary(obj,id);
         out = gatherComposite(obj,varargin);

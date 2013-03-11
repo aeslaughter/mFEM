@@ -37,7 +37,7 @@ function B = shapeDeriv(obj,x)
     % Non-scalar fields
     if n_dof_node > 1;
         b = B;                      % re-assign scalar basis derivatives
-        r = obj.n_dof_node;         % no. of rows
+        r = n_dof_node;         % no. of rows
         c = r*size(b,2);            % no. of cols
         B = zeros(r+1,c);           % size the vector basis
 

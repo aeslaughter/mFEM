@@ -32,6 +32,26 @@ function init(obj)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+    % Partition the elem_map and node_map
+    elem_map = obj.elem_map;
+    node_map = obj.node_map;
+    if ~isdistributed(elem_map);
+        spmd
+            el_codist = codistributor1d(1,codistributor1d.unsetPartition,size(elem_map));
+            elem_map = codistributed(elem_map,el_codist);
+        end
+        obj.elem_map = elem_map;
+        obj.elem_map_codist = el_codist;
+    end
+    if ~isdistributed(node_map);
+        spmd
+            no_codist = codistributor1d(1,codistributor1d.unsetPartition,size(node_map));
+            node_map = codistributed(node_map,no_codist);
+        end
+        obj.node_map = node_map;
+        obj.node_map_codist = no_codist;       
+    end
+
     % Set no. of nodes and elements
     obj.n_nodes = size(obj.node_map,1);
     obj.n_elements = size(obj.elem_map,1);   

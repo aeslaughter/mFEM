@@ -46,7 +46,6 @@ classdef Element < mFEM.elements.base.HideHandle
         n_dof;                  % total no. of dofs associated with element
         dof;                    % dofs for the element, in order of nodes
         n_sides;                % no. of sides for this element
-        n_nodes;                % no. of nodes for this element
         nodes =...              % node objects for this element
             mFEM.elements.base.Node.empty();
     end
@@ -57,6 +56,7 @@ classdef Element < mFEM.elements.base.HideHandle
         side_type;  % name of element for sides
         quad;       % Gauss quadrature rules to utilize
         n_dim;      % no. of spacial dimensions
+        n_nodes;    % no. of nodes per element
     end
 
     properties (Access = ?mFEM.Mesh)

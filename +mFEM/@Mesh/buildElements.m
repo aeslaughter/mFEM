@@ -20,7 +20,7 @@ function [elements,nodes] = buildElements(obj,nodes)
     if matlabpool('size') == 0;
         spmd
             n_elem = size(elem_map,1); % no. of elements
-            elements(n_elem) = feval(['mFEM.elements.',type]); 
+            elements(n_elem) = feval(['mFEM.elements.',type]);
             elements.init(1:n_elem, nodes(gather(elem_map)));
         end
         return % done

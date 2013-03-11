@@ -78,7 +78,7 @@ function T = example1a(varargin)
     %% Manual Assembly
     % Create the stiffness matrix and force vector by looping over the
     % elements, which in this case is a single element.
-    elem = mesh.getElements('-gather');
+    elem = mesh.getElements();
     for e = 1:mesh.n_elements;
 
         % Define short-hand function handles for the element shape functions
@@ -121,7 +121,7 @@ function T = example1a(varargin)
     end
 
     %% Define Variables for Essential and Non-essential Degrees-of-freedom
-    ess = mesh.getDof('Tag', 'essential','-gather');    % 1
+    ess = mesh.getDof('Tag', 'essential');    % 1
     non = ~ess;                                         % 2,3
 
     %% Solve for the Temperatures
@@ -167,7 +167,7 @@ function T = example1a(varargin)
 
     % Create TG Plot
     h = subplot(2,1,2);
-    plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);
+    plot(h,x0,TGex,'b-',TGx,TG,'k-o','LineWidth',1);
     legend({'Exact','FEM'},'location','best');
     xlabel('x (m)','interpreter','tex');
     ylabel('Temp. Gradient (\circC/m)','interpreter','tex');

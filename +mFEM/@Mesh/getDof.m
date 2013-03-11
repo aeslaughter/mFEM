@@ -46,10 +46,10 @@ function dof = getDof(obj,varargin)
     %           getDof('index',true)
     %           getDof('-index')
     %
-    %   Gather
+    %   Parallel
     %       true | {false}
-    %       The default behavior is to return a codistributed vector, this
-    %       option will perform a gather, making the vector a serial
+    %       The default behavior is to return a gathered vector, this
+    %       option will return a parallel codistributed vector.
     %       vector.
     %
     %   Composite
@@ -81,7 +81,7 @@ function dof = getDof(obj,varargin)
     opt.tag = {};
     opt.component = [];
     opt.composite = false;
-    opt.gather = false;
+    opt.parallel = false;
     opt.index = false;
     opt = gatherUserOptions(opt,varargin{:});
 
@@ -144,7 +144,7 @@ function dof = getDof(obj,varargin)
         dof = subscript;
     end
     
-    if matlabpool('size') == 0 || (~opt.composite && opt.gather);
+    if matlabpool('size') == 0 || (~opt.composite && ~opt.parallel);
         dof = gather(dof);
     end
 end

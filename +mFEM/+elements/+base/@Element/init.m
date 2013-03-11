@@ -35,19 +35,19 @@ function init(obj,id,nodes)
     % Set/find the known constants
     lab = labindex; 
     
-    % Determine the no. of nodes and sides
-    n_nodes = size(nodes,2);
+    % Accunt for single node input, make sure it is column
+    if size(nodes,1) == obj(1).n_nodes && size(nodes,2) == 1;
+        nodes = nodes';
+    end
+    
+    % Build correctly sized cell array
     n_sides = size(obj(1).side_ids,1);
-
-    % Build correctly sized cell arrays
-    n_nodes = num2cell(repmat(n_nodes,n,1));
     n_sides = num2cell(repmat(n_sides,n,1));
     lab = num2cell(repmat(lab,n,1));
     id = num2cell(id);
 %     no = mat2cell(nodes,ones(n,1),n_dim)
 
     % Set properties of elements
-    [obj.n_nodes] = n_nodes{:};
     [obj.n_sides] = n_sides{:};
     [obj.id] = id{:};
     [obj.lab] = lab{:};    

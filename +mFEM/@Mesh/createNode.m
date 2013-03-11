@@ -1,9 +1,4 @@
-function node = createNode(obj,x,varargin)
-    
-    opt.space = obj.options.space;
-    opt = gatherUserOptions(opt,varargin{:});
-
-    id = length(obj.nodes) + 1;
-    node = mFEM.elements.base.Node(id,x,opt.space);     
-    obj.nodes{id} = node; 
+function createNode(obj,x)
+    id = size(obj.node_map,1) + 1;
+    obj.node_map(id,:) = x;
 end

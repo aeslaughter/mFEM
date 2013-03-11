@@ -33,9 +33,9 @@ function nodes = getNodes(obj,varargin)
     %       parallel applications, the objects are automatically gathered
     %       to the calling lab.
     %
-    %   Gather
+    %   Parallel
     %       {false} | true
-    %       If true the objects stored in parallel are gathered to the
+    %       If false the objects stored in parallel are gathered to the
     %       calling lab.
     %
     % See Also addBoundary addSubdomain getElements

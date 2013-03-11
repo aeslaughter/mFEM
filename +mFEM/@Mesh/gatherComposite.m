@@ -40,9 +40,9 @@ function out = gatherComposite(obj,varargin)
     %       parallel applications, the objects are automatically gathered
     %       to the calling lab.
     %
-    %   Gather
+    %   Parallel
     %       {false} | true
-    %       If true the objects stored in parallel are gathered to the
+    %       If false the objects stored in parallel are gathered to the
     %       calling lab.
     %
     %----------------------------------------------------------------------
@@ -124,7 +124,7 @@ function out = gatherComposite(obj,varargin)
     end
     
     % Build the output vector
-    if opt.gather
+    if ~opt.parallel
         out = comp{lab(1)};
         for i = 2:length(lab);
             out = [out;comp{lab(i)}];

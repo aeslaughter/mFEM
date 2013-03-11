@@ -1,10 +1,5 @@
-function elem = createElement(obj,type,nodes)
-
-    if isnumeric(nodes);
-        nodes = obj.nodes(nodes);
-    end
-
-    id = length(obj.elements) + 1;
-    elem = feval(['mFEM.elements.',type],id,nodes);
-    obj.elements{id} = elem;
+function createElement(obj,type,nodes)
+    id = size(obj.elem_map,1) + 1;
+    obj.elem_map(id,:) = nodes;
+    obj.elem_type{id} = type;
 end

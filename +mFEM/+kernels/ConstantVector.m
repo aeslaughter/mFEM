@@ -32,7 +32,7 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             obj.testName(name);
             obj.name = name;
             obj.value = mFEM.Vector(mesh);
-            
+
             dof = mesh.getDof(varargin{:},'-index');
             if isscalar(input);
                 input = ones(length(dof),1)*input;

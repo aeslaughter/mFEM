@@ -1,12 +1,15 @@
-function T = test_AutoKernel
+function T = test_AutoKernel(varargin)
 %TEST_AUTOKERNEL Tests the ConstantKernel class
 
 % Call the Test class for this file
-T = mFEM.Test(mfilename('fullfile'));
+T = mFEM.Test('Name','AutoKernel',varargin{:});
 
 % Define a single element mesh (Tri3)
-mesh = mFEM.FEmesh('time',false);
-mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
+mesh = mFEM.Mesh();
+mesh.createNode([0,0]);
+mesh.createNode([2,0.5]);
+mesh.createNode([0,1]);
+mesh.createElement('Tri3',[1,2,3]);
 mesh.init();
 
 % K(1) from Fish (2007), p. 194 (Example 8.1)
@@ -14,7 +17,7 @@ kern = mFEM.kernels.AutoKernel(mesh,'K','B''*D*B', 'D', 5);
 Kexact = [5.3125,-0.625,-4.6875; -0.625, 1.25, -0.625; -4.6875, -0.625, 5.3125];
 Kcalc = kern.eval(mesh.element(1),[0.5,0.5],[]);   
 T.compare(Kexact, Kcalc, 'B''*D*B on Tri3, Fish, 2007, p. 194');
-
+return;
 % Define a single element mesh (Quad4)
 mesh2 = mFEM.FEmesh('time', false);
 mesh2.addElement('Quad4',[0,1; 0,0; 2,0.5; 2,1]);

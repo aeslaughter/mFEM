@@ -32,27 +32,19 @@ classdef Tri3 < mFEM.elements.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
-        n_sides = 3;                % no. of sides
-        lims = [0,1; 0,1];          % limits of xi1 and xi2        
-        side_dof = [1,2; 2,3; 3,1]; % define the side dofs 
+    properties (Constant)
+        side_ids = [1,2; 2,3; 3,1]; % define the side dofs 
         side_type = 'Line2';        % 2-node Truss element for side
-        quad = ...                  % 3-point triangular quadrature 
-            mFEM.Gauss('order', 3, 'type', 'tri'); 
+        quad = mFEM.Gauss(3, 'tri');% 3-point triangular quadrature 
+        n_dim = 2;                  % 2D space
+        n_nodes = 3;                % no. of nodes
     end
     
     % Define the Quad4 constructor
     methods
-        function obj = Tri3(id, nodes, varargin)
+        function obj = Tri3(varargin)
            % Class constructor; calls base class constructor
-           
-           % Test that nodes is sized correctly
-           if ~all(size(nodes) == [3,2]);
-                error('Tri3:Tri3','Nodes not specified correctly; expected a [3 x 2] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
-           end
-           
-           % Call the base class constructor
-           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:});
+           obj = obj@mFEM.elements.base.Element(varargin{:});
         end
     end
     
@@ -63,9 +55,12 @@ classdef Tri3 < mFEM.elements.base.Element
             %JACOBIAN Define the Jacobain (see Fish p. 180)
             %  Note, the Jacobian is a constant.
            
+            % Extract node coordinates
+            nodes = obj.nodes.getCoord();
+              
             % Define short-hand for difference between two points
-            x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
-            y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);
+            x = @(i,j) nodes(i,1) - nodes(j,1);
+            y = @(i,j) nodes(i,2) - nodes(j,2);
             
             % Define the Jacobian matrix
             J = [x(1,3), y(1,3); x(2,3), y(2,3)];
@@ -83,13 +78,16 @@ classdef Tri3 < mFEM.elements.base.Element
         function B = gradBasis(obj, ~) 
             %GRADBASIS Gradient of shape functions (Fish, p. 174)
             %   Note, the gradient of N is constant.
-
+           
+            % Extract node coordinates
+            nodes = obj.nodes.getCoord();
+            
             % Define short-hand for difference between two points
-            x = @(i,j) obj.nodes(i,1) - obj.nodes(j,1);
-            y = @(i,j) obj.nodes(i,2) - obj.nodes(j,2);
+            x = @(i,j) nodes(i,1) - nodes(j,1);
+            y = @(i,j) nodes(i,2) - nodes(j,2);
         
             % Define twice the area of element
-            M = [ones(obj.n_nodes,1), obj.nodes]; % 2A
+            M = [ones(obj.n_nodes,1), nodes]; % 2A
 
             % The shape function derivatives
             B = 1/det(M)*[y(2,3), y(3,1), y(1,2);

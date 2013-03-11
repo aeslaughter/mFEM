@@ -120,10 +120,10 @@ function h = plot(obj, data, varargin)
         FV.vertices(:,2) = opt.data;
     end
 
-    FV.FaceVertexCData = opt.data;
+%     FV.FaceVertexCData = opt.data;
     
     
-    h = patch(FV);
+    h = patch(FV,'FaceColor','None');
     
     
 %     % Plot the data according the spacial dimensions
