@@ -60,7 +60,8 @@ classdef Element < mFEM.elements.base.HideHandle
     end
 
     properties (Access = ?mFEM.Mesh)
-        lab;                    % the processor that holds this element
+        lab;                            % the processor of this element
+        node_plot_order = uint32([]); 	% node plotting order (see Tri6)
     end
     
     % Abstract Methods (protected)
@@ -117,6 +118,7 @@ classdef Element < mFEM.elements.base.HideHandle
          findNeighbors(obj);
          addTag(obj,tag,type);
          setDof(obj);
+         out = getPlotCoord(obj);
     end
 
     methods (Static)

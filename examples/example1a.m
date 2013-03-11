@@ -127,12 +127,11 @@ function T = example1a(varargin)
         % Compute the temperature gradient at the gauss point, store the value
         % twice for each element for creating graph, TGx is the node locations
         % used for plotting
-%         TG(:,e) = B(qp(1))*d;
-%         TGx(:,e) = elem(e).nodes.getCoord();
+        TG(1:2,e) = B(qp(1))*d;
+        TGx(1:2,e) = elem(e).nodes.getCoord();
     end    
 
     %% Generate Figure for T and TG Solutions
-
     % Create Exact Solutions
     x0 = 0:0.1:4;
     Tex = -12.5*x0.^2 + 97.5*x0;
@@ -143,12 +142,12 @@ function T = example1a(varargin)
 
     % Create Temperature Plot
     h = subplot(2,1,1); hold on;
-    mesh.plot(T,'ShowNodes',true);
-%     plot(h,x0,Tex,'k-','LineWidth',1);
-%     legend({'FEM','Exact'},'location','best');
-%     xlabel('x (m)','interpreter','tex');
-%     ylabel('Temperature (\circC)','interpreter','tex');
-return;
+    plot(h,x0,Tex,'b-','LineWidth',2);
+    mesh.plot(T,'-ShowNodes','Patch',{'EdgeColor','k'});
+    legend({'Exact','FEM'},'location','best');
+    xlabel('x (m)','interpreter','tex');
+    ylabel('Temperature (\circC)','interpreter','tex');
+
     % Create TG Plot
     h = subplot(2,1,2);
     plot(h,x0,TGex,'k-',TGx,TG,'b-o','LineWidth',1);

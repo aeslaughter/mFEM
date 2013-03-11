@@ -31,5 +31,7 @@ function out = getCoord(obj)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
+    
+    % Get the coordinates
     out = [obj.coord];
 end
