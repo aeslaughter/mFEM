@@ -31,7 +31,7 @@
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-    
+
     % Loop through the nodes and create or append the element to the list
     for i = 1:length(obj);
         idx = length(obj(i).parents);

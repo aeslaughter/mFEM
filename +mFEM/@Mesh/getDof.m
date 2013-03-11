@@ -97,11 +97,11 @@ function dof = getDof(obj,varargin)
      end
      
      cmp = opt.component;
-    all_tag = obj.tag;
+     all_tag = obj.tag;
     
     composite_flag = opt.composite;
     index_flag = opt.index;
-    
+
     spmd
         idx = true(length(nodes),length(tag)+1);
         map = getLocalPart(node_tag_map);
@@ -116,9 +116,9 @@ function dof = getDof(obj,varargin)
         if any(idx); 
             dof(:,1) = nodes(idx).getDof('Component',cmp); 
         else
-            dof(:,1) = idx; 
+            dof = uint32(0); % acts as empty value on this process
         end
-        
+
         % Build index form of dofs
         if ~composite_flag;
             part = buildCodistributedPartition(length(dof));
@@ -135,6 +135,9 @@ function dof = getDof(obj,varargin)
         end
     end
     
+    % Remove place-holding zeros from dof
+    dof = dof(dof~=0);
+
     % Convert from index to subscript
     if ~index_flag;
         subscript(dof) = true;

@@ -75,7 +75,7 @@ classdef Node < mFEM.elements.base.HideHandle
     end
     
     % Protected methods
-    methods (Access = {?mFEM.elements.base.Element,?mFEM.Mesh,?mFEM.Test})
+    methods %(Access = {?mFEM.elements.base.Element,?mFEM.Mesh,?mFEM.Test})
         setDof(obj,varargin);
         setBoundaryFlag(obj);
         addParent(obj,elem);

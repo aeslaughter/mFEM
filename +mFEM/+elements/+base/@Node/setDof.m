@@ -50,14 +50,14 @@ function dof = setDof(obj,varargin)
         strt = dof;
         for i = 1:length(obj);
             stop = strt + obj(i).n_dof - 1;
-            obj(i).dof = strt:stop;
+            obj(i).dof = uint32(strt:stop);
             strt = stop+1;
         end
     
     % Explicit case    
     elseif size(dof,1) == length(obj);
         for i = 1:length(obj);
-            obj(i).dof = dof(i,:);
+            obj(i).dof = uint32(dof(i,:));
         end
     end
 end

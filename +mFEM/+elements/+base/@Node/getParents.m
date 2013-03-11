@@ -45,4 +45,5 @@ function out = getParents(obj,varargin)
     if nargin == 2;
         out = out(out~=varargin{1});
     end
+    
 end

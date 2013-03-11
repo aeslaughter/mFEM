@@ -87,11 +87,8 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
                     if opt.zero;
                         obj.value.zero();
                     end
-               end
-               
-               
-        end   
-        
+                end
+        end    
     end
     
     methods (Access = protected)
@@ -122,8 +119,6 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             else
                   Ke = obj.evaluateSideVector(elem,id,t);         
             end
-            
- 
         end
         
         function Ke = evaluateSideMatrix(obj, elem, id, t)

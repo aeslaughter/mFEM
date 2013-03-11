@@ -27,11 +27,11 @@ classdef Matrix < handle
     %----------------------------------------------------------------------
 
     properties (SetAccess = private, GetAccess = public)
-      I;    % i vector (see doc sparse)
-      J;    % j vector (see doc sparse)
-      Aij;  % s vector (see doc sparse)
-      m     % no. for rows
-      n;    % no. of columns
+      I = double([]);    % i vector (see doc sparse)
+      J = double([]); ;  % j vector (see doc sparse)
+      Aij = double([]);  % s vector (see doc sparse)
+      m = uint32([]);    % no. for rows
+      n = uint32([]);    % no. of columns
     end
    
     methods
@@ -56,14 +56,6 @@ classdef Matrix < handle
                mesh = varargin{1};
                obj.m = mesh.n_dof;
                obj.n = obj.m;
-               
-%                N = 0;
-%                for e = 1:mesh.n_elements;
-%                    N = N + mesh.element(e).n_dof^2;
-%                end
-%                obj.I = zeros(N,1);
-%                obj.J = zeros(N,1);
-%                obj.Aij = zeros(N,1);
            
            % Case when only m is specfied     
            elseif nargin == 1;
@@ -135,7 +127,7 @@ classdef Matrix < handle
             %    the following:
             %        M(dof1,dof2) = M(dof1,dof2) + B,
             %    where M is the global sparse matrix.
-           
+
             % Case when only a single dof vector is supplied
             if nargin == 3;
                 dof1 = varargin{1};
@@ -146,24 +138,16 @@ classdef Matrix < handle
                 dof1 = varargin{1};
                 dof2 = varargin{2};
             end
+            
+            [X,Y] = ndgrid(dof1,dof2);
+            i = reshape(X,numel(X),1);
+            j = reshape(Y,numel(Y),1);
 
-            % Make sure the dof vectors are organized as columns
-            if ~iscolumn(dof1); dof1 = dof1'; end
-            if ~iscolumn(dof2); dof2 = dof2'; end
-
-            % Compute indices for inserting into sparse matrix i,j,s vectors
-            l = length(obj.I);
-            b = numel(B);
-            idx = l+1 : l+b;
-
-            % Build the i,j components for the sparse matrix creation
-            i = repmat((1:length(dof1))', length(dof1), 1);
-            j = sort(i);
-            obj.I(idx) = dof1(i);
-            obj.J(idx) = dof2(j);
+            obj.I = [obj.I;double(i)];
+            obj.J = [obj.J;double(j)];
 
             % Add the local mass and stiffness matrix to the sparse matrix values
-            obj.Aij(idx) = reshape(B, numel(B), 1);
+            obj.Aij = [obj.Aij; reshape(B, numel(B), 1)];
        end
        
        function A = init(obj)

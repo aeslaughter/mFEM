@@ -1,8 +1,8 @@
-function T = test_ConstantRegistry
+function T = test_ConstantRegistry(varargin)
 %TEST_CONSTANTREGISTRY Tests the ConstantKernelRegistry class
 
 % Call the Test class for this file
-T = mFEM.Test(mfilename('fullfile'));
+T = mFEM.Test('Name','ConstatRegistry',varargin{:});
 
 % Create a registry
 reg = mFEM.registry.ConstantRegistry('-disableWarnings');
@@ -31,4 +31,5 @@ T.compare(reg.get('d'),42, 'Added numeric value to existing constant');
 
 reg.add('d','2*b + c','-add'); % 42 + 2*10 + 2*2 = 66
 T.compare(reg.get('d'),66, 'Added string function to existing constant');
+delete(T);
 end

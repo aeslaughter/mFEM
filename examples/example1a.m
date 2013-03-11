@@ -5,11 +5,24 @@ function T = example1a(varargin)
     % 
     % Syntax
     %   example1a
-    %   example1a(n)
+    %   example1a('PropertyName',PropertyValue,...)
     %
     % Description
-    %   example1a runs example exactly as done in textbook, with two elements
-    %   example1a(n) runs the example with n number of elements
+    %   example1a runs example exactly as done in textbook, with two 
+    %   elements.
+    %
+    %   example1a('PropertyName',PropertyValue,...) allows the user to
+    %   customize the behavior with the properties given below.
+    %
+    % EXAMPLE1A Property Descriptions
+    %   N
+    %       integer
+    %       The number of elements, the default is 2.
+    %
+    %   Debug
+    %       true | {false}
+    %       If set to true, only the temperature is returned and the
+    %       plots are not created.
     %
     % See also EXAMPLE1B EXAMPLE1C
     %
@@ -36,16 +49,15 @@ function T = example1a(varargin)
     % Import the mFEM libraries
     import mFEM.* elements.*;
 
-    % Parse optional input
-    nel = 2;
-    if nargin == 1 && isnumeric(varargin{1}); 
-        nel = varargin{1};
-    end
+    % Gather options
+    opt.N = 2;
+    opt.debug = false;
+    opt = gatherUserOptions(opt,varargin{:});
 
     %% Create a Mesh Object 
     % Build mesh of 2-node linear elemnts from 0 to 4
     mesh = Mesh();
-    mesh.grid('Line2',0,4,nel); 
+    mesh.grid('Line2',0,4,opt.N); 
 
     %% Label The Boundaries
     mesh.addBoundary('essential','left');    % T = 0 boundary (essential)    
@@ -109,14 +121,19 @@ function T = example1a(varargin)
     end
 
     %% Define Variables for Essential and Non-essential Degrees-of-freedom
-    ess = mesh.getDof('Tag', 'essential');   % 1
-    non = ~ess;                              % 2,3
+    ess = mesh.getDof('Tag', 'essential','-gather');    % 1
+    non = ~ess;                                         % 2,3
 
     %% Solve for the Temperatures
     T = zeros(size(f));         % initialize the temperature vector
     T(ess) = T_bar;             % apply essential boundary condtions
     T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 
+    % Stop here if in debug mode
+    if opt.debug; 
+        return;
+    end
+    
     %% Compute the Temperature Gradients
     % Loop through the elements
     for e = 1:mesh.n_elements;

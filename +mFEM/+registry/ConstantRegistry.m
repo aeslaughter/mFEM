@@ -31,8 +31,8 @@ classdef ConstantRegistry < mFEM.registry.base.Registry
                     k0 = obj.kernels(idx);
                     k0.value = [k0.value,'+',k1.value]; 
                 else
-                    %k0 = mFEM.kernels.Constant(name, value);
-                    obj.kernels(idx) = k1;
+                    k0 = mFEM.kernels.Constant(name, value);
+                    obj.kernels(idx) = k0;
                 end
                            
             else

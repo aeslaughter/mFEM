@@ -42,7 +42,7 @@ function addTag(obj,tag,varargin)
     if nargin == 3 && strcmpi(varargin{1},'boundary');
         boundary_flag = true;
     end
-    
+
     % Loop through the elements
     for i = 1:length(obj);
 

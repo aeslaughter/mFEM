@@ -68,7 +68,7 @@ function findNeighbors(obj)
                 end
             end
         end
-        
+
         % Update the element boundary flag
         idx = [elem.sides.on_boundary];
         elem.nodes(elem.side_ids(idx,:)).setBoundaryFlag();
