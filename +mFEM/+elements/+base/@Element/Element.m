@@ -78,7 +78,7 @@ classdef Element < mFEM.elements.base.HideHandle
     methods (Access = public)
         init(obj,id,nodes);
         dof = getDof(obj,varargin);
-        nodes = getNodes(obj,varargin);
+        nodes = getNodes(obj);
         varargout = hasTag(obj,tag);
         N = shape(obj,x,varargin);
         B = shapeDeriv(obj,x);
