@@ -1,12 +1,15 @@
-function T = test_System
+function T = test_System(varargin)
 %TEST_SYSTEM Tests the ConstantKernel class
 
 % Call the Test class for this file
-T = mFEM.Test(mfilename('fullfile'));
+T = mFEM.Test('Name','System',varargin{:});
 
 % Define a single element mesh (Tri3)
-mesh = mFEM.FEmesh('time', false);
-mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
+mesh = mFEM.Mesh();
+mesh.createNode([0,0]);
+mesh.createNode([2,0.5]);
+mesh.createNode([0,1]);
+mesh.createElement('Tri3',[1,2,3]);
 mesh.init();
 
 % K(1) from Fish (2007), p. 194 (Example 8.1)
@@ -25,8 +28,6 @@ sys.addConstant('D', 5);
 T.compare(sys.get('D'), 5, 'Overwrite a constant.');
 
 % Add vector
-
-
 
 %
 sys.addMatrix('K', 'B''*D*B');
