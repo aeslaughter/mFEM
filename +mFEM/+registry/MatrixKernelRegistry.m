@@ -26,20 +26,21 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
         function K = assemble(obj,name,varargin)
             
             opt.zero = false;
-            opt.boundary = [];
-            opt.subdomain = [];
+            opt.tag = {};
             opt.component = [];
             opt = gatherUserOptions(opt, varargin{:});   
                 
             kern = obj.find(name);
            
-            for i = 1:length(kern);
-                kern(i).assemble();
+            K = kern(1).assemble(varargin{:},'-parallel');
+            for i = 2:length(kern);
+                K = K + kern(i).assemble(varargin{:});
             end
            
-            K = kern(1).value.init(); 
             if opt.zero;
-                kern(1).value.zero();
+                for i = 1:length(kern);
+                    kern(i).value.zero();
+                end
             end           
            
         end

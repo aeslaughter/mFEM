@@ -167,7 +167,7 @@ function [comp,map,id,all_ids,opt] = ...
     opt.tag = {};
     opt.lab = [];
     opt.name = '';
-    opt.gather = false;
+    opt.parallel = false;
     opt = gatherUserOptions(opt,properties{:});
     
     % Extract the data to work with

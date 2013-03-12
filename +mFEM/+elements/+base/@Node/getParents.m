@@ -38,6 +38,13 @@ function out = getParents(obj,varargin)
 
     % Get the list of parents
     out = [obj.parents];
+    
+    % Return if it is empty
+    if isempty(out); 
+        return
+    end
+    
+    % Get the unique values
     [~,ix] = unique([out.id]);
     out = out(ix);
 
@@ -45,5 +52,4 @@ function out = getParents(obj,varargin)
     if nargin == 2;
         out = out(out~=varargin{1});
     end
-    
 end

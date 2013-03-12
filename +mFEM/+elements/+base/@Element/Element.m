@@ -80,7 +80,7 @@ classdef Element < mFEM.elements.base.HideHandle
     % (These methods are accessible by the user to create the element and
     % access the shape functions and other necessary parameters)
     methods (Access = public)
-        init(obj,id,nodes);
+        init(obj,id,nodes,varargin);
         varargin = getPosition(xi,varargin);
         dof = getDof(obj,varargin);
         nodes = getNodes(obj);

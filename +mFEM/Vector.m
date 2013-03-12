@@ -1,8 +1,8 @@
-classdef Vector < handle
-    %VECTOR A wrapper class for creating a column vector, this is simple 
-    % wrapper that provides the same features as the Matrix class so that 
-    % syntax may remain consistent. This creates a column vector. And will
-    % serve as the basis of creating parallel vectors in the future.  
+classdef Vector < mFEM.Matrix
+    %VECTOR A class for creating a column vector.
+    %   This limits the Matrix class to a column vector, it stores the
+    %   vector as a sparse I,J,S format. This is necessary for this class
+    %   to work properly with pVector (parallel Vector).
     %
     %----------------------------------------------------------------------
     %  mFEM: An Object-Oriented MATLAB Finite Element Library
@@ -23,14 +23,6 @@ classdef Vector < handle
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-
-    properties (SetAccess = private, GetAccess = public)
-      m     % no. of rows
-    end
-    
-    properties (Access = private)
-        f     % the vector
-    end
    
     methods
        function obj = Vector(m,varargin)
@@ -51,106 +43,59 @@ classdef Vector < handle
            %
            %    Vector(vec) create an initilized vector
 
-           % Case when creating from an FEmesh object
+           % By default the I,J,S values of the sparse are empty
+           I = [];
+           J = [];
+           Aij = [];
+           
+           % Case when creating from an Mesh object
            if nargin == 1 && isa(m,'mFEM.Mesh');
-               mesh = m;
-               obj.m = mesh.n_dof;
-               obj.zero();
-               
-           % Case when only m is specfied     
-           elseif nargin == 1 && isscalar(m);
-               obj.m = m;
-               obj.zero();
-               
+                m = m.n_dof;
+
            % Case when a vector is given    
-           elseif nargin == 1;
-               obj.m = length(m);
-               obj.f = m;
-               
+           elseif nargin == 1 && ~isscalar(m);
+                 [I,J,Aij] = find(m);
+                 m = length(m);
+                 
            % Case when a constant vector is desired
            elseif nargin == 2;
-               obj.m = m;
-               obj.f = ones(m,1)*varargin{1};
-
-           % Input not understood
-           else
-               error('Vector:Vector', 'Input Error');
+               [I,J,Aij] = find(ones(m,1)*varargin{1});
            end
+           
+           % Call the base constructor and set I,J,Aij values
+           obj = obj@mFEM.Matrix(m,1);
+           obj.I = I;
+           obj.J = J;
+           obj.Aij = Aij;
        end
        
-       function varargout = size(obj, varargin)
-           %SIZE Returns the size of the the matrix
-           %
-           % Syntax
-           %    m = size()
-           %
-           % Description
-           %    m = size() returns the length of the vector
-
-           % The size of the matrix
-           varargout{1} = obj.m;
-       end
-       
-       function add(obj, fe, varargin)
+       function add(obj,B,dof)
             %ADD Adds a sub-vector to the global vector
+            %   This is an overloaded method of the matrix class, it simply
+            %   limits the second dof input to 1 because this is a vector.
             %
             % Syntax
-            %    add(f)
-            %    add(fe, dof)
+            %    add(fe,dof)
             %
             % Description
-            %    add(f) adds a the complete vector, f, to the existing
-            %
-            %    add(fe, dof) adds the local vector fe to the 
+            %    add(fe,dof) adds the local vector fe to the 
             %    locations specified in dof, this is equivelent to the 
             %    following:
             %        f(dof) = f(dof) + fe,
             %    where f is the global vector.
-
-            if nargin == 3;
-                dof = varargin{1};
-            else
-                dof = 1:obj.m;
-            end
-            
-            obj.f(dof) = obj.f(dof) + fe;
+            add@mFEM.Matrix(obj,B,dof,1);
        end
-       
-       function out = getLocal(obj, dof)
-           %GETLOCAL extract a local vector given the dof
-           %
-           % Syntax
-           %    out = getLocal(dof)
-           %
-           % Description
-           %    out = getLocal(dof) returns a subvector, where dof are the
-           %    indices of the subvector
-           
-           out = obj.f(dof);
-       end
-       
-       function f = init(obj)
-           %INIT Return the vector
-           %
-           % Syntax
-           %    f = init()
-           %
-           % Description
-           %    f = init() creturns the vector
-           f = obj.f;
-       end
-       
-       function zero(obj)
-           %ZERO Clears the matrix
-           %
-           % Syntax
-           %    zero()
-           %
-           % Description 
-           %    zero() removes all existing values, it does not resize the
-           %    matrix.
-
-           obj.f = zeros(obj.m,1);
-       end
+ 
+%        function out = getLocal(obj, dof)
+%            %GETLOCAL extract a local vector given the dof
+%            %
+%            % Syntax
+%            %    out = getLocal(dof)
+%            %
+%            % Description
+%            %    out = getLocal(dof) returns a subvector, where dof are the
+%            %    indices of the subvector
+%            out = obj.f(dof);
+%        end
    end
 end

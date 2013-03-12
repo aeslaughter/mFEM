@@ -28,8 +28,6 @@ classdef LinearSolver < mFEM.solvers.base.Solver
    properties (Access = protected)
        options = ...        % Solver options
            struct('stiffness', 'K', 'force', 'f');
-       %K;
-       %f;
    end
    
    methods
@@ -107,6 +105,12 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            % Apply essential boundary constraings to the solution
            [u,ess] = obj.applyConstraints();
    
+           % Currently MATLAB does not support parallel sparse in mldivide
+           if isdistributed(K);
+               warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
+               K = gather(K); f = gather(f);
+           end
+
            % Solve the equations
            u(~ess) = K(~ess,~ess)\(f(~ess) - K(ess,~ess)'*u(ess));
            

@@ -35,9 +35,6 @@
 % Functin declaration
 function T = example1c(varargin)
 
-% Import the mFEM libraries
-import mFEM.* mFEM.kernels.*;
-   
 % Parse optional input
 nel = 2;
 if nargin == 1 && isnumeric(varargin{1}); 
@@ -46,19 +43,13 @@ end
 
 %% Create a FEmesh Object 
 % Build mesh of 2-node linear elemnts from 0 to 4
-mesh = FEmesh('Element', 'Line2');
-mesh.grid(0,4,nel); 
+mesh = mFEM.Mesh();
+mesh.grid('Line2',0,4,nel); 
 mesh.init();
 
 %% Label The Boundaries
 mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
 mesh.addBoundary(2,'right');   % q = 20 boundary   
-
-%% Create Gauss Objects 
-% Initilizes an object for performing integration on the element and
-% extracts the integration rules.
-q_elem = Gauss('Order',1);
-[qp, ~] = q_elem.rules();
 
 %% Define Constants
 k = 2;          % thermal conductivity 
@@ -68,19 +59,18 @@ q_bar = 5;      % right boundary prescribed heat flux
 T_bar = 0;      % known temperatures
 
 %% Define Kernels
-diffusion = Diffusion(mesh, 'D', k*A);
-source = Source(mesh, 'b', b);
+diffusion = mFEM.kernels.Diffusion(mesh, 'D', k*A);
+source = mFEM.kernels.Source(mesh, 'b', b);
 % flux = Source(mesh, 'b', -q_bar*A, 'boundary', 2);
-flux = Source(mesh, 'b', -q_bar*A);
-
+flux = mFEM.kernels.Source(mesh, 'b', -q_bar*A);
 
 %% Assemble Stiffness Matrix and Force Vector
 K = diffusion.assemble();
 % f = source.assemble() + flux.assemble();
-f = source.assemble() + flux.assemble('boundary', 2);
+f = source.assemble() + flux.assemble('Tag', 2);
 
 %% Define Variables for Essential and Non-essential Degrees-of-freedom
-ess = mesh.getDof('Boundary', 1);  % 1
+ess = mesh.getDof('Tag', 1);  % 1
 non = ~ess;                         % 2,3
 
 %% Solve for the Temperatures
@@ -90,10 +80,11 @@ T(non) = K(non,non)\f(non); % solve for T on the non-essential boundaries
 
 %% Compute the Temperature Gradients
 % Loop through the elements
-for e = 1:mesh.n_elements;
+elements = mesh.getElements();
+for e = 1:length(elements);
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Collect the local values of T
     d(:,1) = T(elem.getDof());
@@ -101,9 +92,8 @@ for e = 1:mesh.n_elements;
     % Compute the temperature gradient at the gauss point, store the value
     % twice for each element for creating graph, TGx is the node locations
     % used for plotting
-    TG(1:2,e) = elem.shapeDeriv(qp(1))*d;
-    TGx(1:2,e) = elem.nodes;
-
+    TG(1:2,e) = elem.shapeDeriv(elem.qp(1))*d;
+    TGx(1:2,e) = elem.nodes.getCoord();
 end    
 
 %% Generate Figure for T and TG Solutions
@@ -118,7 +108,7 @@ figure('Color','w','Name','Example 1 Results');
 
 % Create Temperature Plot
 h = subplot(2,1,1);
-mesh.plot(T,'ShowNodes',true); hold on;
+mesh.plot(T,'-ShowNodes'); hold on;
 plot(h,x0,Tex,'k-','LineWidth',1);
 legend({'FEM','Exact'},'location','best');
 xlabel('x (m)','interpreter','tex');

@@ -180,15 +180,10 @@ classdef System < handle
             %   boundaries with the same id (see FEMESH.ADDBOUNDARY)
             %
             % ADDMATRIX Property Descriptions
-            %   Boundary
-            %       numeric
+            %   Tag
+            %       char | numeric | cell
             %       Limits the application of the supplied equation to the 
-            %       boundaries with the id, see FEMESH.ADDBOUNDARY
-            %
-            %   Subdomain
-            %       numeric
-            %       Limits the application of the supplied equation to the 
-            %       elements on the subdomain, see FEMESH.ADDSUBDOMAIN
+            %       boundaries with the id, see MESH.ADDBOUNDARY
             %
             %   Component
             %       numeric
@@ -197,9 +192,9 @@ classdef System < handle
             %
             % Examples
             %   sys.addMatrix('M','N''*N');
-            %   sys.addMatrix('K','B''*B', 'Boundary', 1);
+            %   sys.addMatrix('K','B''*B', 'Tag', 1);
   
-            obj.addMatrixPrivate('matrix', varargin{:});
+            obj.addMatrixPrivate('matrix',varargin{:});
         end
 
         function addVector(obj, varargin)  
@@ -230,15 +225,10 @@ classdef System < handle
             %   same id (see FEMESH.ADDBOUNDARY)
             %
             % ADDVECTOR Property Descriptions
-            %   Boundary
-            %       numeric
+            %   Tag
+            %       char | numeric | cell
             %       Limits the application of the supplied equation to the 
-            %       boundaries with the id, see FEMESH.ADDBOUNDARY
-            %
-            %   Subdomain
-            %       numeric
-            %       Limits the application of the supplied equation to the 
-            %       elements on the subdomain, see FEMESH.ADDSUBDOMAIN
+            %       boundaries with the id, see MESH.ADDBOUNDARY
             %
             %   OverWrite
             %       true | {false}
@@ -252,8 +242,8 @@ classdef System < handle
             %       dofs.
             %
             % Example
-            %   sys.add_vector('f','N''*b'); % b is a constant
-
+            %   sys.addVector('f','N''*b'); % b is a constant
+            
             obj.addMatrixPrivate('vector', varargin{:});
         end
 
@@ -404,20 +394,13 @@ classdef System < handle
             [~, type] = obj.exists(name);
             
             for i = 1:length(type);
-                if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry');
-                    if i == 1;
-                        X = obj.mat.assemble(name, varargin{:});         
-                    else
-                        X = X + obj.mat.assemble(name, varargin{:});      
-                    end
-                elseif strcmp(type{i}, 'mFEM.registry.ConstantVectorRegistry');
-                    if i == 1;
-                        X = obj.vec.get(name, '-init');         
-                    else
-                        X = X + obj.vec.get(name, '-init');         
-                    end
+                if strcmp(type{i},'mFEM.registry.MatrixKernelRegistry');
+                    X = obj.mat.assemble(name,varargin{:});         
+
+                elseif strcmp(type{i},'mFEM.registry.ConstantVectorRegistry');
+                    X = obj.vec.get(name,'-init');         
                 else
-                    error('System:assemble', 'Only variables added with addMatrix or addVector may be assembled');
+                    error('System:assemble','Only variables added with addMatrix or addVector may be assembled');
                 end
             end  
         end
@@ -436,8 +419,7 @@ classdef System < handle
             %   MatrixKernel object is a 'vector' or 'matrix' type.
             
             % Define available options
-            opt.boundary = [];
-            opt.subdomain = [];
+            opt.tag = {};
             opt.component = [];
             [opt, unknown] = gatherUserOptions(opt, varargin{:});
 
@@ -453,11 +435,10 @@ classdef System < handle
                     obj.mat.add(name, kern);
                     
                 elseif ischar(kern);
-                    kern = mFEM.kernels.AutoKernel(obj.mesh, name, kern,...
+                    kern = mFEM.kernels.AutoKernel(obj.mesh,name,kern,...
                         'ConstantRegistry', obj.const,...
                         'FuncRegistry', obj.func,...
-                        'boundary', opt.boundary,...
-                        'subdomain', opt.subdomain,...
+                        'tag', opt.tag,...
                         'component', opt.component,...
                         'type', type);
                     obj.mat.add(name, kern);

@@ -26,7 +26,7 @@ classdef Matrix < handle
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    properties (SetAccess = private, GetAccess = public)
+    properties (SetAccess = protected, GetAccess = public)
       I = double([]);    % i vector (see doc sparse)
       J = double([]); ;  % j vector (see doc sparse)
       Aij = double([]);  % s vector (see doc sparse)
@@ -109,12 +109,12 @@ classdef Matrix < handle
            end
        end
        
-       function add(obj, B, varargin)
+       function add(obj,B,varargin)
             %ADD Adds a dense sub-matrix to the global matrix
             %
             % Syntax
-            %    add(B, dof)
-            %    add(B, dof1, dof2)
+            %    add(B,dof)
+            %    add(B,dof1,dof2)
             %
             % Description
             %    add(B, dof) adds the dense matrix B to the locations
@@ -138,11 +138,11 @@ classdef Matrix < handle
                 dof1 = varargin{1};
                 dof2 = varargin{2};
             end
-            
+
             [X,Y] = ndgrid(dof1,dof2);
             i = reshape(X,numel(X),1);
             j = reshape(Y,numel(Y),1);
-
+            
             obj.I = [obj.I;double(i)];
             obj.J = [obj.J;double(j)];
 

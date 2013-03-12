@@ -23,7 +23,7 @@ classdef Mesh < handle
         elem_map_codist;
         node_tag_map = Composite();
         elem_tag_map = Composite();
-        tag = {};
+        tag = struct('name',{},'type',{});
     end
     
     methods
@@ -37,6 +37,7 @@ classdef Mesh < handle
         el = getElements(obj,varargin);
         no = getNodes(obj,varargin);
         dof = getDof(obj,varargin);
+        tag = getTag(obj,name);
         plot(obj,varargin);
 
         function obj = Mesh(varargin)

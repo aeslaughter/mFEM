@@ -1,13 +1,18 @@
-function init(obj,id,nodes)
+function init(obj,id,nodes,varargin)
     %INIT Element initialization for creating vectors of element objects
     %
     % Syntax
     %   init(id,nodes)
+    %   init(id,nodes,'-addParents')
     %
     % Description
     %   init(id,nodes) creates an element object for each id and set of
     %   Node objects. Each element is constructed from the rows of nodes,
     %   which should be the length of the ids.
+    %
+    %   init(id,nodes,'-addParents') same as above but triggers a call to
+    %   the addParents method of the nodes, this is used by mFEM.Mesh to
+    %   speed up neighbor finding.
     %
     %----------------------------------------------------------------------
     %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
@@ -28,7 +33,7 @@ function init(obj,id,nodes)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-
+    
     % The no. of elements
     n = length(obj);
 
@@ -54,18 +59,14 @@ function init(obj,id,nodes)
     lab = repmat({lab},n,1);
     id = num2cell(id);
 
-%     no = mat2cell(nodes,ones(n,1),n_dim)
-
     % Set properties of elements
     [obj.n_sides] = n_sides{:};
     [obj.id] = id{:};
     [obj.lab] = lab{:};  
 
-
     % Loop through elements and set remaining properties (todo)
     for i = 1:length(obj);
         obj(i).nodes = nodes(i,:);
-        obj(i).nodes.addParent(obj(i));
         obj(i).sides = struct('neighbor',[],...
                          'neighbor_side',[],...
                          'on_boundary',...
@@ -73,5 +74,11 @@ function init(obj,id,nodes)
                          'tag',[]);
         obj(i).dof = [obj(i).nodes.dof];
         obj(i).n_dof = sum([obj(i).nodes.n_dof]);
+    end
+    
+    if ~isempty(varargin) && strcmpi(varargin{1},'-addParents');
+        for i = 1:length(obj);
+            obj(i).nodes.addParent(obj(i));
+        end   
     end
 end

@@ -21,7 +21,7 @@ function [elements,nodes] = buildElements(obj,nodes)
         spmd
             n_elem = size(elem_map,1); % no. of elements
             elements(n_elem) = feval(['mFEM.elements.',type]);
-            elements.init(1:n_elem, nodes(gather(elem_map)));
+            elements.init(1:n_elem, nodes(gather(elem_map)),'-addParents');
         end
         return % done
     end

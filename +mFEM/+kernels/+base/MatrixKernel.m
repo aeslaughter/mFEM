@@ -4,7 +4,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
     properties
        t = 0;
        options = struct(...
-           'tag', [], 'component', [], 'type', 'matrix');
+           'tag',[],'component',[],'type','matrix','parallel',false);
        reserved = {'N','B','Ke','elem','qp','x','t','L'};
 
     end
@@ -22,14 +22,12 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         function obj = MatrixKernel(mesh, name, varargin)
             obj = obj@mFEM.kernels.base.Kernel(name);
 
-            [obj.options, unknown] = gatherUserOptions(obj.options, varargin{:});
+            [obj.options, ~] = gatherUserOptions(obj.options, varargin{:});
             obj.mesh = mesh;
             
             if any(strcmpi(obj.options.type,{'matrix','mat','m'}));
-                obj.value = mFEM.Matrix(mesh);
                 obj.options.type = 'matrix';
             elseif any(strcmpi(obj.options.type,{'vector','vec','v'}));
-                obj.value = mFEM.Vector(mesh);
                 obj.options.type = 'vector';
             else
                 error('MatrixKernel:MatrixKernel', 'Unknown type %s.', obj.options.type);
@@ -52,39 +50,64 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
             end
         end
         
-        function varargout = assemble(obj, varargin)
+        function varargout = assemble(obj,varargin)
             
 %                 if obj.assembled
 %                     warning('MatrixKernel:assemble', 'The kernel named %s was previously assembled.', obj.name);
 %                 end
-               
-                opt.zero = false;
-                opt.tag = obj.options.tag;
-%                 opt.component = obj.options.component;
-                opt.time = obj.t;
-                opt = gatherUserOptions(opt, varargin{:});
-                obj.t = opt.time;
 
-                elem = obj.mesh.getElements('tag',opt.tag);
-               for i = 1:length(elem);
-               
-                    if isempty(opt.tag);
-                        Ke = obj.evaluateElement(elem(i),obj.t);
-                    else
-                        Ke = obj.evaluateSide(elem(i), opt.tag, obj.t);
-                    end
+            opt.tag = obj.options.tag;
+            opt.parallel = obj.options.parallel;
+            opt.zero = false;
+            opt.time = obj.t;               
+            opt = gatherUserOptions(opt,varargin{:});
+            obj.t = opt.time;
+            type = obj.options.type;
 
-                    dof = elem(i).getDof();
-                    obj.value.add(Ke, dof); 
-               end
-               
-              
-                if nargout == 1;
-                    varargout{1} = obj.value.init(); 
-                    if opt.zero;
-                        obj.value.zero();
-                    end
+            int_type = 'element';
+            if ~isempty(opt.tag);
+                tag = obj.mesh.getTag(opt.tag);
+                if isempty(tag);
+                    error('MatrixKernel:assemble:IvalidTag','The tag %s was not found.',opt.tag);
                 end
+                if strcmpi(tag.type,'boundary');
+                    int_type = 'side';
+                end
+            end
+                  
+            elem = obj.mesh.getElements('tag',opt.tag,'-parallel');
+            spmd
+                n_dof = sum([elem.n_dof]);
+                if strcmpi(type,'vector');
+                    K = mFEM.Vector(n_dof);
+                elseif strcmpi(type,'matrix');
+                    K = mFEM.Matrix(n_dof);
+                end
+
+                if strcmpi(int_type,'element');
+                    for i = 1:length(elem);
+                        Ke = obj.evaluateElement(elem(i),obj.t);
+                        dof = elem(i).getDof();
+                        K.add(Ke,dof); 
+                    end
+                    
+                elseif strcmpi(int_type,'side');
+                     for i = 1:length(elem);
+                        Ke = obj.evaluateSide(elem(i), opt.tag, obj.t);
+                        dof = elem(i).getDof();
+                        K.add(Ke,dof); 
+                     end
+                end
+            end
+
+            obj.value = mFEM.pMatrix(K);
+
+            if nargout == 1;
+                varargout{1} = obj.value.assemble('parallel',opt.parallel); 
+                if opt.zero;
+                    obj.value.zero();
+                end
+            end
         end    
     end
     
@@ -121,21 +144,20 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         function Ke = evaluateSideMatrix(obj, elem, id, t)
             
             Ke = zeros(elem.n_dof);         
+            [~,sid] = elem.hasTag(id);
+            for i = 1:length(sid); 
+                s = sid(i);
+                side = elem.buildSide(s);
+                dof = elem.getDof('Side', s, '-local');
 
-            for s = 1:elem.n_sides; 
-                if any(elem.side(s).boundary_id == id);
-                    side = elem.buildSide(s);
-                    dof = elem.getDof('Side', s, '-local');
-
-                    if elem.local_n_dim == 1;
-                        Ke(dof,dof) = Ke(dof,dof) + obj.eval(side,[],t); 
-                    else
-                        for i = 1:length(side.qp);
-                            Ke(dof,dof) = Ke(dof,dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(side.qp{i});              
-                        end
+                if elem.n_dim == 1;
+                    Ke(dof,dof) = Ke(dof,dof) + obj.eval(side,[],t); 
+                else
+                    for j = 1:length(side.qp);
+                        Ke(dof,dof) = Ke(dof,dof) + side.W(j)*obj.eval(side,side.qp{j},t)*side.detJ(side.qp{j});              
                     end
-                    delete(side);
                 end
+                delete(side);
             end  
         end
         
@@ -143,21 +165,22 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 
             Ke = zeros(elem.n_dof,1);         
             
-            for s = 1:elem.n_sides; 
-                if any(elem.side(s).boundary_id == id);
-                    side = elem.buildSide(s);
-                    dof = elem.getDof('Side', s, '-local');
+            [~,sid] = elem.hasTag(id);
+            for i = 1:length(sid); 
+                s = sid(i);
+                side = elem.buildSide(s);
+                dof = elem.getDof('Side', s, '-local');
 
-                    if elem.local_n_dim == 1;
-                        Ke(dof) = Ke(dof) + obj.eval(side,[],t); 
-                    else
-                        for i = 1:length(side.qp);
-                            Ke(dof) = Ke(dof) + side.W(i)*obj.eval(side,side.qp{i},t)*side.detJ(side.qp{i});              
-                        end
+                if elem.n_dim == 1;
+                    Ke(dof) = Ke(dof) + obj.eval(side,[],t); 
+                else
+                    for j = 1:length(side.qp);
+                        Ke(dof) = Ke(dof) + side.W(j)*obj.eval(side,side.qp{j},t)*side.detJ(side.qp{j});              
                     end
-                    delete(side);
                 end
-            end  
+                delete(side);
+            end 
+        
         end
     end
 

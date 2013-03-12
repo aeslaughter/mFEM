@@ -24,17 +24,14 @@
 % See also EXAMPLE1B
 function T = example1b(varargin)
 
-% Setup
-import mFEM.*
-
 % Set the default options and apply the user defined options
 opt.n = 2;
 opt.element = 'Line2';
 opt = gatherUserOptions(opt,varargin{:});
     
 % Create Mesh
-mesh = FEmesh('Element', opt.element);
-mesh.grid(0,4,opt.n);
+mesh = mFEM.Mesh();
+mesh.grid(opt.element,0,4,opt.n);
 mesh.init();
 
 % Label the boundaries
@@ -42,26 +39,24 @@ mesh.addBoundary(1,'left');    % T = 0 boundary (essential)
 mesh.addBoundary(2,'right');   % q = 20 boundary 
 
 % Build Matrix and Vector Equations
-sys = System(mesh);
-sys.addConstant('k', 2, 'A' ,0.1, 'b', 5, 'q_bar', 5);
-sys.addMatrix('K', 'B''*k*A*B');
-sys.addVector('f', 'N''*b');
-sys.addVector('f', '-q_bar*A*N''', 'Boundary', 2);
-
-
-%f = sys.assemble('f')
+sys = mFEM.System(mesh);
+sys.addConstant('k',2,'A',0.1,'b',5,'q_bar',5);
+sys.addMatrix('K','B''*k*A*B');
+sys.addVector('f','N''*b');
+sys.addVector('f','-q_bar*A*N''','Tag',2);
 
 % Assemble and solve
-solver = solvers.LinearSolver(sys);
-solver.addEssential('boundary', 1, 'value' , 0);
+solver = mFEM.solvers.LinearSolver(sys);
+solver.addEssential('Tag',1,'Value',0);
 T = solver.solve();
 
 % Compute the temperature gradients for the elements
 k = 1;
-for e = 1:mesh.n_elements;
+elements = mesh.getElements();
+for e = 1:length(elements);
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Get the Gauss points
     qp = elem.quad.rules();

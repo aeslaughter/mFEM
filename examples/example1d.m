@@ -47,7 +47,7 @@ function T = example1d(varargin)
 
 tic;
     % Gather options
-    opt.n = 200;
+    opt.n = 2;
     opt.debug = true;
     opt = gatherUserOptions(opt,varargin{:});
    
@@ -70,13 +70,13 @@ toc;
 tic;
     % Parallel Manual Assembly
     % Extract the elements (a MATLAB Composite)
-    elements = mesh.getElements();
+    elements = mesh.getElements('-parallel');
     
     % Begin parallel block
     spmd   
         n_dof = sum([elements.n_dof]);
         K = mFEM.Matrix(n_dof);
-        f = mFEM.Matrix(n_dof,1);
+        f = mFEM.Vector(n_dof);
         
         for e = 1:length(elements);
             
@@ -113,32 +113,23 @@ tic;
             % Add the local stiffness and force to the global 
             dof = elem.getDof();
             K.add(Ke,dof);
-            f.add(fe,dof,1); 
+            f.add(fe,dof); 
         end
-
-        ipart = buildCodistributedPartition(length(K.I));
-        jpart = buildCodistributedPartition(length(K.J));       
-        spart = buildCodistributedPartition(length(K.Aij));   
-        fpart = buildCodistributedPartition(length(f.init())); 
-        
-        idist = codistributor1d(1,ipart,[sum(ipart),1]);
-        jdist = codistributor1d(1,jpart,[sum(jpart),1]);  
-        sdist = codistributor1d(1,jpart,[sum(spart),1]);  
-        fdist = codistributor1d(1,fpart,[sum(fpart),1]);  
-        
-        I = codistributed.build(K.I,idist);
-        J = codistributed.build(K.J,jdist);
-        S = codistributed.build(K.Aij,sdist);
-        f = codistributed.build(f.init(),fdist);
     end
+    
+    pK = mFEM.pMatrix(K);
+    pf = mFEM.pMatrix(f);
+    K = pK.assemble();
+    f = pf.assemble();
     toc;
+    
     tic;
     % Parallel mldivide on sparse does not yet work!
-    K = gather(sparse(I,J,S));
+    K = gather(K);
     f = gather(f);
 
     %% Define Variables for Essential and Non-essential Degrees-of-freedom
-    ess = mesh.getDof('Tag',1,'-gather');    % 1
+    ess = mesh.getDof('Tag',1);    % 1
     non = ~ess;                               % 2,3
 
     %% Solve for the Temperatures

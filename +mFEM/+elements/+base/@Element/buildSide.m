@@ -29,16 +29,13 @@ function side = buildSide(obj,id)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    error('Not done yet');
-    
     % Extract the nodes for the side
-    dof = obj.side_dof(id,:);
-    node = obj.nodes(dof,:);
+    ix = obj.side_ids(id,:);
+    node = obj.nodes(ix);
 
     % Create the side element
-    side = feval(['mFEM.elements.',obj.side_type], NaN, node, ...
-        'Space', obj.opt.space);
+    side = feval(['mFEM.elements.',obj.side_type],NaN,node);
 
     % Set the global dofs
-    side.global_dof = obj.global_dof(dof);
+    side.dof = [side.nodes.dof];
 end

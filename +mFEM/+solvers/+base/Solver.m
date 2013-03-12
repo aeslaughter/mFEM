@@ -78,28 +78,17 @@ classdef Solver < handle
             %
             % Syntax
             %   addEssential('PropertyName', PropertyValue,...);
-            %   addEssential(C1,C2,...); 
             %
             % Description
-            %   add_essential_boundary('PropertyName', PropertyValue,...)
+            %   addEssential('PropertyName', PropertyValue,...)
             %   adds based on the properties an essential boundary
             %   condition that will be applied to the solution
             %
-            %   add_essential_boundary(C1,C2,...) same as above where each
-            %   input is a seperate cell array of property pairings, this
-            %   simply allows multiple boundary conditions to be assigned
-            %   together.
-            %
-            % ADD_ESSENTIAL_BOUNDARY Property Descriptions
-            %   boundary
-            %       scalar | row vector
-            %       A scalar or row vector of boundary ids (see FEMESH) that are
-            %       identify the essential boundary conditions.
-            %
-            %   subdomain
-            %       scalar | row vector
-            %       A scalar or row vector of subdomain ids (see FEMESH) that are
-            %       identify essential boundary conditions.  
+            % ADDESSENTIAL Property Descriptions
+            %   tag
+            %       numeric | char | cell array
+            %       A set of tags (see MESH) that identify the essential 
+            %       boundary conditions.
             %
             %   value
             %       scalar | vector | char | func
@@ -125,27 +114,38 @@ classdef Solver < handle
             %       changing the conditions with time. If clear is used in
             %       the C1, C2 style of input it will clear all boundaries
             %       including those defined previously in the same call.
-            %
             
-            % Cell input case
-            if nargin > 0 && iscell(varargin{1});
+            % Gather the input
+            opt.tag = [];
+            opt.value = [];
+            opt.component = [];
+            opt.clear = false;
+            opt = gatherUserOptions(opt, varargin{:});
 
-                % Loop through each input, they should all be cells
-                for i = 1:length(varargin);
-                    
-                    % Give an error if the input is not a cell
-                    if ~iscell(varargin{i});
-                        error('Solver:addEssentialBoundary', 'Expected a cell, but recieved a %s', class(varargin{i}));
-                    end
-                    
-                    % Add to the dof
-                    obj.addEssentialPrivate(varargin{i}{:});  
-                end
-                
-            % Traditional input case    
-            else
-                obj.addEssentialPrivate(varargin{:});  
+            if opt.clear
+                obj.essential = struct('id',{},'value',{},'component',{});
             end
+
+            % Test that id and value are given
+            if isempty(opt.tag) || isempty(opt.value);
+                error('Solver:addEssentialPrivate','Both the id and value properties must be set.');
+            end
+
+            % Append storage data structure
+            idx = length(obj.essential);
+            obj.essential(idx+1).boundary = opt.tag;
+            obj.essential(idx+1).component = opt.component;   
+
+            % Apply the value
+            if ischar(opt.value) && ~isempty(obj.system);
+                obj.essential(idx+1).value = obj.system.get(opt.value);
+
+            elseif isnumeric(opt.value) || isa(opt.value,'function_handle');
+                obj.essential(idx+1).value = opt.value;
+                
+           else
+                error('Solver:addEssentialPrivate','Error extacting value from the System');
+           end
         end
         
         function set(obj, varargin)
@@ -212,54 +212,6 @@ classdef Solver < handle
                 x = obj.options.(name);                    
             end               
         end
-         
-        function addEssentialPrivate(obj, varargin)
-            %ADDESSENTIALPRIVATE label a boundary as essential
-            %
-            % Syntax
-            %   addEssentialPrivate('PropertyName', PropertyValue,...);
-            %
-            % Description
-            %   add_essential_boundary('PropertyName', PropertyValue,...)
-            %   adds based on the properties an essential boundary
-            %   condition that will be applied to the solution
-            %
-            % ADDESSENTIALPRIVATE Property Descriptions
-            %   see ADDESSENTIAL
-
-            % Gather the input
-            opt.boundary = [];
-            opt.value = [];
-            opt.component = [];
-            opt.clear = false;
-            opt = gatherUserOptions(opt, varargin{:});
-
-            if opt.clear
-                obj.essential = struct('id',{},'value',{},'component',{});
-            end
-
-            % Test that id and value are given
-            if isempty(opt.boundary) || isempty(opt.value);
-                error('Solver:addEssentialPrivate','Both the id and value properties must be set.');
-            end
-
-            % Append storage data structure
-            idx = length(obj.essential);
-            obj.essential(idx+1).boundary = opt.boundary;
-            obj.essential(idx+1).component = opt.component;   
-
-            % Apply the value
-            if ischar(opt.value) && ~isempty(obj.system);
-                obj.essential(idx+1).value = obj.system.get(opt.value);
-
-            elseif isnumeric(opt.value) || isa(opt.value,'function_handle');
-                obj.essential(idx+1).value = opt.value;
-                
-           else
-                error('Solver:addEssentialPrivate', 'Error extacting value from the System');
-            end
-
-        end
 
         function [u,ess] = applyConstraints(obj, varargin)
             %APPLYCONSTRAINTS Cretes solution and applies essential boundaries
@@ -286,7 +238,7 @@ classdef Solver < handle
             % Apply the essential boundary condions
             dof = false(obj.mesh.n_dof, length(obj.essential));
             for i = 1:length(obj.essential);
-               dof(:,i) = logical(obj.mesh.getDof('Boundary', obj.essential(i).boundary, 'Component', obj.essential(i).component));
+               dof(:,i) = logical(obj.mesh.getDof('Tag',obj.essential(i).boundary,'Component',obj.essential(i).component));
                
                if isa(obj.essential(i).value, 'function_handle');
                    x = obj.mesh.getNodes(); 

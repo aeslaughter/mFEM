@@ -1,9 +1,5 @@
 classdef AutoKernel < mFEM.kernels.base.MatrixKernel
     %AUTOMATRIXKERNEL Abstract class for defining finite element matrices
-
-    properties
-        
-    end
     
     properties (GetAccess = public, SetAccess = protected) %(SetAccess = {?mFEM.registry.MatrixKernelRegistry})
         const;
@@ -15,7 +11,7 @@ classdef AutoKernel < mFEM.kernels.base.MatrixKernel
    
     methods 
         function obj = AutoKernel(mesh, name, eqn_input, varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, name, varargin{:});
+            obj = obj@mFEM.kernels.base.MatrixKernel(mesh,name,varargin{:});
             obj.mesh = mesh;
             obj.input = eqn_input;
             

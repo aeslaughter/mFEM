@@ -89,15 +89,16 @@ function dof = getDof(obj,varargin)
     nodes = obj.nodes;
 %     dof_part = obj.dof_partition;
     
-     tag = opt.tag;
-     if ischar(tag); tag = {tag}; end
-     if isnumeric(tag); tag = num2cell(tag); end
-     for i = 1:length(tag);
-         if isnumeric(tag{i}); tag{i} = num2str(tag{i}); end
-     end
+     all_tag = {obj.tag.name};
+     tag = obj.getTag(opt.tag);
+%      if ischar(tag); tag = {tag}; end
+%      if isnumeric(tag); tag = num2cell(tag); end
+%      for i = 1:length(tag);
+%          if isnumeric(tag{i}); tag{i} = num2str(tag{i}); end
+%      end
      
      cmp = opt.component;
-     all_tag = obj.tag;
+     
     
     composite_flag = opt.composite;
     index_flag = opt.index;
@@ -107,7 +108,7 @@ function dof = getDof(obj,varargin)
         map = getLocalPart(node_tag_map);
         
         for i = 1:length(tag);
-            c = strcmp(tag{i},all_tag);
+            c = strcmp(tag(i).name,all_tag);
             idx(:,i+1) = map(:,c);
         end
                 

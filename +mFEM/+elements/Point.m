@@ -21,19 +21,20 @@ classdef Point < mFEM.elements.base.Element
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     
-    properties (SetAccess = protected, GetAccess = public)    
-        n_dim = 0;
+    properties  (Constant) 
+        n_dim = 0;                      % it is a point
         side_ids = [];                  % local dofs of the "sides"
         side_type = '';                 % 1D elements do not have side elements
         quad = [];                      % Instance of Gauss quadrature class
+        n_nodes = 1;                    % no. of nodes
     end
     
     methods     
-        function obj = Point(id, nodes, varargin)
+        function obj = Point(varargin)
            % POINT Class constructor; calls base class constructor
 
            % Call the base class constructor
-           obj = obj@mFEM.elements.base.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.elements.base.Element(varargin{:}); 
         end
     end
     

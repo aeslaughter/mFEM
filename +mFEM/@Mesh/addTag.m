@@ -50,7 +50,6 @@ function addTag(obj, tag, type, varargin)
     nodes = obj.nodes;                  
     node_map = obj.node_map;            
     node_tag_map = obj.node_tag_map;
-%     elem_tag_map = obj.elem_tag_map;
     
     % Convert numeric tags to strings
     if isnumeric(tag); 
@@ -62,10 +61,10 @@ function addTag(obj, tag, type, varargin)
         varargin{1} = varargin(1);
     end
     
-    % Append the tag to the complete list of tags and return the count
-    obj.tag{end+1} = tag;
-    cnt = length(obj.tag); % location in tag maps
-    
+    % Append the tag to the complete list of tags
+    obj.tag(end+1) = struct('name',tag,'type',type);
+    cnt = length(obj.tag); 
+
     % Parse the input
     [fcn,col,value,use_all] = parseAddTagInput(node_map, varargin{:});
     
@@ -115,6 +114,8 @@ function addTag(obj, tag, type, varargin)
                 gi = [elem(e_idx).id];
                 elem_tag_map(gi,cnt) = e_idx;
             end
+        else
+            elem_tag_map = [];
         end
     end
     
