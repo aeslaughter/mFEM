@@ -46,9 +46,6 @@ function T = example1a(varargin)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
-    % Import the mFEM libraries
-    import mFEM.* elements.*;
-
     % Gather options
     opt.N = 2;
     opt.debug = false;
@@ -56,7 +53,7 @@ function T = example1a(varargin)
 
     %% Create a Mesh Object 
     % Build mesh of 2-node linear elemnts from 0 to 4
-    mesh = Mesh();
+    mesh = mFEM.Mesh();
     mesh.grid('Line2',0,4,opt.N); 
 
     %% Label The Boundaries

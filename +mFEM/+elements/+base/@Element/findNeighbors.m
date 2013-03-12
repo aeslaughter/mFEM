@@ -45,7 +45,7 @@ function findNeighbors(obj)
             end
             
             % Get the coordinates of the current side
-            elem_side = sort(elem_coord(:,elem.side_ids(s,:)),2);
+            elem_side = sort(elem_coord(elem.side_ids(s,:),:),1);
             
             % Loop through the neighbor elements
             for j = 1:length(neighbors);
@@ -54,7 +54,7 @@ function findNeighbors(obj)
                 
                 % Loop through neighbor sides
                 for n = 1:neigh.n_sides;
-                    neigh_side = sort(neigh_coord(:,neigh.side_ids(n,:)),2);
+                    neigh_side = sort(neigh_coord(neigh.side_ids(n,:),:),1);
 
                     % If the sides are the same, update the structure
                     if isequal(elem_side, neigh_side);

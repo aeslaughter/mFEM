@@ -32,8 +32,9 @@ function init(obj,id,nodes)
     % The no. of elements
     n = length(obj);
 
-    % Set/find the known constants
+    % Set/find the known constants and quadrature information
     lab = labindex; 
+    [qp,W] = obj(1).quad.rules('-cell');
     
     % Accunt for single node input, make sure it is column
     if size(nodes,1) == obj(1).n_nodes && size(nodes,2) == 1;
@@ -43,14 +44,18 @@ function init(obj,id,nodes)
     % Build correctly sized cell array
     n_sides = size(obj(1).side_ids,1);
     n_sides = num2cell(repmat(n_sides,n,1));
-    lab = num2cell(repmat(lab,n,1));
+    lab = repmat({lab},n,1);
     id = num2cell(id);
+    qp = repmat({qp},n,1);
+    W = repmat({W},n,1);
 %     no = mat2cell(nodes,ones(n,1),n_dim)
 
     % Set properties of elements
     [obj.n_sides] = n_sides{:};
     [obj.id] = id{:};
-    [obj.lab] = lab{:};    
+    [obj.lab] = lab{:};  
+    [obj.qp] = qp{:};
+    [obj.W] = W{:};
 
     % Loop through elements and set remaining properties (todo)
     for i = 1:length(obj);

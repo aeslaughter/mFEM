@@ -37,6 +37,15 @@ classdef Element < mFEM.elements.base.HideHandle
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
 
+    % Constants that must be defined by inherting class (e.g., Quad4)
+    properties (Abstract, Constant, Access = public)
+        side_ids;   % map that defines which nodes comprise each side  
+        side_type;  % name of element for sides
+        quad;       % Gauss quadrature rules to utilize
+        n_dim;      % no. of spacial dimensions
+        n_nodes;    % no. of nodes per element
+    end   
+    
     % Basic read-only properties that are available for user
     properties %(GetAccess = public, SetAccess = {?mFEM.Mesh,?mFEM.elements.base.Element})
         id = uint32([]);        % unique global id
@@ -46,19 +55,13 @@ classdef Element < mFEM.elements.base.HideHandle
         n_dof;                  % total no. of dofs associated with element
         dof;                    % dofs for the element, in order of nodes
         n_sides;                % no. of sides for this element
+        qp;                     % cell of quadrature points
+        W;                      % array of weight values for quadrature points
         nodes =...              % node objects for this element
             mFEM.elements.base.Node.empty();
     end
     
-    % Constants that must be defined by inhering class (e.g., Quad4)
-    properties (Abstract, Constant, Access = public)
-        side_ids;   % map that defines which nodes comprise each side  
-        side_type;  % name of element for sides
-        quad;       % Gauss quadrature rules to utilize
-        n_dim;      % no. of spacial dimensions
-        n_nodes;    % no. of nodes per element
-    end
-
+    % Protected properties used by mFEM.Mesh class
     properties (Access = ?mFEM.Mesh)
         lab;                            % the processor of this element
         node_plot_order = uint32([]); 	% node plotting order (see Tri6)
@@ -78,6 +81,7 @@ classdef Element < mFEM.elements.base.HideHandle
     % access the shape functions and other necessary parameters)
     methods (Access = public)
         init(obj,id,nodes);
+        varargin = getPosition(xi,varargin);
         dof = getDof(obj,varargin);
         nodes = getNodes(obj);
         varargout = hasTag(obj,tag);

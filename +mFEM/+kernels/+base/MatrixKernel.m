@@ -4,7 +4,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
     properties
        t = 0;
        options = struct(...
-           'boundary', [], 'subdomain', [], 'component', [], 'type', 'matrix');
+           'tag', [], 'component', [], 'type', 'matrix');
        reserved = {'N','B','Ke','elem','qp','x','t','L'};
 
     end
@@ -59,22 +59,19 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 %                 end
                
                 opt.zero = false;
-                opt.boundary = obj.options.boundary;
-                opt.subdomain = obj.options.subdomain;
-                opt.component = obj.options.component;
+                opt.tag = obj.options.tag;
+%                 opt.component = obj.options.component;
                 opt.time = obj.t;
                 opt = gatherUserOptions(opt, varargin{:});
                 obj.t = opt.time;
 
-                elem = obj.mesh.getElements('boundary', opt.boundary, ...
-                                             'subdomain', opt.subdomain);
-                                            %'component', opt.component);
+                elem = obj.mesh.getElements('tag',opt.tag);
                for i = 1:length(elem);
                
-                    if isempty(opt.boundary);
+                    if isempty(opt.tag);
                         Ke = obj.evaluateElement(elem(i),obj.t);
                     else
-                        Ke = obj.evaluateSide(elem(i), opt.boundary, obj.t);
+                        Ke = obj.evaluateSide(elem(i), opt.tag, obj.t);
                     end
 
                     dof = elem(i).getDof();
@@ -97,7 +94,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
               
             if obj.direct            
                 Ke = obj.eval(elem, [], t);
-                return;
+                return
             end
             
             if strcmpi(obj.options.type, 'matrix');

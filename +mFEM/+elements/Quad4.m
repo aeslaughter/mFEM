@@ -85,7 +85,7 @@ classdef Quad4 < mFEM.elements.base.Element
             %JACOBIAN Returns the jacobian matrix  
                         
             % Compute the Jacobian
-            J = obj.localGradBasis(x)*obj.nodes.getCoord()';                 
+            J = obj.localGradBasis(x)*obj.nodes.getCoord();                 
         end
     end
     

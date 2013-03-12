@@ -28,8 +28,7 @@ classdef Gauss < handle
     properties (SetAccess = private, GetAccess = public)
         order;
         type;
-    %    opt = ...   % Structure of available options
-    %        struct('order', 1, 'type', 'line');
+        options = struct('cell',false);
     end
     
     methods (Access = public)
@@ -274,7 +273,7 @@ classdef Gauss < handle
             %
             
             % These types only require conversion to a cell array
-            if any(strcmpi(obj.opt.type,{'line','tet','tri'}));
+            if any(strcmpi(obj.type,{'line','tet','tri'}));
             	qp_cell = cell(size(qp,2),1);
                 for i = 1:size(qp,1);
                     qp_cell{i} = qp(i,:);
@@ -288,7 +287,7 @@ classdef Gauss < handle
                 out{2} = sort(repmat(idx', length(idx), 1),1);
 
                 % Build the 3D from the 2D
-                if strcmpi('hex',obj.opt.type);
+                if strcmpi('hex',obj.type);
                    out{1} =  repmat(out{1}, 3, 1);
                    out{3} =  sort(repmat(out{2}, 3, 1),1); 
                    out{2} =  repmat(out{2}, 3, 1); 

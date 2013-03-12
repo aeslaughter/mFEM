@@ -33,5 +33,5 @@ function out = getCoord(obj)
     %----------------------------------------------------------------------
     
     % Get the coordinates
-    out = [obj.coord];
+    out = [obj.coord]';
 end
