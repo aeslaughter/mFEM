@@ -5,6 +5,8 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     %   retrieved. This function sends requests to labs for nodes, which in
     %   turn send back the nodes (copies).
     %
+    %   This function must be run inside an spmd block.
+    %
     % Syntax
     %   no = getOffLabNodes(e_map, node_map, nodes)
     %
@@ -42,6 +44,7 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     local = nodes;
     local_id = globalIndices(node_map,1);  % local node ids
     limit = getpref('MFEM_PREF','LABSEND_LIMIT');
+    limit = 10;
    
     % Build a map that indicates the lab location for each node
     no = unique(e_map);         % all nodes needed by this lab
@@ -60,7 +63,7 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     for i = 1:length(lab);
         % Send a request to the lab for nodes based on the id
         labSend(node_ids(lab_map==lab(i)),lab(i));
-        %disp(['Sending request to lab ', num2str(lab(i)), ' for nodes ', mat2str(node_ids(lab_map==lab(i)))]);
+%         disp(['Sending request to lab ', num2str(lab(i)), ' for nodes ', mat2str(node_ids(lab_map==lab(i)))]);
     end
     labBarrier; % finish all sends before continuing
      
@@ -69,7 +72,7 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     nid = {};
     while labProbe % continue to receive requests until there is none
         [nid{k},proc(k)] = labReceive;    
-        %disp(['Lab ', num2str(proc(k)), ' requested nodes ', mat2str(nid{k})]);
+%         disp(['Lab ', num2str(proc(k)), ' requested nodes ', mat2str(nid{k})]);
         k = k + 1;    
     end
     labBarrier; % finish recieving requests for nodes before continuing
@@ -80,7 +83,7 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
 
         s = [0:limit:length(idx),length(idx)];
         for i = 1:length(s)-1;
-            ix = idx(s(i)+1:s(i+1)); 
+            ix = idx(s(i)+1:s(i+1));
             pkg.id = local_id(ix);
             pkg.nodes = local(ix);
             labSend(pkg,proc(k));

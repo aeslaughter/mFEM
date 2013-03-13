@@ -11,13 +11,18 @@ function nodes = buildNodes(obj)
         ticID = tMessage('Creating finite element nodes...');
     end
     
+    % Check that enough elements are present for parallel
+    if matlabpool('size') > obj.n_nodes;
+        error('Mesh:buildNodes:ParallelFail','The number of elements (%d) must exceed the number of processors (%d)',obj.n_nodes,matlabpool('size'));
+    end
+    
     % Create the nodes in parallel
     spmd  
         local_map = getLocalPart(node_map);     % local node coordinates
         id = globalIndices(node_map,1);         % global node ids
         n = size(local_map,1);                  % size of local array
         nodes(n,1) = mFEM.elements.base.Node(); % initialize node objects
-        nodes.init(id,local_map,space);         % set properties of nodes
+         nodes.init(id,local_map,space);        % set properties of nodes
     end
     
      % Complete message time message

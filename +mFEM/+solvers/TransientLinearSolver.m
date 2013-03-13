@@ -212,7 +212,13 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
             K_hat = obj.M + theta*dt*obj.K;
             f_hat = dt*(theta*obj.f + (1-theta)*obj.f_old) + ...
                 (obj.M - (1-theta)*dt*obj.K)*obj.u_old;
-
+            
+            % Currently MATLAB does not support parallel sparse in mldivide
+            if isdistributed(K_hat);
+               warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
+               K_hat= gather(K_hat); f_hat = gather(f_hat);
+            end
+           
             % Solve for the unknowns
             u(~ess) = K_hat(~ess,~ess)\(f_hat(~ess) - K_hat(ess,~ess)'*u(ess));
 

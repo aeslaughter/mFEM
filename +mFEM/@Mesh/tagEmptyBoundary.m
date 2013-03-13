@@ -64,7 +64,7 @@ function tagEmptyBoundary(obj, tag)
                 end
             
                 % Apply the tag to the side
-                elem.side(s).tag = tag;
+                elem.sides(s).tag = tag;
             end
         end
     end

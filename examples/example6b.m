@@ -33,12 +33,12 @@ opt.element = 'Quad4';
 opt = gatherUserOptions(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element', opt.element);
-mesh.grid(0,1,0,1,opt.n,opt.n);
-mesh.init();
+mesh = mFEM.Mesh();
+mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
 
 % Label the boundaries
 mesh.addBoundary(1); % essential boundaries (all)
+mesh.update();
 
 % Build the system
 sys = System(mesh);
@@ -48,12 +48,17 @@ sys.addMatrix('K', 'B''*D*B');
 
 % Collect the node positions for applying the essential boundary conditions
 nodes = mesh.getNodes();
-x = nodes(:,1);
-y = nodes(:,2);
+coord = nodes.getCoord();
+x = coord(:,1);
+y = coord(:,2);
 
 % Define exact temperature
 T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
 T = T_exact(x,y,0);
+if ~opt.debug;
+    mesh.plot(T); hold on;
+    title('t = 0');    
+end
 
 % Plot the initial condition
 if ~opt.debug;
@@ -66,8 +71,8 @@ end
 
 % Create and initilize the transient solver
 dt = 0.1;
-solver = TransientLinearSolver(sys, 'dt', dt, 'force', 0);
-solver.addEssential('Boundary', 1, 'value', 0);
+solver = TransientLinearSolver(sys,'dt',dt,'force',0);
+solver.addEssential('Tag',1,'value',0);
 solver.init(T);
 
 % Perform 10 time-steps

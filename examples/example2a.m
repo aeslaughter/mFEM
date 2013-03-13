@@ -11,19 +11,16 @@ function varargout = example2a(varargin)
 opt.debug = false;
 opt = gatherUserOptions(opt, varargin{:});
 
-% Import the mFEM library
-import mFEM.*;
-
-% Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
-mesh.addElement('Tri3',[2,0.5; 2,1; 0,1]);
+% Create a FEmesh object, add the single elements, and initialize it
+mesh = mFEM.Mesh();
+mesh.createNode([0,0; 2,0.5; 2,1; 0,1]);
+mesh.createElement('Tri3',[1,2,4; 2,3,4]);
 mesh.init();
 
 % Label the boundaries
 mesh.addBoundary(1, 'top');     % q = 20 boundary
 mesh.addBoundary(2, 'right');   % q = 0 boundary
-mesh.addBoundary(3);       % essential boundaries (all others)
+mesh.addBoundary(3);            % essential boundaries (all others)
 
 % Define the constants for the problem
 D = 5*eye(2);   % thermal conductivity matrix
@@ -37,10 +34,11 @@ f = zeros(mesh.n_dof, 1);
 
 % Create the stiffness matrix and force vector by looping over the
 % elements, which in this case is a single element.
+elements = mesh.getElements();
 for e = 1:mesh.n_elements;
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
@@ -61,21 +59,21 @@ for e = 1:mesh.n_elements;
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
     % using numeric integration via the quadrature points for element side.
-    for s = 1:elem.n_sides;
-        if any(elem.side(s).boundary_id == 1);
+    [~,sid] = elem.hasTag(1);
+    for j = 1:length(sid);
+        s = sid(j);
             
-            % Local dofs for the current side
-            dof = elem.getDof('Side',s,'-local'); 
-           
-            % Build the side element
-            side = elem.buildSide(s);
-            
-            % Perform Guass quadrature
-            for i = 1:length(side.qp);
-                fe(dof) = fe(dof) + q_top*side.W(i)*side.shape(side.qp{i})'*side.detJ(side.qp{i});              
-            end
-            delete(side)
+        % Local dofs for the current side
+        dof = elem.getDof('Side',s,'-local'); 
+
+        % Build the side element
+        side = elem.buildSide(s);
+
+        % Perform Guass quadrature
+        for i = 1:length(side.qp);
+            fe(dof) = fe(dof) + q_top*side.W(i)*side.shape(side.qp{i})'*side.detJ(side.qp{i});              
         end
+        delete(side)
     end  
     
     % Add the local stiffness and force to the global (this method is slow)
@@ -84,7 +82,7 @@ for e = 1:mesh.n_elements;
     f(dof) = f(dof) + fe;
 end
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.getDof('Boundary',3); 
+ess = mesh.getDof('Tag',3); 
 non = ~ess;
 
 % Solve for the temperatures
@@ -101,10 +99,10 @@ if ~opt.debug;
 end
 % Compute the flux values for each element
 % Loop through the elements
-for e = 1:mesh.n_elements; 
+for e = 1:length(elements); 
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Collect the local values of T
     d(:,1) = T(elem.getDof());

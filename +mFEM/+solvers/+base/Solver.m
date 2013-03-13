@@ -128,7 +128,7 @@ classdef Solver < handle
 
             % Test that id and value are given
             if isempty(opt.tag) || isempty(opt.value);
-                error('Solver:addEssentialPrivate','Both the id and value properties must be set.');
+                error('Solver:addEssentialPrivate','Both the tag and value properties must be set.');
             end
 
             % Append storage data structure

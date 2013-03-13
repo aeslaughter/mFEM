@@ -54,7 +54,7 @@ function addBoundary(obj, id, varargin)
 
     % Special case, tag all untagged
     if nargin == 2;
-        obj.idEmptyBoundary(id);
+        obj.tagEmptyBoundary(id);
         
     % Loop through the supplied options    
     else

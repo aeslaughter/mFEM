@@ -16,6 +16,11 @@ function [elements,nodes] = buildElements(obj,nodes)
     elem_type = obj.elem_type;
     type = gather(elem_type(1));type = type{1};
     
+    % Check that enough elements are present for parallel
+    if matlabpool('size') > obj.n_elements;
+        error('Mesh:buildElements:ParallelFail','The number of elements (%d) must exceed the number of processors (%d)',obj.n_elements,matlabpool('size'));
+    end
+    
     % Serial case
     if matlabpool('size') == 0;
         spmd
@@ -32,11 +37,11 @@ function [elements,nodes] = buildElements(obj,nodes)
         e_id  = globalIndices(elem_map, 1); % global element no.
 
         % Extract all the nodes that are needed on this processor
-        no = obj.getOffLabNodes(elem_map, node_map, nodes);
+        no = obj.getOffLabNodes(elem_map, node_map, nodes); 
 
         % Create the elements
         n = size(no,1);
         elements(n,1) = feval(['mFEM.elements.',type]);
-        elements.init(e_id,no,'-addParents');     
+        elements.init(e_id,no,'-addParents');
     end
 end

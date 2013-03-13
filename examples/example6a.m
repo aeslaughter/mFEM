@@ -33,23 +33,20 @@
 
 function varargout = example6a(varargin)
 
-% Import the mFEM library
-import mFEM.*;
-
 % Set the default options and apply the user defined options
 opt.debug = false;
-opt.n = 32;
+opt.n = 64;
 opt.element = 'Quad4';
 opt.method = 'normal';
 opt = gatherUserOptions(opt,varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Element',opt.element);
-mesh.grid(0,1,0,1,opt.n,opt.n);
-mesh.init();
+mesh = mFEM.Mesh();
+mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
 
 % Label the boundaries
 mesh.addBoundary(1); % essential boundaries (all)
+mesh.update();
 
 % Problem specifics
 D = 1 / (2*pi^2);           % thermal conductivity
@@ -63,15 +60,16 @@ if strcmpi(opt.method,'alt');
     Mij = I;
     Kij = I;
 else
-    M = sparse(mesh.n_dof(), mesh.n_dof());
-    K = sparse(mesh.n_dof(), mesh.n_dof());
+    M = sparse(mesh.n_dof, mesh.n_dof);
+    K = sparse(mesh.n_dof, mesh.n_dof);
 end
 
 % Create mass and stiffness matrices by looping over elements
-for e = 1:mesh.n_elements;
+elements = mesh.getElements();
+for e = 1:length(elements);
 
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
@@ -99,7 +97,7 @@ for e = 1:mesh.n_elements;
         idx = m*(e-1)+1 : m*(e);
 
         % Build the i,j components for the sparse matrix creation
-        i = repmat(dof, length(dof),1);
+        i = repmat(dof,length(dof),1);
         j = sort(i);
         
         % Get the global degrees of freedom for this element
@@ -127,17 +125,16 @@ if strcmpi(opt.method,'alt');
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.getDof('Boundary',1);   
+ess = mesh.getDof('Tag',1);   
 non = ~ess;
 
 % Initialize the temperatures
 T_exact = @(x,y,t) exp(-t)*sin(pi*x).*sin(pi*y);
 nodes = mesh.getNodes();
-T = T_exact(nodes(:,1),nodes(:,2),0);
-
-% Collect the node positions for applying the essential boundary conditions
-x = nodes(:,1);
-y = nodes(:,2);
+coord = nodes.getCoord();
+x = coord(:,1);
+y = coord(:,2);
+T = T_exact(x,y,0);
 
 % Plot the initial condition
 if ~opt.debug;

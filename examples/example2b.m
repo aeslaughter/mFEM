@@ -11,13 +11,10 @@ function varargout = example2b(varargin)
 opt.debug = false;
 opt = gatherUserOptions(opt, varargin{:});
 
-% Import the mFEM library
-import mFEM.*;
-
 % Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.addElement('Tri3',[0,0; 2,0.5; 0,1]);
-mesh.addElement('Tri3',[2,0.5; 2,1; 0,1]);
+mesh = mFEM.Mesh();
+mesh.createNode([0,0; 2,0.5; 2,1; 0,1]);
+mesh.createElement('Tri3',[1,2,4; 2,3,4]);
 mesh.init();
 
 % Label the boundaries
@@ -26,17 +23,17 @@ mesh.addBoundary(2, 'right');   % q = 0 boundary
 mesh.addBoundary(3);            % essential boundaries (all others)
 
 % Create the System
-sys = System(mesh);
+sys = mFEM.System(mesh);
 sys.addConstant('k', 5*eye(2), 's', 6, 'q_top', 20);
 
 % Create matrices
 sys.addMatrix('K', 'B''*k*B');
 sys.addVector('f', 'N''*s');
-sys.addVector('f', 'N''*-q_top', 'Boundary', 1);
+sys.addVector('f', 'N''*-q_top', 'Tag', 1);
 
 % Assemble and solve
-solver = solvers.LinearSolver(sys);
-solver.addEssential('Boundary', 3, 'Value', 0);
+solver = mFEM.solvers.LinearSolver(sys);
+solver.addEssential('Tag',3,'Value',0);
 T = solver.solve();
 
 % Display the results
@@ -46,17 +43,17 @@ end
 
 % Compute the flux values for each element
 % Loop through the elements
-for e = 1:mesh.n_elements; 
+elements = mesh.getElements();
+for e = 1:length(elements);
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = elements(e);
     
     % Collect the local values of T
     d(:,1) = T(elem.getDof());
     
     % Compute the flux at the Gauss points
     q(:,e) = -sys.get('k')*elem.shapeDeriv([])*d;
-
 end    
 
 % Display the flux vectors

@@ -17,7 +17,7 @@ classdef Mesh < handle
     properties (Hidden, Access = protected)
         node_map = [];
         elem_map = uint32([]);
-        elem_type = Composite();
+        elem_type = {};
         initialized = false;
         node_map_codist;
         elem_map_codist;
