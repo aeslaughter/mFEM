@@ -13,14 +13,22 @@ opt = gatherUserOptions(opt, varargin{:});
 
 % Create a FEmesh object, add the single elements, and initialize it
 mesh = mFEM.Mesh();
-mesh.createNode([0,0; 2,0.5; 2,1; 0,1]);
-mesh.createElement('Tri3',[1,2,4; 2,3,4]);
+mesh.createNode([0,0; 2,0.5; 0,1; 2,1]);
+mesh.createElement('Tri3',[1,2,3; 2,4,3]);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1, 'top');     % q = 20 boundary
-mesh.addBoundary(2, 'right');   % q = 0 boundary
-mesh.addBoundary(3);            % essential boundaries (all others)
+% mesh.addBoundary(1,'top');                  % q = 20 boundary
+% mesh.addBoundary(2,'right');                % q = 0 boundary
+mesh.addBoundary(3,'x==0','y<=0.5');        % essential boundaries
+mesh.update();
+elem = mesh.getElements();
+
+elem(1).sides(1).tag
+elem(1).sides(2).tag
+elem(1).sides(3).tag
+
+return;
 
 % Define the constants for the problem
 D = 5*eye(2);   % thermal conductivity matrix
@@ -34,16 +42,16 @@ f = zeros(mesh.n_dof, 1);
 
 % Create the stiffness matrix and force vector by looping over the
 % elements, which in this case is a single element.
-elements = mesh.getElements();
 for e = 1:mesh.n_elements;
     
     % Extract the current element from the mesh object
-    elem = elements(e);
+    elem = getElements(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    N = @(xi) elem.shape(xi);    
-    B = @() elem.shapeDeriv([]);
+    N = @(i) elem.shape(elem.qp{i});    
+    B = @(i) elem.shapeDeriv(elem.qp{i});
+    detJ = @(i) elem.detJ(elem.qp{i});
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
@@ -52,19 +60,19 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points to perform the numeric integration
     for i = 1:size(elem.qp);
-        fe = fe + elem.W(i)*b*N(elem.qp{i})'*elem.detJ(elem.qp{i});
-        Ke = Ke + elem.W(i)*B()'*D*B()*elem.detJ(elem.qp{i});
+%         fe = fe + elem.W(i)*b*N(i)'*detJ(i);
+        Ke = Ke + elem.W(i)*B(i)'*D*B(i)*detJ(i);
     end
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
     % using numeric integration via the quadrature points for element side.
-    [~,sid] = elem.hasTag(1);
+    [~,sid] = elem.hasTag(1)
     for j = 1:length(sid);
         s = sid(j);
             
         % Local dofs for the current side
-        dof = elem.getDof('Side',s,'-local'); 
+        dof = elem.getDof('Side',s,'-local')
 
         % Build the side element
         side = elem.buildSide(s);
@@ -81,6 +89,10 @@ for e = 1:mesh.n_elements;
     K(dof, dof) = K(dof, dof) + Ke;
     f(dof) = f(dof) + fe;
 end
+
+f
+return;
+
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.getDof('Tag',3); 
 non = ~ess;

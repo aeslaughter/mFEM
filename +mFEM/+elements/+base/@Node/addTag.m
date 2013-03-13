@@ -31,9 +31,7 @@ function addTag(obj,tag)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-    
     for i = 1:length(obj);
-       n = length(obj(i).tag)+1;
-       obj(i).tag{n} = tag;
+       obj(i).tag(end+1) = tag;
     end
 end

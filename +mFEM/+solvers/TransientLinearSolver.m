@@ -215,7 +215,7 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
             
             % Currently MATLAB does not support parallel sparse in mldivide
             if isdistributed(K_hat);
-               warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
+%                warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
                K_hat= gather(K_hat); f_hat = gather(f_hat);
             end
            

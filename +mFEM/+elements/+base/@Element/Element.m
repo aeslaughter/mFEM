@@ -120,7 +120,7 @@ classdef Element < mFEM.elements.base.HideHandle
     
     methods %(Access = ?mFEM.Mesh)
          findNeighbors(obj);
-         addTag(obj,tag,type);
+         update(obj);
          setDof(obj);
          out = getPlotCoord(obj);
     end

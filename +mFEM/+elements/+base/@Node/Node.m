@@ -50,9 +50,10 @@ classdef Node < mFEM.elements.base.HideHandle
         on_boundary = false;    % true if node is on a boundary
         n_dim;                  % no. of spatial degrees-of-freedom
         n_dof;                  % no. of degrees-of-freedom for node
-        dof = uint32([]);       % global degrees-of-freedom
-        tag = {};               % list of char tags for this node
+        dof = uint32([]);       % global degrees-of-freedom              
         lab = uint32([]);       % the processor that holds this node
+        tag = ...               % tags associated with this node
+            struct('name',{},'type',{}); 
     end
     
     properties (Access = {?mFEM.elements.base.Element,?mFEM.Mesh})

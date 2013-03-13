@@ -44,7 +44,7 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     local = nodes;
     local_id = globalIndices(node_map,1);  % local node ids
     limit = getpref('MFEM_PREF','LABSEND_LIMIT');
-    limit = 10;
+%     limit = 10;
    
     % Build a map that indicates the lab location for each node
     no = unique(e_map);         % all nodes needed by this lab

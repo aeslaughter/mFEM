@@ -6,7 +6,7 @@ function addBoundary(obj, id, varargin)
     %   addBoundary(id)
     %
     % Description
-    %   addBoundary(id) labels all unidentified elements and sides
+    %   addBoundary(id) labels all unidentified nodes
     %       with the specified id, which must be an interger
     %       value greater than zero.
     %

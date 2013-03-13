@@ -35,7 +35,7 @@ function varargout = example6a(varargin)
 
 % Set the default options and apply the user defined options
 opt.debug = false;
-opt.n = 64;
+opt.n = 16;
 opt.element = 'Quad4';
 opt.method = 'normal';
 opt = gatherUserOptions(opt,varargin{:});
@@ -75,6 +75,7 @@ for e = 1:length(elements);
     % and shape function derivatives
     B = @(i) elem.shapeDeriv(elem.qp{i});
     N = @(i) elem.shape(elem.qp{i});
+    detJ = @(i) elem.detJ(elem.qp{i});
 
     % Initialize the local matrices and vector
     Me = zeros(elem.n_dof);     % mass matrix
@@ -83,8 +84,8 @@ for e = 1:length(elements);
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
     for i = 1:length(elem.qp);
-        Me = Me + elem.W(i)*N(i)'*N(i)*elem.detJ(elem.qp{i});
-        Ke = Ke + elem.W(i)*B(i)'*D*B(i)*elem.detJ(elem.qp{i});
+        Me = Me + elem.W(i)*N(i)'*N(i)*detJ(i);
+        Ke = Ke + elem.W(i)*B(i)'*D*B(i)*detJ(i);
     end
 
     % Insert current values into global matrix using one of two methods

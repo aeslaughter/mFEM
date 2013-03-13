@@ -1,17 +1,17 @@
 function tagEmptyBoundary(obj, tag)
-    %TAGEMPTYBOUNDARY Mark all unmarked boundaries
+    %TAGEMPTYBOUNDARY Tag all nodes on boundary not previously tagged
     %
     % Syntax
     %   tagEmptyBoundary(id)
     %
     % Description
-    %   tagEmptyBoundary(id) tags all boundaries that are unmarked
-    %   with the specified id.
+    %   tagEmptyBoundary(id) tags all the nodes on boundaries that are 
+    %   unmarked with the specified id.
     %
     % See Also ADDBOUNDARY
     %
     %----------------------------------------------------------------------
-    %  mFEM: An Object-Oriented MATLAB Finite Element Library
+    %  mFEM: A Parallel, Object-Oriented MATLAB Finite Element Library
     %  Copyright (C) 2013 Andrew E Slaughter
     % 
     %  This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ function tagEmptyBoundary(obj, tag)
     %  GNU General Public License for more details.
     % 
     %  You should have received a copy of the GNU General Public License
-    %  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    %  along with this program. If not, see <http://www.gnu.org/licenses/>.
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
@@ -35,37 +35,31 @@ function tagEmptyBoundary(obj, tag)
         tag = num2str(tag);
     end
     
+    % Build tag structure
+    tag = struct('name',tag,'type','boundary');
+    
     % spmd statements do not accept dot referencing
-    elements = obj.elements;
+    nodes = obj.nodes;
     
     % Begin parralel computations
     spmd
         % Loop through all local elements
-        for e = 1:length(elements);
+        for i = 1:length(nodes);
             
             % The current element
-            elem = elements(e);
+            no = nodes(i);
             
-            % Go the the next element if it is not on a boundary or if it
+            % Go the the next node if it is not on a boundary or if it
             % already has a tag applied
-            if ~elem.on_boundary || ~isempty(elem.tag);
+            if ~no.on_boundary || ~isempty(no.tag);
                 continue;
             end
             
             % Apply the tag to the element
-            elem.tag = tag;
-            
-            % Loop through the sides and apply tag
-            for s = 1:elem.n_sides;
-                
-                % Go to the next side if not on the boundary
-                if ~elem.sides(s).on_boundary;
-                    continue;
-                end
-            
-                % Apply the tag to the side
-                elem.sides(s).tag = tag;
-            end
+            no.tag = tag;
         end
     end
+    
+    % Return the node objects
+    obj.nodes = nodes;
 end

@@ -31,17 +31,22 @@ function update(obj)
     %
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
-    
-    % No need for this function in serial
-    if matlabpool('size') == 0;
-        return
-    end
-    
+     
     % Perform parallel node update
     elem_map = obj.elem_map;
     node_map = obj.node_map;
     elements = obj.elements;
-    nodes = obj.nodes;
+    nodes = obj.nodes;   
+
+    % No communication is required in serial
+    if matlabpool('size') == 0;
+        spmd
+            elements.update();
+        end
+        return
+    end
+    
+    % Parallel requires off processor nodes to be copied
     spmd
         % Extract all the nodes that are needed on this processor
         no = obj.getOffLabNodes(elem_map, node_map, nodes);
@@ -49,7 +54,11 @@ function update(obj)
         % Update the elements nodes
         [m,n] = size(no);
         no = mat2cell(no,ones(m,1),n);
-        [elements.nodes] = no{:};  
+        [elements.nodes] = no{:};
+        labBarrier;
+        
+        % Update/apply the element tags
+        elements.update();
     end
 end
     

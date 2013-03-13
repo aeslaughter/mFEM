@@ -28,7 +28,7 @@ import mFEM.* mFEM.solvers.*;
 
 % Set the default options and apply the user defined options
 opt.debug = false;
-opt.n = 32;
+opt.n = 16;
 opt.element = 'Quad4';
 opt = gatherUserOptions(opt,varargin{:});
 

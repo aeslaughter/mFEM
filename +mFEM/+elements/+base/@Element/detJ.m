@@ -29,4 +29,8 @@ function J = detJ(obj,x)
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
     J = det(obj.jacobian(x));
+    if J < 0;
+        msg = sprintf('WARNING: Negative determinant of Jacobian (|J| < 0) computed on element %d.',obj.id);
+        disp(msg);
+    end
 end 

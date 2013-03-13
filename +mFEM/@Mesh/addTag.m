@@ -4,9 +4,9 @@ function addTag(obj, tag, type, varargin)
     %   function, the user should refer to the addBoundary or addSubdomain
     %   functions for adding tags.
     %
-    %   ADDTAG only interacts with the node_tag_map, the elem_tag_map is
-    %   updated when the init() method is called, which should be done
-    %   after all tags are added.
+    %   ADDTAG only interacts with the node_tag_map and the elem_tag_map.
+    %   It also adds the tags to the nodes on each process, the tagging of
+    %   the elements takes place when the update method is called.
     %
     % Syntax
     %    addTag(tag, type, FuncString,...)
@@ -61,8 +61,9 @@ function addTag(obj, tag, type, varargin)
         varargin{1} = varargin(1);
     end
     
-    % Append the tag to the complete list of tags
-    obj.tag(end+1) = struct('name',tag,'type',type);
+    % Build tag structure, append to the complete list of tags
+    tag = struct('name',tag,'type',type);
+    obj.tag(end+1) = tag;
     cnt = length(obj.tag); 
 
     % Parse the input
@@ -79,6 +80,7 @@ function addTag(obj, tag, type, varargin)
             n_idx(:,i) = feval(fcn{i},local(:,col(i)),value(i));
         end
         
+        
         % Account for the two types of input AND (all) or OR (any)
         if use_all;
             n_idx = all(n_idx,2); 
@@ -91,7 +93,7 @@ function addTag(obj, tag, type, varargin)
            n_idx(:,2) =  [nodes.on_boundary];
            n_idx = all(n_idx,2);
         end
-        
+ 
         % Apply the nodal tags
         nodes(n_idx).addTag(tag);
         
@@ -99,16 +101,15 @@ function addTag(obj, tag, type, varargin)
         gi = globalIndices(node_tag_map,1);
         node_tag_map(gi,cnt) = n_idx;
 
-        % Extract elements from node parents, limit to current lab
-        elem = [nodes(n_idx).parents];
-        if ~isempty(elem);
-            [~,ix] = unique([elem.id]);
-            elem = elem(ix);
+        % Update the node tag map
+        elem = [nodes(n_idx).parents];      % elements affected
+        if ~isempty(elem);              
+            [~,ix] = unique([elem.id]);     % ids of elements
+            elem = elem(ix);                % element classes
             if ~isempty(elem);
-
-                % Add tags to elements           
+                % Limit elements altered to this lab
                 e_idx = [elem.lab]==labindex;
-                elem(e_idx).addTag(tag,type);
+%                 elem(e_idx).addTag(tag,type);
 
                 % Update the element map
                 gi = [elem(e_idx).id];
