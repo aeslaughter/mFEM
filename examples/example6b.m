@@ -38,7 +38,7 @@ mesh.grid(opt.element,0,1,0,1,opt.n,opt.n);
 
 % Label the boundaries
 mesh.addBoundary(1); % essential boundaries (all)
-mesh.update();
+% mesh.update();
 
 % Build the system
 sys = System(mesh);
@@ -62,7 +62,6 @@ end
 
 % Plot the initial condition
 if ~opt.debug;
-    figure; hold on;
     mesh.plot(T,'colorbar','Temperature');
     title('t = 0');
     xlabel('x');

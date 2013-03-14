@@ -170,8 +170,8 @@ for t = dt:dt:1;
     T(ess) = T_exact(x(ess), y(ess), t);
 
     % Plot the results
-    pause(0.25);
     if ~opt.debug;
+        pause(0.25);
         mesh.plot(T);
         title(['t = ', num2str(t)]);
     end

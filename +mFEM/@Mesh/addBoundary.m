@@ -2,9 +2,12 @@ function addBoundary(obj, id, varargin)
     %ADDBOUNDARY Labels elements and sides with numeric tags.
     %
     % Syntax
+    %   addBoundary(id)
     %   addBoundary(id, Limit1,...)
     %
     % Description
+    %   addBoundary(id) marks all boundaries with the supplied tag
+    %
     %   addBoundary(id, Limit1,...) allows 
     %       for customization to what boundaries are tagged, see 
     %       the descriptions below. It is possible to
@@ -47,6 +50,11 @@ function addBoundary(obj, id, varargin)
             'The Mesh was previously initailized, for these tags to be applied the init() method must be called again.');
     end
 
+    % Account for special case
+    if nargin == 2;
+        varargin{1} = 'x~=NaN';
+    end
+    
     % Apply tags
     obj.addTag(id, 'boundary', varargin{:});
 end

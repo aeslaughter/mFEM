@@ -1,7 +1,7 @@
 function T = test_example6
 
 % Initilize testing class
-T = mFEM.Test();
+T = mFEM.Test('Name','Example 6');
 
 % Run example 6a
 [x,y,t,Temp] = example6a('-debug', 'N', 16);
