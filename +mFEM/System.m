@@ -360,7 +360,7 @@ classdef System < mFEM.base.HideHandle
             end
         end
         
-        function X = assemble(obj, name, varargin)
+        function X = assemble(obj,name,varargin)
             %ASSEMBLE Assembles Matrix objects given by name
             %
             % Syntax
@@ -375,20 +375,34 @@ classdef System < mFEM.base.HideHandle
             %   addVector methods.
             %
             % ASSEMBLE Property Descriptions
-            %   Boundary
-            %       numeric
+            %   Tag
+            %       numeric | char
             %       Limits the application of the supplied equation to the 
             %       boundaries with the id, see FEMESH.ADDBOUNDARY
-            %
-            %   Subdomain
-            %       numeric
-            %       Limits the application of the supplied equation to the 
-            %       elements on the subdomain, see FEMESH.ADDSUBDOMAIN
             %
             %   Component
             %       numeric
             %       Limits the application of the supplied equation to the
             %       specified component for vector unknowns.
+            %
+            %   Parallel
+            %       true | {false}
+            %       If true a distributed matrix or vector is returned,
+            %       otherwise the desired component is collected. This does
+            %       not affect the actual assembly of the variable, which
+            %       is always done in parallel.
+            %
+            %   Zero
+            %       true | {false}
+            %       If set to true the assemble matrix is set to zero after
+            %       it is returned.
+            
+            % Gather the options
+            opt.tag = {};
+            opt.component = [];
+            opt.parallel = false;
+            opt.zero = false;
+            opt = gatherUserOptions(opt,varargin{:});
             
             % Extract the types with the given name
             [~, type] = obj.exists(name);
@@ -403,6 +417,11 @@ classdef System < mFEM.base.HideHandle
                     error('System:assemble','Only variables added with addMatrix or addVector may be assembled');
                 end
             end  
+            
+            if isdistributed(X) && ~opt.parallel
+                X = gather(X);
+            end
+            
         end
     end 
     

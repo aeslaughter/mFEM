@@ -80,7 +80,6 @@ function addTag(obj, tag, type, varargin)
             n_idx(:,i) = feval(fcn{i},local(:,col(i)),value(i));
         end
         
-        
         % Account for the two types of input AND (all) or OR (any)
         if use_all;
             n_idx = all(n_idx,2); 

@@ -11,19 +11,17 @@ function varargout = example5a(varargin)
 opt.debug = false;
 opt = gatherUserOptions(opt, varargin{:});
 
-% Import the mFEM library
-import mFEM.*;
-
-% Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh();
-mesh.addElement('Tri3', 1/100*[0,0; 2,0; 2,4]);
-mesh.addElement('Tri3', 1/100*[0,0; 2,4; 0,2]);
+% Create a Mesh object, add the single element, and initialize it
+mesh = mFEM.Mesh();
+mesh.createNode(1/100*[0,0; 0,2; 2,0; 2,4]);
+mesh.createElement('Tri3',[1,3,4; 1,4,2]);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1,'left', 'right');  % insulated
-mesh.addBoundary(2, 'bottom');        % convective
-mesh.addBoundary(3);                  % essential
+mesh.addBoundary('insulated','left','right');  
+mesh.addBoundary('convective','bottom'); 
+mesh.addBoundary('essential','y>=0.02');
+mesh.update();
 
 % Problem specifics
 D = 3 * eye(2);         % thermal conductivity (W/(mC))
@@ -46,7 +44,7 @@ f = zeros(mesh.n_dof(), 1);
 for e = 1:mesh.n_elements;
 
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = mesh.getElements(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
@@ -66,18 +64,20 @@ for e = 1:mesh.n_elements;
     end
 
     % Loop through the sides of the element, if the side has the boundary
-    % id of 2 (bottom), then add the convective flux term to stiffness
+    % convective tag, then add the convective flux term to stiffness
     % matrix and force vector using numeric integration via the quadrature 
     % points for element side.
-    for s = 1:elem.n_sides;
-        if any(elem.side(s).boundary_id == 2);
-            side = elem.buildSide(s);
-            N = @(xi) side.shape(xi);
-            for i = 1:length(side.qp);
-                d = elem.getDof('side',s,'-local'); % local dofs for side
-                Ke(d,d) = Ke(d,d) + side.W(i) * h * N(side.qp{i})'*N(side.qp{i})*side.detJ(side.qp{i});
-                fe(d) = fe(d) + h*T_inf*side.W(i)*N(side.qp{i})'*side.detJ(side.qp{i});              
-            end
+    [~,sid] = elem.hasTag('convective');
+    for j = 1:length(sid);
+        s = sid(j);
+        side = elem.buildSide(s);
+        W = @(i) side.W(i);
+        N = @(i) side.shape(side.qp{i});
+        J = @(i) side.detJ(side.qp{i});
+        for i = 1:length(side.qp);
+            d = elem.getDof('side',s,'-local'); % local dofs for side
+            Ke(d,d) = Ke(d,d) + W(i)*h*N(i)'*N(i)*J(i);
+            fe(d) = fe(d) + h*T_inf*W(i)*N(i)'*J(i);              
         end
     end      
     
@@ -89,7 +89,7 @@ for e = 1:mesh.n_elements;
 end
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.getDof('Boundary', 3); % 3,4
+ess = mesh.getDof('Tag','essential'); % 3,4
 non = ~ess;
 
 % Solve for the temperatures
@@ -121,6 +121,5 @@ end
 if opt.debug; % debug, return M,K,f,T
     varargout = {M,K,f,T};
 else
-    ix = [1,4,2,3];
-    T(ix,:)'
+   T'
 end
