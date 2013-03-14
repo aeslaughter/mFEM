@@ -68,13 +68,10 @@ function init(obj)
        nodes.setDof(strt(labindex));
     end
     
+    obj.buildElements(nodes);
+    return;
     % Build the elements
     [elements,nodes] = obj.buildElements(nodes);
-    
-%     % Set the element dofs, in parallel
-%     spmd
-%         elements.setDof();
-%     end
     
     % Display message time for finding neighbors, if desired
     if obj.options.time;

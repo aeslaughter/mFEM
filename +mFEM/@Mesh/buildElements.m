@@ -41,7 +41,8 @@ function [elements,nodes] = buildElements(obj,nodes)
 
         % Create the elements
         n = size(no,1);
-        elements(n,1) = feval(['mFEM.elements.',type]);
-        elements.init(e_id,no,'-addParents');
+%         elements(n,1) = feval(['mFEM.elements.',type]);
+%         elements.init(e_id,no,'-addParents');
     end
+    elements = {};
 end
