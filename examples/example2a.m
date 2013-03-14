@@ -18,17 +18,10 @@ mesh.createElement('Tri3',[1,2,3; 2,4,3]);
 mesh.init();
 
 % Label the boundaries
-% mesh.addBoundary(1,'top');                  % q = 20 boundary
-% mesh.addBoundary(2,'right');                % q = 0 boundary
+mesh.addBoundary(1,'top');                  % q = 20 boundary
+mesh.addBoundary(2,'right');                % q = 0 boundary
 mesh.addBoundary(3,'x==0','y<=0.5');        % essential boundaries
 mesh.update();
-elem = mesh.getElements();
-
-elem(1).sides(1).tag
-elem(1).sides(2).tag
-elem(1).sides(3).tag
-
-return;
 
 % Define the constants for the problem
 D = 5*eye(2);   % thermal conductivity matrix
@@ -45,7 +38,7 @@ f = zeros(mesh.n_dof, 1);
 for e = 1:mesh.n_elements;
     
     % Extract the current element from the mesh object
-    elem = getElements(e);
+    elem = mesh.getElements(e);
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
@@ -72,7 +65,7 @@ for e = 1:mesh.n_elements;
         s = sid(j);
             
         % Local dofs for the current side
-        dof = elem.getDof('Side',s,'-local')
+        dof = elem.getDof('Side',s,'-local');
 
         % Build the side element
         side = elem.buildSide(s);

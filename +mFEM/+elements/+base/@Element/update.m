@@ -58,8 +58,6 @@ end
 
 function updateSides(elem)
 
-disp(sprintf('Element %d',elem.id));
-
     % Update the sides
     for s = 1:elem.n_sides;
        no = elem.nodes(elem.side_ids(s,:));
@@ -68,16 +66,30 @@ disp(sprintf('Element %d',elem.id));
        if length(no) == 1;
            elem.sides(s).tag = no.tag;
        else
-            T1 = no(1).tag;
-            T2 = [no(2:end).tag];
+            T1 = no(1).tag;         % tags from node 1 of side s
+            T2 = [no(2:end).tag];   % tags from other nodes of side s
+            
+            % If the tag sets are not empty continue
+            if ~isempty(T1) && ~isempty(T2);
+                
+                % Compare the name and type
+                [Lia1,~] = ismember({T1.name},{T2.name});
+                [Lia2,Locb] = ismember({T1.type},{T2.type});
+                
+                % Extract index of matching tags
+                Lia = all([Lia1,Lia2],2);
+                index = Locb(Lia);
 
-            [Lia(:,1),~] = ismember({T1.name},{T2.name});
-            [Lia(:,2),Locb] = ismember({T1.type},{T2.type});
-            Lia = all(Lia,2);
-            index = Locb(Lia)
-
-            if ~isempty(index)
-                elem.sides(s).tag = T1(index);
+                % tag the side if things match
+                if ~isempty(index)
+                    T0 = T2(index);
+                    for i = 1:length(T0); % loop over all tags
+                        if (strcmpi(T0(i).type,'boundary') && elem.sides(s).on_boundary) ||...
+                           (strcmpi(T0(i).type,'subdomain') && ~elem.sides(s).on_boundary);
+                                elem.sides(s).tag(end+1) = T0(i);
+                        end
+                    end
+                end
             end
        end
     end

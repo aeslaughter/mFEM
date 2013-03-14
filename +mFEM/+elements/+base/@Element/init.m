@@ -64,6 +64,7 @@ function init(obj,id,nodes,varargin)
     [obj.id] = id{:};
     [obj.lab] = lab{:};  
 
+
     % Loop through elements and set remaining properties (todo)
     for i = 1:length(obj);
         obj(i).nodes = nodes(i,:);
@@ -71,7 +72,7 @@ function init(obj,id,nodes,varargin)
                          'neighbor_side',[],...
                          'on_boundary',...
                          num2cell(true(obj(i).n_sides,1)),...
-                         'tag',[]);
+                         'tag',struct('name',{},'type',{}));
         obj(i).dof = [obj(i).nodes.dof];
         obj(i).n_dof = sum([obj(i).nodes.n_dof]);
     end
