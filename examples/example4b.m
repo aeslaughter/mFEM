@@ -5,32 +5,27 @@ function [stress, strain] = example4b(varargin)
 opt.display = true;
 opt = gatherUserOptions(opt, varargin{:});
 
-% Import the mFEM library
-import mFEM.*;
-  
-% Create a FEmesh object, add the single element, and initialize it
-mesh = FEmesh('Space','vector');
-mesh.addElement('Quad4',[0,1; 0,0; 2,0.5; 2,1]);
+% Create a Mesh object, add the single element, and initialize it
+mesh = mFEM.Mesh('Space','Vector');
+mesh.createNode([0,1; 0,0; 2,0.5; 2,1]);
+mesh.createElement('Quad4',1:4);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1, 'left');    % essential boundaries
-mesh.addBoundary(2, 'top');     % distributed load (t = -20)
+mesh.addBoundary('essential','left');    % essential boundaries
+mesh.addBoundary('distributed','top');   % distributed load (t = -20)
+mesh.update();
 
 % Create system and add necessary components
-sys = System(mesh);
+sys = mFEM.System(mesh);
 sys.addConstant('E', 3e7, 'v', 0.3, 't_top', [0;-20]);
 sys.addConstant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
-sys.addMatrix('K', 'B''*D*B');
-sys.addVector('f', 'N''*t_top');
-
-% Assemble the matrix and vector
-K = sys.assemble('K'); 
-f = sys.assemble('f', 'Boundary', 2);
+sys.addMatrix('K','B''*D*B');
+sys.addVector('f','N''*t_top','Tag','distributed');
 
 % Assemble and solve
-solver = solvers.LinearSolver(sys);
-solver.addEssential('Boundary',1,'value',0);
+solver = mFEM.solvers.LinearSolver(sys);
+solver.addEssential('Tag','essential','value',0);
 u = solver.solve();
 
 % Display the results
@@ -43,7 +38,7 @@ end
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = mesh.getElements(e);
     
     % Collect the local values of T
     d(:,1) = u(elem.getDof());
