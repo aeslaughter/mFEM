@@ -14,13 +14,13 @@ opt = gatherUserOptions(opt, varargin{:});
 % Create a FEmesh object, add the single element, and initialize it
 mesh = mFEM.Mesh();
 mesh.createNode([0,1; 0,0; 2,0.5; 2,1]);
-mesh.createElement('Quad4',[1,2,3,4]);
+mesh.createElement('Quad4',1:4);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1, 'top');     % q = 20 boundary
-mesh.addBoundary(2, 'right');   % q = 0 boundary
-mesh.addBoundary(3);            % essential boundaries (all others)
+mesh.addBoundary(1,'top');                  % q = 20 boundary
+mesh.addBoundary(2,'right');                % q = 0 boundary
+mesh.addBoundary(3,'x==0','y<=0.5');        % essential boundaries
 mesh.update();
 
 % Definethe constants for the problem
@@ -38,9 +38,11 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
-    B = @(xi) elem.shapeDeriv(xi);
-    N = @(xi) elem.shape(xi);
-
+    W = @(i) elem.W(i);
+    N = @(i) elem.shape(elem.qp{i});    
+    B = @(i) elem.shapeDeriv(elem.qp{i});
+    detJ = @(i) elem.detJ(elem.qp{i});
+    
     % Initialize the stiffness matrix (K) and the force vector (f), for
     % larger systems K should be sparse.
     K = zeros(elem.n_dof);
@@ -49,8 +51,8 @@ for e = 1:mesh.n_elements;
     % Loop over the quadrature points in the two dimensions to perform the
     % numeric integration
     for i = 1:length(elem.qp);
-        f = f + elem.W(i)*s*N(elem.qp{i})'*elem.detJ(elem.qp{i});
-        K = K + elem.W(i)*B(elem.qp{i})'*D*B(elem.qp{i})*elem.detJ(elem.qp{i});
+        f = f + W(i)*s*N(i)'*detJ(i);
+        K = K + W(i)*B(i)'*D*B(i)*detJ(i);
     end
   
     % Loop throught the sides of the element, if the side has the boundary
@@ -69,11 +71,12 @@ for e = 1:mesh.n_elements;
     end  
 end
 
-full(K)
-return;
+K
+f
+
 
 % Define dof indices for the essential dofs and non-essential dofs
-ess = mesh.getDof('Boundary',3); % 4
+ess = mesh.getDof('Tag',3); % 4
 non = ~ess;
 
 % Solve for the temperatures
@@ -93,14 +96,14 @@ end
 for e = 1:mesh.n_elements; % (include for illustration, but not needed)
     
     % Extract the current element from the mesh object
-    elem = mesh.element(e);
+    elem = mesh.getElements(e);
     
     % Collect the local values of T
     d(:,1) = T(elem.getDof());
     
     % Compute the flux at the Gauss points
     for i = 1:length(elem.qp);
-        q(:,i) = -D*B(elem.qp{i})*d;
+        q(:,i) = -D*B(i)*d;
     end
 end    
 

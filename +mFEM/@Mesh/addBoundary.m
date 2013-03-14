@@ -3,18 +3,13 @@ function addBoundary(obj, id, varargin)
     %
     % Syntax
     %   addBoundary(id, Limit1,...)
-    %   addBoundary(id)
     %
     % Description
-    %   addBoundary(id) labels all unidentified nodes
-    %       with the specified id, which must be an interger
-    %       value greater than zero.
-    %
     %   addBoundary(id, Limit1,...) allows 
     %       for customization to what boundaries are tagged, see 
     %       the descriptions below. It is possible to
     %       supply multiple limits For example,
-    %           add_boundary(1,'left','right','x==1')
+    %           addBoundary(1,'left','right','x==1')
     %       will loop through each value and apply the boundary
     %       id to each.
     %
@@ -52,12 +47,6 @@ function addBoundary(obj, id, varargin)
             'The Mesh was previously initailized, for these tags to be applied the init() method must be called again.');
     end
 
-    % Special case, tag all untagged
-    if nargin == 2;
-        obj.tagEmptyBoundary(id);
-        
-    % Loop through the supplied options    
-    else
-        obj.addTag(id, 'boundary', varargin{:});
-    end
+    % Apply tags
+    obj.addTag(id, 'boundary', varargin{:});
 end

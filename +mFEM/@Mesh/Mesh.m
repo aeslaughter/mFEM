@@ -46,9 +46,7 @@ classdef Mesh < handle
     end
     
     methods (Hidden, Access = protected)
-
         addTag(obj, id, type, varargin)
-        idEmptyBoundary(obj,id);
         out = gatherComposite(obj,varargin);
         nodes = buildNodes(obj);
         [elements, nodes] = buildElements(obj,nodes);

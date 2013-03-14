@@ -27,7 +27,7 @@ classdef LinearSolver < mFEM.solvers.base.Solver
     %----------------------------------------------------------------------
    properties (Access = protected)
        options = ...        % Solver options
-           struct('stiffness', 'K', 'force', 'f');
+           struct('stiffness', 'K', 'force', 'f','disablewarnings',false);
    end
    
    methods
@@ -71,6 +71,10 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            %        equation, Ku = f. Using a numeric vector 
            %        explicitly gives the assembled vector. The default is 
            %        the character 'f'.      
+           %
+           %    DisableWarnings
+           %        true | {false}
+           %        Disables any warnings that may be triggered.
            
            % Call the base class constructor
            obj@mFEM.solvers.base.Solver(input)
@@ -104,7 +108,9 @@ classdef LinearSolver < mFEM.solvers.base.Solver
    
            % Currently MATLAB does not support parallel sparse in mldivide
            if isdistributed(K);
-               warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
+               if ~obj.options.disablewarnings;
+                    warning('LinearSolver:Solve:ParallelSparseNotSupported','MATLAB does not currently support parallel sparse input for mldivide, the solve is being completed serially.');
+               end
                K = gather(K); f = gather(f);
            end
 

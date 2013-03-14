@@ -2,14 +2,14 @@ function N = shape(obj, x, varargin)
     %SHAPE Returns the shape functions
     %
     % Syntax
-    %   shape(x)
-    %   shape(x, '-scalar')
+    %   shape(xi)
+    %   shape(xi, '-scalar')
     %
     % Description
     %   shape(xi) returns the element shape functions evaluated at
-    %   the locations specified by xi.
+    %   the local locations specified by xi.
     %
-    %   shape(...,'-scalar') allows user to
+    %   shape(xi,'-scalar') allows user to
     %   override the vectorized output using the scalar flag, this
     %   is used by GETPOSITION
     %

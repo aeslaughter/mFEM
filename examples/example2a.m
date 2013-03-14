@@ -42,6 +42,7 @@ for e = 1:mesh.n_elements;
     
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
+    W = @(i) elem.W(i);
     N = @(i) elem.shape(elem.qp{i});    
     B = @() elem.shapeDeriv([]);
     detJ = @(i) elem.detJ(elem.qp{i});
@@ -53,8 +54,8 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points to perform the numeric integration
     for i = 1:size(elem.qp);
-        fe = fe + elem.W(i)*b*N(i)'*detJ(i);
-        Ke = Ke + elem.W(i)*B()'*D*B()*detJ(i);
+        fe = fe + W(i)*b*N(i)'*detJ(i);
+        Ke = Ke + W(i)*B()'*D*B()*detJ(i);
     end
     
     % Loop throught the sides of the element, if the side has the boundary
@@ -62,6 +63,7 @@ for e = 1:mesh.n_elements;
     % using numeric integration via the quadrature points for element side.
     [~,sid] = elem.hasTag(1);
     for j = 1:length(sid);
+        % Current side
         s = sid(j);
             
         % Local dofs for the current side
@@ -111,7 +113,6 @@ for e = 1:mesh.n_elements;
     
     % Compute the flux at the Gauss points
     q(:,e) = -D*B()*d;
-
 end    
 
 % Display the flux vectors

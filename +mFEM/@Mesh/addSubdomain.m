@@ -19,7 +19,6 @@ function addSubdomain(obj, id, varargin)
     %       will id elements with nodes at x = 1 AND y < 2.
 
     % Check if system is initialized
-    % Check if system is initialized
     if obj.initialized;
         warning('Mesh:addSubdomain:MeshInitialized',...
             'The Mesh was previously initailized, for these tags to be applied the init() method must be called again.');

@@ -13,14 +13,14 @@ opt = gatherUserOptions(opt, varargin{:});
 
 % Create a FEmesh object, add the single element, and initialize it
 mesh = mFEM.Mesh();
-mesh.createNode([0,0; 2,0.5; 2,1; 0,1]);
-mesh.createElement('Tri3',[1,2,4; 2,4,3]);
+mesh.createNode([0,0; 2,0.5; 0,1; 2,1]);
+mesh.createElement('Tri3',[1,2,3; 2,4,3]);
 mesh.init();
 
 % Label the boundaries
-mesh.addBoundary(1, 'top');     % q = 20 boundary
-mesh.addBoundary(2, 'right');   % q = 0 boundary
-mesh.addBoundary(3);            % essential boundaries (all others)
+mesh.addBoundary(1,'top');                  % q = 20 boundary
+mesh.addBoundary(2,'right');                % q = 0 boundary
+mesh.addBoundary(3,'x==0','y<=0.5');        % essential boundaries
 mesh.update();
 
 % Create the System
