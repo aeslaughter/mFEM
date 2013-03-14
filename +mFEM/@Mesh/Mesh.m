@@ -41,7 +41,7 @@ classdef Mesh < handle
         plot(obj,varargin);
 
         function obj = Mesh(varargin)
-            obj.options = gatherUserOptions(obj.options, varargin{:});  
+            obj.options = gatherUserOptions(obj.options, varargin{:}); 
         end
     end
     

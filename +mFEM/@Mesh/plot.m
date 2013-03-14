@@ -120,37 +120,37 @@ function h = plot(obj, data, varargin)
         FV.vertices(:,2) = opt.data;
     end
 
-    if ~isempty(opt.data);
+    space = obj.options.space;
+    if (ischar(space) && strcmpi(space,'scalar')) || ...
+       (isnumeric(space) && space == 1)
         FV.FaceVertexCData = opt.data;
+        
+    elseif (ischar(space) && strcmpi(space,'vector')) || ...
+           (isnumeric(space) && space > 1);
+       
+        n = obj.n_dof/obj.n_nodes;
+        opt.data = reshape(opt.data,n,numel(opt.data)/n)';
+        
+        if isempty(opt.component);
+            data = mean(opt.data,2);
+        else
+            data = opt.data(:,opt.component);
+        end
+        FV.FaceVertexCData = data;
     end
     
+    if isfield(FV,'FaceVertexCData') &&  opt.deform;
+        if ~isempty(opt.component);
+            c = opt.component;
+            FV.vertices(:,c) = FV.vertices(:,c) + opt.scale*opt.data(:,c); 
+        else
+            FV.vertices = FV.vertices + opt.scale*opt.data;
+        end
+    end
     
     h = patch(FV,'FaceColor','interp');
     
-    
-%     % Plot the data according the spacial dimensions
-%     if obj.n_dim == 1 && obj.n_dof_node == 1;
-%         h = plot1DScalar(obj, opt);
-%         
-%     elseif obj.n_dim == 1 && obj.n_dof_node == 2;
-%         h = plot1DVector(obj, opt);
-%         
-%     elseif obj.n_dim == 2 && obj.n_dof_node == 1;
-%         h = plot2DScalar(obj, opt);
-%         
-%     elseif obj.n_dim == 2 && obj.n_dof_node == 2;
-%         h = plot2DVector(obj, opt);
-%         
-%     elseif obj.n_dim == 3 && obj.n_dof_node == 1;
-%         h = plot3DScalar(obj, opt);
-%         
-%     elseif obj.n_dim == 3 && obj.n_dof_node == 3;
-%         error('FEplot:FEplot','Plotting 3D vector problems is not yet supported');
-%         %h = plot3D_vector(obj, opt);
-%     end
-%     
     applyPlotOptions(obj, h, opt);
-    %build_plot(obj, opt);
 %     
 %     % Add the element labels
 %     addElementLabels(obj, opt);
@@ -215,271 +215,7 @@ function opt = parseInput(data, varargin)
     end
     
     % Account for text input for component option
-    if ischar(opt.component);
-        switch lower(opt.component);
-            case 'x'; opt.component = 1;
-            case 'y'; opt.component = 2;
-            case 'z'; opt.component = 3;
-            otherwise
-                error('FEplot:parse_input','Un-reconginzed option, %s, for component option.', opt.component);
-        end
-    end
-end
-
-function [face,vert] = plot1DScalar(elem, opt)
-    %PLOT1D create a 1D plot
-    
-    % The node positions
-    vert = elem.getPlotCoord();
-    face = elem.side_ids'
-    
-    dof = elem.getDof()
-    
-
-    % For 1D, use data as y-axis data
-    if ~isempty(opt.data);        
-        dof = elem.getDof();
-        vert(:,2) = opt.data(dof);
-    else
-        vert(:,2) = zeros(size(vert,1),1);
-    end
-
-    % Create the patch
-    
-%     h = patch('Faces',face,'Vertices',vert);
-end
-
-function h = plot1DVector(obj, opt)
-    %PLOT1D_vector create a plot for 1D with multiple dofs per node
-
-    % Initialize the x and y values
-    h = zeros(obj.n_elements,1);
-    
-    % Generate the graph
-    for e = 1:obj.n_elements;
-
-        % The current element
-        elem = obj.element(e);
-        
-        % The node positions
-        x = elem.nodes(:,1);
-        y = zeros(size(x));
-        
-        % Gather y-axis data
-        z = [];
-        if ~isempty(opt.data)
-            dof = elem.getDof();
-            z = opt.data(dof);
-            zz(:,1) = z(1:2:end);
-            zz(:,2) = z(2:2:end);           
-            
-            if isnan(opt.component);
-                z = nan(size(x));
-            elseif isempty(opt.component);
-                z = sqrt(zz(:,1).^2 + zz(:,2).^2);
-            elseif isnumeric(opt.component) && isscalar(opt.component);
-                z = zz(:,opt.component);
-            else
-                error('FEplot:plot2D_vector','Error with Component property value');
-            end
-            
-             % Adjust nodal position if deformed shape is desired
-            if opt.deform
-                % Adjust the nodal values
-                x = x + opt.scale*zz(:,1);
-                y = z + opt.scale*zz(:,2);
-            end
-        end
-
-        % Apply the plotting order
-        order = elem.node_plot_order;
-        if ~isempty(order);
-            x = x(order);
-            y = y(order);
-            if ~isempty(z);
-                z = z(order);
-            end
-        end
-
-        % Create the graph
-        if isempty(z);
-            h(e) = patch(x, y, 'w');
-        else
-            h(e) = patch(x, y, z,'EdgeColor','interp');
-        end
-    end
-    
-    % Create the colorbar        
-    if ~isempty(opt.colorbar) && ischar(opt.colorbar);
-        cbar = colorbar;
-        set(get(cbar,'YLabel'),'String',opt.colorbar);
-    end    
-
-end
-
-function h = plot2DScalar(obj, opt)
-    %PLOT2D_SCALAR create a 2D plot with scalar values
-
-    % Initialize the x and y values
-    h = zeros(obj.n_elements,1);
-    
-    % Generate the graph
-    for e = 1:obj.n_elements;
-
-        % The current element
-        elem = obj.element(e);
-        
-        % Apply the plotting order
-        if ~isempty(elem.node_plot_order);
-            idx = elem.node_plot_order;
-        else
-            idx = 1:elem.n_dof;
-        end
-
-        % Create the graph
-        if isempty(opt.data);
-            h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2), 'w');
-        else
-            dof = elem.getDof();
-            h(e) = patch(elem.nodes(idx,1), elem.nodes(idx,2),...
-                opt.data(dof(idx)), 'EdgeColor','k');
-        end
-    end
-end
-
-function h = plot2DVector(obj, opt)
-    %PLOT2D_vector create a 2D plot for vector spaces
-  
-    % Initialize the x and y values
-    h = zeros(obj.n_elements,1);
-    
-    % Generate the graph
-    for e = 1:obj.n_elements;
-
-        % The current element
-        elem = obj.element(e);
-        
-        % The node positions
-        x = elem.nodes(:,1);
-        y = elem.nodes(:,2);
-        
-        % Gather y-axis data
-        z = [];
-        if ~isempty(opt.data)
-            dof = elem.getDof();
-            z = opt.data(dof);
-            zz(:,1) = z(1:2:end);
-            zz(:,2) = z(2:2:end);           
-            
-            if isnan(opt.component);
-                z = nan(size(x));
-            elseif isempty(opt.component);
-                z = sqrt(zz(:,1).^2 + zz(:,2).^2);
-            elseif isnumeric(opt.component) && isscalar(opt.component);
-                z = zz(:,opt.component);
-            else
-                error('FEplot:plot2D_vector','Error with Component property value');
-            end
-            
-             % Adjust nodal position if deformed shape is desired
-            if opt.deform
-                if ~isempty(opt.component) && opt.component == 1 || strcmpi(opt.component, 'x');
-                    x = x + opt.scale*zz(:,1);
-                elseif ~isempty(opt.component) && opt.component == 2 || strcmpi(opt.component, 'y');
-                    y = y + opt.scale*zz(:,2);
-                else
-                    x = x + opt.scale*zz(:,1);
-                    y = y + opt.scale*zz(:,2);
-                end
-            end
-        end
-
-        % Apply the plotting order
-        order = elem.node_plot_order;
-        if ~isempty(order);
-            x = x(order);
-            y = y(order);
-            if ~isempty(z);
-                z = z(order);
-            end
-        end
-
-        % Create the graph
-        if isempty(z);
-            h(e) = patch(x, y, 'w');
-        else
-            h(e) = patch(x, y, z,'EdgeColor','interp');
-        end
-    end
-end
-
-function h = plot3DScalar(obj, opt)
-    %PLOT_SCALAR create a plot of scalar data
-    
-    % Limit based on slices
-    if ~isempty(opt.slice);
-        s.x = [];
-        s.y = [];
-        s.z = [];
-        s.all = false;
-        s = gatherUserOptions(s,opt.slice{:});
-        
-        idx = true(size(obj.map.node));
-        
-        if ~isempty(s.x) && length(s.x) == 2;
-            idx(:,1) = obj.map.node(:,1) > s.x(1) & obj.map.node(:,1) < s.x(2);
-        end
-        
-        if ~isempty(s.y) && length(s.y) == 2;
-            idx(:,2) = obj.map.node(:,2) > s.y(1) & obj.map.node(:,2) < s.y(2);
-        end
-
-        if ~isempty(s.z) && length(s.z) == 2;
-            idx(:,3) = obj.map.node(:,3) > s.z(1) & obj.map.node(:,3) < s.z(2);
-        end      
-        
-        if s.all
-            idx = all(idx,2);
-        else
-            idx = any(idx,2);
-        end
-        
-        elements = obj.map.elem(idx);    
-    
-    else
-        elements = 1:obj.n_elements;
-    end
-    
-    % Initialize the x and y values
-    h = zeros(length(elements),1);
-    
-    % Generate the graph
-    for e = 1:length(elements);
-
-        % The current element
-        elem = obj.element(elements(e));
-
-        % Plot with data
-        if ~isempty(opt.data)
-            dof = elem.getDof();
-            h(e) = patch('Vertices',elem.nodes,'Faces',elem.side_dof,...
-                'FaceVertexCData',opt.data(dof));
-            
-        % Plot without data    
-        else
-            h(e) = patch('Vertices',elem.nodes,'Faces',elem.side_dof);
-        end
-    end
-    
-    % Apply settings
-    if ~isempty(opt.slice);
-        set(h,'FaceColor','interp','EdgeColor','interp','Marker','.',...
-        'MarkerFaceColor','flat','MarkerSize',0.1);
-    else
-        set(h,'FaceColor','none','EdgeColor','interp','Marker','.',...
-        'MarkerFaceColor','flat','MarkerSize',0.1); 
-    end 
-    view(3);  
+    opt.component = convertComponent(opt.component);
 end
 
 function applyPlotOptions(obj,h,opt)
