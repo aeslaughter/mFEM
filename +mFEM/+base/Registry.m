@@ -1,4 +1,4 @@
-classdef Registry < handle
+classdef Registry < mFEM.base.HideHandle
     properties
         reserved = {}% reserved variables, not available for constants
             %{'N','B','L','x','t','xi','eta','zeta','elem','Ke','grad'};

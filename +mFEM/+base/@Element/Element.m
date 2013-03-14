@@ -1,4 +1,4 @@
-classdef Element < mFEM.elements.base.HideHandle
+classdef Element < mFEM.base.HideHandle
     %ELEMENT Base class for defining elements.
     %   Inludes the general behavior of an element, including the node 
     %   locations, id, shape functions, etc...
@@ -58,7 +58,7 @@ classdef Element < mFEM.elements.base.HideHandle
         qp;                     % cell of quadrature points
         W;                      % array of weight values for quadrature points
         nodes =...              % node objects for this element
-            mFEM.elements.base.Node.empty();
+            mFEM.base.Node.empty();
     end
     
     % Protected properties used by mFEM.Mesh class

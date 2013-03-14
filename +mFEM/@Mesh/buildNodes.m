@@ -21,7 +21,7 @@ function nodes = buildNodes(obj)
         local_map = getLocalPart(node_map);     % local node coordinates
         id = globalIndices(node_map,1);         % global node ids
         n = size(local_map,1);                  % size of local array
-        nodes(n,1) = mFEM.elements.base.Node(); % initialize node objects
+        nodes(n,1) = mFEM.base.Node(); % initialize node objects
          nodes.init(id,local_map,space);        % set properties of nodes
     end
     

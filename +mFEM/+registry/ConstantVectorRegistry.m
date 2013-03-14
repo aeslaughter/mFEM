@@ -1,4 +1,4 @@
-classdef ConstantVectorRegistry < mFEM.registry.base.Registry
+classdef ConstantVectorRegistry < mFEM.base.Registry
     %CONSTANTVECTORREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -10,7 +10,7 @@ classdef ConstantVectorRegistry < mFEM.registry.base.Registry
     
     methods (Access = public)
         function obj = ConstantVectorRegistry(mesh,varargin)
-            obj = obj@mFEM.registry.base.Registry(varargin{:});
+            obj = obj@mFEM.base.Registry(varargin{:});
             obj.mesh = mesh;
         end
         

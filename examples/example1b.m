@@ -37,6 +37,7 @@ mesh.init();
 % Label the boundaries
 mesh.addBoundary(1,'left');    % T = 0 boundary (essential)    
 mesh.addBoundary(2,'right');   % q = 20 boundary 
+mesh.update();
 
 % Build Matrix and Vector Equations
 sys = mFEM.System(mesh);

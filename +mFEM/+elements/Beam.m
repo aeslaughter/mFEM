@@ -1,4 +1,4 @@
-classdef Beam < mFEM.elements.base.Element
+classdef Beam < mFEM.base.Element
     % A 2-node Beam element, it may be located in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -46,7 +46,7 @@ classdef Beam < mFEM.elements.base.Element
            end
            
            % Call the base class constructor
-           obj = obj@mFEM.elements.base.Element(id, nodes, 'Space', 2); 
+           obj = obj@mFEM.base.Element(id, nodes, 'Space', 2); 
         end
         
         % Define the size function

@@ -1,4 +1,4 @@
-classdef Diffusion < mFEM.kernels.base.MatrixKernel
+classdef Diffusion < mFEM.base.MatrixKernel
     %DIFFUSION A kernel for the diffusion equation.
     %   
     %
@@ -13,7 +13,7 @@ classdef Diffusion < mFEM.kernels.base.MatrixKernel
     
     methods
         function obj = Diffusion(mesh, varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh, 'Diffusion', 'Type', 'Matrix');
+            obj = obj@mFEM.base.MatrixKernel(mesh, 'Diffusion', 'Type', 'Matrix');
 
             opt.d = 1;
             opt.function = false;

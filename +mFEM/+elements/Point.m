@@ -1,4 +1,4 @@
-classdef Point < mFEM.elements.base.Element
+classdef Point < mFEM.base.Element
     %POINT A 1-node "element", for use as side element of 1D elements.
     %
     %----------------------------------------------------------------------
@@ -34,7 +34,7 @@ classdef Point < mFEM.elements.base.Element
            % POINT Class constructor; calls base class constructor
 
            % Call the base class constructor
-           obj = obj@mFEM.elements.base.Element(varargin{:}); 
+           obj = obj@mFEM.base.Element(varargin{:}); 
         end
     end
     

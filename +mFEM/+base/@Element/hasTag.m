@@ -52,8 +52,8 @@ function varargout = hasTag(obj,tag)
         sid = 1:obj.n_sides;
         
         % Loop through the sides, searching for tag
-        for i = 1:obj.n_sides
-            tf(i) = any(strcmp(tag,{obj.sides(i).tag.name}));
+        for s = 1:obj.n_sides
+            tf(s) = any(strcmp(tag,{obj.sides(s).tag.name}));
         end
         
         % Return the results

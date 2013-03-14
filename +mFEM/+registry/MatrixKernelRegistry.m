@@ -1,4 +1,4 @@
-classdef MatrixKernelRegistry < mFEM.registry.base.Registry
+classdef MatrixKernelRegistry < mFEM.base.Registry
     %MATRIXKERNELREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
    
@@ -10,7 +10,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
     
     methods %(Access = Public)
         function obj = MatrixKernelRegistry(mesh, varargin)
-            obj = obj@mFEM.registry.base.Registry(varargin{:},'-AllowDuplicates');
+            obj = obj@mFEM.base.Registry(varargin{:},'-AllowDuplicates');
             obj.mesh = mesh;
         end 
         
@@ -34,7 +34,7 @@ classdef MatrixKernelRegistry < mFEM.registry.base.Registry
            
             K = kern(1).assemble(varargin{:},'-parallel');
             for i = 2:length(kern);
-                K = K + kern(i).assemble(varargin{:});
+                K = K + kern(i).assemble(varargin{:},'-parallel');
             end
            
             if opt.zero;

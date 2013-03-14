@@ -1,4 +1,4 @@
-classdef ConstantVector < mFEM.kernels.base.Kernel;
+classdef ConstantVector < mFEM.base.Kernel;
     %CONSTANTVECTOR Vector of length mesh.n_dof
     
     properties (Access = public)%(Access = ?mFEM.registry.base.Registry)
@@ -28,7 +28,7 @@ classdef ConstantVector < mFEM.kernels.base.Kernel;
             %       scalar
             %       Extract the dofs for the subdomain specified, where the
             %       scalar is the numeric tag added using ADD_SUBDOMAIN.
-            obj = obj@mFEM.kernels.base.Kernel(name);
+            obj = obj@mFEM.base.Kernel(name);
             obj.testName(name);
             obj.name = name;
             obj.value = mFEM.Vector(mesh);

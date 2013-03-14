@@ -1,4 +1,4 @@
-classdef LinearSolver < mFEM.solvers.base.Solver
+classdef LinearSolver < mFEM.base.Solver
     %LINEARSOLVER A basic linear solver.
     % This solver solve the basic Ku = f matrix equation, where u is the
     % unknown. See the class constructor for details regarding initlizeing
@@ -77,7 +77,7 @@ classdef LinearSolver < mFEM.solvers.base.Solver
            %        Disables any warnings that may be triggered.
            
            % Call the base class constructor
-           obj@mFEM.solvers.base.Solver(input)
+           obj@mFEM.base.Solver(input)
 
            % Collect the inputs
            obj.options = gatherUserOptions(obj.options, varargin{:});

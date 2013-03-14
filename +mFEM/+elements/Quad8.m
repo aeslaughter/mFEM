@@ -1,4 +1,4 @@
-classdef Quad8 < mFEM.elements.base.Element
+classdef Quad8 < mFEM.base.Element
     %Quad8 8-node quadrilateral element
     %
     %   (-1,1)    (3)    (1,1)
@@ -46,7 +46,7 @@ classdef Quad8 < mFEM.elements.base.Element
     methods
         function obj = Quad8(varargin)
            % Class constructor; calls base class constructor
-           obj = obj@mFEM.elements.base.Element(varargin{:}); 
+           obj = obj@mFEM.base.Element(varargin{:}); 
         end
     end
     

@@ -1,4 +1,4 @@
-classdef Line2 < mFEM.elements.base.Element
+classdef Line2 < mFEM.base.Element
     %LINE2 A 2-node, 1D linear element.
     %
     %      (-1)   (1)   (1)
@@ -43,7 +43,7 @@ classdef Line2 < mFEM.elements.base.Element
             %   see mFEM.Element
             %
             % See Also mFEM.Element
-            obj = obj@mFEM.elements.base.Element(varargin{:}); 
+            obj = obj@mFEM.base.Element(varargin{:}); 
         end
         
         % Define the size function

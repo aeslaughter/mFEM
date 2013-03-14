@@ -1,4 +1,4 @@
-classdef FuncRegistry < mFEM.registry.base.Registry
+classdef FuncRegistry < mFEM.base.Registry
     %FUNCREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -9,7 +9,7 @@ classdef FuncRegistry < mFEM.registry.base.Registry
     
     methods %(Access = Public)
         function obj = FuncRegistry(varargin)
-            obj = obj@mFEM.registry.base.Registry(varargin{:});
+            obj = obj@mFEM.base.Registry(varargin{:});
 
             obj.options = gatherUserOptions(obj.options, varargin{:}, 'GatherUserOptions', {'-disablewarn'});
             

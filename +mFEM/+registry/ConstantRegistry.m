@@ -1,4 +1,4 @@
-classdef ConstantRegistry < mFEM.registry.base.Registry
+classdef ConstantRegistry < mFEM.base.Registry
     %CONSTANTKERNELREGISTRY Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -9,7 +9,7 @@ classdef ConstantRegistry < mFEM.registry.base.Registry
     
     methods (Access = public)
         function obj = ConstantRegistry(varargin)
-            obj = obj@mFEM.registry.base.Registry(varargin{:});
+            obj = obj@mFEM.base.Registry(varargin{:});
         end
         
      function value = get(obj, name)

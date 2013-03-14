@@ -117,12 +117,6 @@ function T = example1a(varargin)
         f(dof) = f(dof) + fe;
     end
 
-    
-    K
-    f
-    
-    return;
-    
     %% Define Variables for Essential and Non-essential Degrees-of-freedom
     ess = mesh.getDof('Tag', 'essential');    % 1
     non = ~ess;                                         % 2,3

@@ -1,4 +1,4 @@
-classdef Node < mFEM.elements.base.HideHandle
+classdef Node < mFEM.base.HideHandle
     %NODE Class for defining node objects
     %   Inludes the general behavior for a finite element node, including 
     %   coordinates, boundary information, and global degrees-of-freedom.

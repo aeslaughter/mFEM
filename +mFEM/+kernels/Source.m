@@ -1,4 +1,4 @@
-classdef Source < mFEM.kernels.base.MatrixKernel
+classdef Source < mFEM.base.MatrixKernel
     %SOURCE A kernel for the diffusion equation.
     %   
     %
@@ -13,7 +13,7 @@ classdef Source < mFEM.kernels.base.MatrixKernel
     
     methods
         function obj = Source(mesh,varargin)
-            obj = obj@mFEM.kernels.base.MatrixKernel(mesh,'Source',varargin{:},'Type','vector');
+            obj = obj@mFEM.base.MatrixKernel(mesh,'Source',varargin{:},'Type','vector');
 
             opt.b = 1;
             opt.function = false;

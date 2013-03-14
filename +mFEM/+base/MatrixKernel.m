@@ -1,4 +1,4 @@
-classdef MatrixKernel < mFEM.kernels.base.Kernel                     
+classdef MatrixKernel < mFEM.base.Kernel                     
     %MATRIXKERNEL Abstract class for defining finite element matrices
 
     properties
@@ -9,7 +9,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
 
     end
     
-    properties (SetAccess = {?mFEM.registry.base.Registry})
+    properties (SetAccess = {?mFEM.base.Registry})
         value;
     end
    
@@ -20,7 +20,7 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
        
     methods 
         function obj = MatrixKernel(mesh, name, varargin)
-            obj = obj@mFEM.kernels.base.Kernel(name);
+            obj = obj@mFEM.base.Kernel(name);
 
             [obj.options, ~] = gatherUserOptions(obj.options, varargin{:});
             obj.mesh = mesh;
@@ -164,7 +164,6 @@ classdef MatrixKernel < mFEM.kernels.base.Kernel
         function Ke = evaluateSideVector(obj, elem, id, t)
 
             Ke = zeros(elem.n_dof,1);         
-            
             [~,sid] = elem.hasTag(id);
             for i = 1:length(sid); 
                 s = sid(i);

@@ -1,4 +1,4 @@
-classdef Constant < mFEM.kernels.base.Kernel;
+classdef Constant < mFEM.base.Kernel;
  
     properties (Access = public)%(Access = ?mFEM.registry.base.Registry)
         value;
@@ -7,7 +7,7 @@ classdef Constant < mFEM.kernels.base.Kernel;
     
     methods 
         function obj = Constant(name, input)
-            obj = obj@mFEM.kernels.base.Kernel(name);
+            obj = obj@mFEM.base.Kernel(name);
             obj.testName(name);
             if isnumeric(input);
                 obj.value = mat2str(input);

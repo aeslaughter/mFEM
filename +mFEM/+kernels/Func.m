@@ -1,4 +1,4 @@
-classdef Func < mFEM.kernels.base.Kernel;
+classdef Func < mFEM.base.Kernel;
     properties %(Access = protected)
         input;  % function as input
         reserved = {'elem', 'x', 't'};
@@ -7,7 +7,7 @@ classdef Func < mFEM.kernels.base.Kernel;
 
     methods 
         function obj = Func(name, input, varargin)
-            obj = obj@mFEM.kernels.base.Kernel(name);
+            obj = obj@mFEM.base.Kernel(name);
             
             opt.constantregistry = mFEM.registry.ConstantRegistry.empty();
             opt.reserved = {};

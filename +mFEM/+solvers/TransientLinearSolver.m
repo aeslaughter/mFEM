@@ -1,4 +1,4 @@
-classdef TransientLinearSolver < mFEM.solvers.base.Solver
+classdef TransientLinearSolver < mFEM.base.Solver
     %TRANSIENTLINEARSOLVER A basic transient linear solver.
     % This solver solve the basic Mdu/dt + Ku = f matrix equation, 
     % where u is the unknown. See the class constructor for details 
@@ -26,10 +26,16 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
     %  Contact: Andrew E Slaughter (andrew.e.slaughter@gmail.com)
     %----------------------------------------------------------------------
    properties (Access = protected)
-       options = ...        % Solver options
-           struct('mass', 'M', 'stiffness', 'K', 'force', 'f', ...
-           'theta', 0.5, 'dt', [], 'disablemass', false, ...
-           'disablestiffness', false, 'disableforce', false, 'disableall', false);
+       options = struct(...         % solver options structure
+           'mass','M',...           % default to System variable named M
+           'stiffness','K',...      % default to System variable named K
+           'force','f',...          % default to System variable named f
+           'theta',0.5,...          % default to Crank-Nicolson
+           'dt',[],...              % time-step
+           'disablemass',false, ... % by default assemble w/ time
+           'disablestiffness',false,...
+           'disableforce',false,...
+           'disableall',false);
 
        initialized = false;     % flag of initlization state
        K;                       % stiffness matrix
@@ -123,7 +129,7 @@ classdef TransientLinearSolver < mFEM.solvers.base.Solver
            %        Toggles the automatic assembly of the all components.
 
            % Call the base class constructor
-           obj@mFEM.solvers.base.Solver(input)
+           obj@mFEM.base.Solver(input)
            
            % Collect the inputs
            obj.options = gatherUserOptions(obj.options, varargin{:});

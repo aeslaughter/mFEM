@@ -1,4 +1,4 @@
-classdef Tri3 < mFEM.elements.base.Element
+classdef Tri3 < mFEM.base.Element
     %Tri3 3-node triangle element
     % 
     %        xi2  
@@ -44,7 +44,7 @@ classdef Tri3 < mFEM.elements.base.Element
     methods
         function obj = Tri3(varargin)
            % Class constructor; calls base class constructor
-           obj = obj@mFEM.elements.base.Element(varargin{:});
+           obj = obj@mFEM.base.Element(varargin{:});
         end
     end
     

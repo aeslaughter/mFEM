@@ -1,4 +1,4 @@
-classdef Truss < mFEM.elements.base.Element
+classdef Truss < mFEM.base.Element
     %TRUSS A 2-node Truss element, it may be in 1D, 2D, or 3D space.
     %
     %      (-1)   (1)   (1)
@@ -39,7 +39,7 @@ classdef Truss < mFEM.elements.base.Element
         % Define the Truss constructor
         function obj = Truss(varargin)
            % Class constructor; calls base class constructor
-           obj = obj@mFEM.elements.base.Element(varargin{:}); 
+           obj = obj@mFEM.base.Element(varargin{:}); 
         end
         
         % Define the size function

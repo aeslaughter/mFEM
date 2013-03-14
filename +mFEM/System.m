@@ -1,4 +1,4 @@
-classdef System < handle
+classdef System < mFEM.base.HideHandle
     %SYSTEM A class for automatic assembly of finite element equations.
     % This class allows the specification of the finite element equations
     % for matrices and vectors as strings, the assembly is handled
@@ -10,8 +10,8 @@ classdef System < handle
     %   mesh.init()
     %
     %   sys = System(mesh)
-    %   sys.add_constant('k',10);
-    %   sys.add_matrix('K','B''*k*B');
+    %   sys.addConstant('k',10);
+    %   sys.addMatrix('K','B''*k*B');
     %   K = sys.assemble('K');
     %   full(K)
     %
@@ -431,7 +431,7 @@ classdef System < handle
                 name = unknown{i};
                 kern = unknown{i+1};
                 
-                if isa(kern, 'mFEM.kernels.base.MatrixKernel');
+                if isa(kern, 'mFEM.base.MatrixKernel');
                     obj.mat.add(name, kern);
                     
                 elseif ischar(kern);
