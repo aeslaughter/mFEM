@@ -43,7 +43,7 @@ for e = 1:mesh.n_elements;
     % Define short-hand function handles for the element shape functions
     % and shape function derivatives
     N = @(i) elem.shape(elem.qp{i});    
-    B = @(i) elem.shapeDeriv(elem.qp{i});
+    B = @() elem.shapeDeriv([]);
     detJ = @(i) elem.detJ(elem.qp{i});
 
     % Initialize the stiffness matrix (K) and the force vector (f), for
@@ -53,14 +53,14 @@ for e = 1:mesh.n_elements;
     
     % Loop over the quadrature points to perform the numeric integration
     for i = 1:size(elem.qp);
-%         fe = fe + elem.W(i)*b*N(i)'*detJ(i);
-        Ke = Ke + elem.W(i)*B(i)'*D*B(i)*detJ(i);
+        fe = fe + elem.W(i)*b*N(i)'*detJ(i);
+        Ke = Ke + elem.W(i)*B()'*D*B()*detJ(i);
     end
     
     % Loop throught the sides of the element, if the side has the boundary
     % id of 1 (top), then add the prescribed flux term to the force vector
     % using numeric integration via the quadrature points for element side.
-    [~,sid] = elem.hasTag(1)
+    [~,sid] = elem.hasTag(1);
     for j = 1:length(sid);
         s = sid(j);
             
@@ -83,9 +83,6 @@ for e = 1:mesh.n_elements;
     f(dof) = f(dof) + fe;
 end
 
-f
-return;
-
 % Define dof indices for the essential dofs and non-essential dofs
 ess = mesh.getDof('Tag',3); 
 non = ~ess;
@@ -104,10 +101,10 @@ if ~opt.debug;
 end
 % Compute the flux values for each element
 % Loop through the elements
-for e = 1:length(elements); 
+for e = 1:mesh.n_elements; 
     
     % Extract the current element from the mesh object
-    elem = elements(e);
+    elem = mesh.getElements(e);
     
     % Collect the local values of T
     d(:,1) = T(elem.getDof());

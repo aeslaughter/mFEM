@@ -118,7 +118,7 @@ classdef Element < mFEM.elements.base.HideHandle
         end
     end
     
-    methods %(Access = ?mFEM.Mesh)
+    methods (Access = {?mFEM.Mesh,?mFEM.Test})
          findNeighbors(obj);
          update(obj);
          setDof(obj);

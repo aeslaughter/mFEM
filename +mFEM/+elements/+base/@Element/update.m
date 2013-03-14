@@ -73,16 +73,13 @@ function updateSides(elem)
             if ~isempty(T1) && ~isempty(T2);
                 
                 % Compare the name and type
-                [Lia1,~] = ismember({T1.name},{T2.name});
-                [Lia2,Locb] = ismember({T1.type},{T2.type});
-                
-                % Extract index of matching tags
-                Lia = all([Lia1,Lia2],2);
-                index = Locb(Lia);
+                Lia1 = ismember({T1.name},{T2.name});
+                Lia2 = ismember({T1.type},{T2.type});
 
-                % tag the side if things match
-                if ~isempty(index)
-                    T0 = T2(index);
+                % Extract index of matching tags
+                T0 = T1(all([Lia1',Lia2'],2));
+
+                if ~isempty(T0)
                     for i = 1:length(T0); % loop over all tags
                         if (strcmpi(T0(i).type,'boundary') && elem.sides(s).on_boundary) ||...
                            (strcmpi(T0(i).type,'subdomain') && ~elem.sides(s).on_boundary);
