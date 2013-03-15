@@ -42,9 +42,8 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     e_map = getLocalPart(elem_map);
     part = cumsum(n_dist.Partition);
     local = nodes;
-    local_id = globalIndices(node_map,1);  % local node ids
+    local_id = [nodes.id]; % local node ids
     limit = getpref('MFEM_PREF','LABSEND_LIMIT');
-%     limit = 10;
    
     % Build a map that indicates the lab location for each node
     no = unique(e_map);         % all nodes needed by this lab
@@ -65,33 +64,41 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
         labSend(node_ids(lab_map==lab(i)),lab(i),100);
         disp(['Lab ', num2str(labindex), ' sent request to lab ', num2str(lab(i)), ' for nodes: ', mat2str(node_ids(lab_map==lab(i)))]);
     end
-
+    labBarrier;
+    
     % If a request is found, send out those nodes
     while labProbe('any',100) % continue to receive requests until there is none
-        [nid,proc] = labReceive('any',100);   
+        [nid,proc] = labReceive('any',100);  
         
         [~,idx] = intersect(local_id,nid);
-        
-        pkg.id = local_id(idx);
-        pkg.nodes = local(idx);
-        labSend(pkg,proc,200);
+
+        s = [0:limit:length(idx),length(idx)];
+        for i = 1:length(s)-1;
+            i
+             ix = idx(s(i)+1:s(i+1));
+            labSend(local(ix),proc,200);
+        end
         
         disp(['Lab ', num2str(proc), ' requested nodes from lab ',num2str(labindex),': ', mat2str(nid)]);
         disp(['Lab ', num2str(labindex), ' sent nodes to lab ', num2str(proc),': ', mat2str(nid)]);
     end
-
+    labBarrier;
      
     % Recieve the package and append local nodes
-    while labProbe('any',200);
-        [pkg,p] = labReceive('any',200);  % recieve the package
-        local = [local; pkg.nodes];     % append recieved nodes
-        local_id = [local_id, pkg.id];  % append recieved node ids
-        disp(['Lab ', num2str(labindex), ' recieved nodes ', mat2str(pkg.id), ' from lab ', num2str(p)]);
+%     
+    for i = 1:length(lab);
+        while labProbe(lab(i),200);
+            [ghst,p] = labReceive(lab(i),200);  % recieve the package
+            local = [local; ghst];     % append recieved nodes
+        end
+%         local_id = [local_id, pkg.id];  % append recieved node ids
+        disp(['Lab ', num2str(labindex), ' recieved nodes from lab ', num2str(p)]);
     end
     labBarrier;
     
     % Convert global node connectivity element map to local indices 
-    [~,Locb] = ismember(reshape(e_map,1,numel(e_map)),local_id)
+
+    [~,Locb] = ismember(reshape(e_map,1,numel(e_map)),[local.id]);
     e_map = reshape(Locb, size(e_map));
 
     % Ensure that nodes are organized correctly (single element)
