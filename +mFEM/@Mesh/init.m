@@ -68,8 +68,6 @@ function init(obj)
        nodes.setDof(strt(labindex));
     end
     
-    obj.buildElements(nodes);
-    return;
     % Build the elements
     [elements,nodes] = obj.buildElements(nodes);
     
@@ -91,7 +89,7 @@ function init(obj)
     
     % Set the total degrees-of-freedom for the mesh
     obj.n_dof = sum(ndof{1});
-    
+
     % Update the Mesh object variables
     obj.nodes = nodes;
     obj.elements = elements;    

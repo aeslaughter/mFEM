@@ -58,6 +58,8 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     lab_map = loc(ix);      % locations of the nodes needed
     lab = unique(loc(ix));  % list of labs that will need to be accessed
   
+%     disp(sprintf('Data is available: %d',labProbe));
+    
     % Loop through each of the labs containing nodes that are needed
     for i = 1:length(lab);
         % Send a request to the lab for nodes based on the id
@@ -69,13 +71,12 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
     % If a request is found, send out those nodes
     while labProbe('any',100) % continue to receive requests until there is none
         [nid,proc] = labReceive('any',100);  
-        
         [~,idx] = intersect(local_id,nid);
-
+        
+        % Limite the package size
         s = [0:limit:length(idx),length(idx)];
         for i = 1:length(s)-1;
-            i
-             ix = idx(s(i)+1:s(i+1));
+            ix = idx(s(i)+1:s(i+1));
             labSend(local(ix),proc,200);
         end
         
@@ -91,13 +92,11 @@ function local = getOffLabNodes(elem_map, node_map, nodes)
             [ghst,p] = labReceive(lab(i),200);  % recieve the package
             local = [local; ghst];     % append recieved nodes
         end
-%         local_id = [local_id, pkg.id];  % append recieved node ids
         disp(['Lab ', num2str(labindex), ' recieved nodes from lab ', num2str(p)]);
     end
     labBarrier;
     
     % Convert global node connectivity element map to local indices 
-
     [~,Locb] = ismember(reshape(e_map,1,numel(e_map)),[local.id]);
     e_map = reshape(Locb, size(e_map));
 

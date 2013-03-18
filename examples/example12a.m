@@ -2,14 +2,10 @@
 
 function example12a
 
-% Import the mFEM library
-import mFEM.*
-
 % Create the truss structure
-mesh = FEmesh();
-mesh.addElement('Truss', [-1,1; 0,0]);
-mesh.addElement('Truss', [0,1; 0,0]);
-mesh.addElement('Truss', [1,1; 0,0]);
+mesh = mFEM.Mesh('Space',2);
+mesh.createNode([-1,1; 0,1; 1,1; 0,0]);
+mesh.createElement('Truss', [1,4; 2,4; 3,4]);
 mesh.init();
 
 % Label the various boundaries
@@ -24,14 +20,14 @@ a = 10^-2;
 A = [a,2*a,a];
 
 % Initilize the stiffness matrix and force vector
-K = Matrix(mesh);
+K = mFEM.Matrix(mesh);
 f = zeros(mesh.n_dof,1);
 
 % Loop through the elements and append global stiffness
 for e = 1:mesh.n_elements;
     
     % The current element
-    elem = mesh.element(e);
+    elem = mesh.getElements(e);
     
     % The element length
     L = elem.size();
@@ -44,13 +40,14 @@ for e = 1:mesh.n_elements;
 end
 
 % Extract the essential boundary conditions
-ess = mesh.getDof({'Boundary',1},{'Boundary',2,'Component','y'});
+% ess = mesh.getDof({'Boundary',1},{'Boundary',2,'Component','y'});
+ess = mesh.getDof('Tag',{1,2},'Component',{[],'y'});
 
 % Create the stiffness matrix
 K = K.init();
 
 % Apply the external force
-nat = mesh.getDof('Boundary',3,'Component','x');
+nat = mesh.getDof('Tag',3,'Component','x')
 f(nat) = P;
 
 % Solve for the displacements

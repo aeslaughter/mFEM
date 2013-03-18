@@ -52,7 +52,7 @@ classdef Matrix < handle
            %    Matrix(m) create an m x m matrix.
 
            % Case when creating from an FEmesh object
-           if nargin == 1 && isa(varargin{1},'mFEM.FEmesh');
+           if nargin == 1 && isa(varargin{1},'mFEM.Mesh');
                mesh = varargin{1};
                obj.m = mesh.n_dof;
                obj.n = obj.m;

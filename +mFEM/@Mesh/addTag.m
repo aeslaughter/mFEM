@@ -1,4 +1,4 @@
-function addTag(obj, tag, type, varargin)
+function addTag(obj,tag,type,varargin)
     %ADDTAG (protected) Adds tags based on string based flags and functions
     %   Acts to add tags to nodes, elements, and sides. This is a private
     %   function, the user should refer to the addBoundary or addSubdomain
@@ -9,8 +9,8 @@ function addTag(obj, tag, type, varargin)
     %   the elements takes place when the update method is called.
     %
     % Syntax
-    %    addTag(tag, type, FuncString,...)
-    %    addTag(tag, type, FuncCell)
+    %    addTag(tag,type,FuncString,...)
+    %    addTag(tag,type,FuncCell)
     %
     % Description
     %    addTag(tag, type, FuncString,...) adds tag based on a single or
@@ -68,7 +68,7 @@ function addTag(obj, tag, type, varargin)
 
     % Parse the input
     [fcn,col,value,use_all] = parseAddTagInput(node_map, varargin{:});
-    
+
     % Evaluate the functions on each lab
     spmd
         % Get the local node_map and global indices 
@@ -92,7 +92,7 @@ function addTag(obj, tag, type, varargin)
            n_idx(:,2) =  [nodes.on_boundary];
            n_idx = all(n_idx,2);
         end
- 
+        
         % Apply the nodal tags
         nodes(n_idx).addTag(tag);
         

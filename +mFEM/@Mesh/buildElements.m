@@ -36,13 +36,13 @@ function [elements,nodes] = buildElements(obj,nodes)
         % Extract local part of the element map 
         e_id  = globalIndices(elem_map, 1); % global element no.
 
+        elem_map,node_map,nodes
         % Extract all the nodes that are needed on this processor
         no = obj.getOffLabNodes(elem_map, node_map, nodes); 
 
         % Create the elements
         n = size(no,1);
-%         elements(n,1) = feval(['mFEM.elements.',type]);
-%         elements.init(e_id,no,'-addParents');
+        elements(n,1) = feval(['mFEM.elements.',type]);
+        elements.init(e_id,no,'-addParents');
     end
-    elements = {};
 end
