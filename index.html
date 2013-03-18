@@ -16,7 +16,7 @@
     <div class="wrapper">
       <header>
         <h1>mFEM</h1>
-        <p>An object-orient MATLAB finite element library.</p>
+        <p>A parallel, object-oriented MATLAB finite element library.</p>
 
         <p class="view"><a href="https://github.com/aeslaughter/mFEM">View the Project on GitHub <small>aeslaughter/mFEM</small></a></p>
 
@@ -30,9 +30,9 @@
       <section>
        <h2>Welcome to mFEM.</h2>
 
-<p>mFEM is an object-oriented, open-source finite element library that includes automatic assembly routines. The project was started to serve as a means for methods testing and comparison against advanced, massively parallel frameworks such as <a href="http://libmesh.sourceforge.net/">libMesh</a>. </p>
+<p>mFEM is a parallel, object-oriented, open-source finite element library that includes automatic assembly routines. The project was started to serve as a means for methods testing and comparison against advanced, massively parallel frameworks such as <a href="http://libmesh.sourceforge.net/">libMesh</a>. </p>
 
-<p><i>This project is currently under development, although most of the code and documentation are complete. I am currently working on publishing an article about mFEM, so the code will likely change as I write and test the various components. </i></p>
+<p><i>This project is currently under development, although most of the code and documentation are complete. I am currently working on completing the parallel code and publishing an article about mFEM. The code will change as I write and test the various components. There are currently two main branches in the repository, the master branch contains the non-parallel version of the code that is in a near finished state, the other branch (parallel) contains the code that is currently under heavy development. </i></p>
 
 <h2>Installation</h2>
 <p> Installation is trival, since mFEM relies soley on MATLAB's built in functionality. To install mFEM:
@@ -50,38 +50,38 @@ The install functions simply adds the necessary directories to the path and adds
 <p> The following code solves a simple displacement problem using 13 lines of code, with a few extra for plotting the results. This is demo was extracted from Example 7 of the mFEM source code, which contains dozens of example problems, with and without the automatic solvers and assembly functionality.
 
 <p> Generate a rectangular, 2D grid. This grid rangs from 0 to 10 in the x-direction and -0.5 to 0.5 in the y-direction. It is discritized into 30 and 20 elements in the x- and y-direction, respectively.
-<pre><code>mesh = mFEM.FEmesh('Element','Quad4','Space','vector');
-mesh.grid(0,10,-0.5,0.5,30,20);
-mesh.init();
+<pre><code>mesh = mFEM.Mesh('Space','vector');
+mesh.grid('Quad4',0,10,-0.5,0.5,30,20);
 </pre></code>
 </p>
 
 <p>Add boundary tags to the left and right side.
-<pre><code>mesh.add_boundary(1, 'right'); 
-mesh.add_boundary(2, 'left');
+<pre><code>mesh.addBoundary(1, 'right'); 
+mesh.addBoundary(2, 'left');
+mesh.update();
 </pre></code>
 </p>
 
 <p>Add the finite element equations.
 <pre><code>sys = mFEM.System(mesh);
-sys.add_constant('E', 1e7, 'v', 0.3, 'P', [0;100]);
-sys.add_constant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
-sys.add_matrix('K', 'B''*D*B');
-sys.add_vector('f', 'N''*P', 'Boundary', 2);
+sys.addConstant('E', 1e7, 'v', 0.3, 'P', [0;100]);
+sys.addConstant('D', 'E / (1-v^2) * [1, v, 0; v, 1, 0; 0, 0, (1-v)/2]');
+sys.addMatrix('K', 'B''*D*B');
+sys.addVector('f', 'N''*P', 'Tag', 2);
 </pre></code>
 </p>
 
 <p>Assemble and solve the equations.
 <pre><code>solver = mFEM.solvers.LinearSolver(sys);
-solver.add_essential_boundary('id', 1, 'value', 0);
+solver.addEssential('tag',1,'value',0);
 u = solver.solve();
 </pre></code>
 </p>
 
 <p>Plot the results.
-<pre><code>mesh.plot(u,'-deform','Patch',{'EdgeColor','k'},'Colorbar','Displacement');
-xlabel('x'); ylabel('y');
-xlim([-0.1,10]);
+<pre><code>mesh.plot(u,'-deform','Patch',{'EdgeColor','k'},'Colorbar','y-disp. (m)','Component', 2);
+title('FEM Solution');
+xlabel('x (m)'); ylabel([]);
 </pre></code>
 <img src="http://aeslaughter.github.com/mFEM/docs/demo.png" alt="Example of Beam Displacement" align="center" />
 </p>
