@@ -9,9 +9,9 @@ mesh.createElement('Truss', [1,4; 2,4; 3,4]);
 mesh.init();
 
 % Label the various boundaries
-mesh.addBoundary(1,{'x<=0','y>0'}); % pin connections
-mesh.addBoundary(2,{'x>0','y>0'});  % roller connection
-mesh.addBoundary(3,'bottom');       % applied load
+mesh.addSubdomain(1,{'x<=0','y>0'}); % pin connections
+mesh.addSubdomain(2,{'x>0','y>0'});  % roller connection
+mesh.addSubdomain(3,'bottom');       % applied load
 
 % Define the known parameters
 P = 10^3;
@@ -47,7 +47,7 @@ ess = mesh.getDof('Tag',{1,2},'Component',{[],'y'});
 K = K.init();
 
 % Apply the external force
-nat = mesh.getDof('Tag',3,'Component','x')
+nat = mesh.getDof('Tag',3,'Component','x');
 f(nat) = P;
 
 % Solve for the displacements

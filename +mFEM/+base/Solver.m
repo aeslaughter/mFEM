@@ -131,21 +131,32 @@ classdef Solver < handle
                 error('Solver:addEssentialPrivate','Both the tag and value properties must be set.');
             end
 
+            % Convert to cell for single input
+            if ~iscell(opt.tag)
+                opt.tag = {opt.tag};
+                opt.value = {opt.value};
+                opt.component = {opt.component};
+            end
+            
             % Append storage data structure
-            idx = length(obj.essential);
-            obj.essential(idx+1).boundary = opt.tag;
-            obj.essential(idx+1).component = opt.component;   
+            k = length(obj.essential);
+            
+            for i = 1:length(opt.tag)
+                k = k + 1;
+                obj.essential(k).boundary = opt.tag{i};
+                obj.essential(k).component = opt.component{i};   
 
-            % Apply the value
-            if ischar(opt.value) && ~isempty(obj.system);
-                obj.essential(idx+1).value = obj.system.get(opt.value);
+                % Apply the value
+                if ischar(opt.value{i}) && ~isempty(obj.system);
+                    obj.essential(k).value = obj.system.get(opt.value{i});
 
-            elseif isnumeric(opt.value) || isa(opt.value,'function_handle');
-                obj.essential(idx+1).value = opt.value;
-                
-           else
-                error('Solver:addEssentialPrivate','Error extacting value from the System');
-           end
+                elseif isnumeric(opt.value{i}) || isa(opt.value{i},'function_handle');
+                    obj.essential(k).value = opt.value{i};
+
+                else
+                    error('Solver:addEssentialPrivate','Error extacting value from the System');
+                end
+            end
         end
         
         function set(obj, varargin)
@@ -197,13 +208,12 @@ classdef Solver < handle
                 % calls.
                 for i = 1:length(type);
                     % Assembly
-                    if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry');
+                    if strcmp(type{i}, 'mFEM.registry.MatrixKernelRegistry') || ...
+                       strcmp(type{i}, 'mFEM.registry.ConstantVectorRegistry');
                         x = obj.system.assemble(obj.options.(name),'-zero'); 
-                
-                    % Do nothing for ConstantVector (inclusion is handled
-                    % in assembly function), throw an error if something
-                    % else is found.
-                    elseif ~strcmp(type{i}, 'mFEM.registry.ConstantVectorRegistry'); 
+                        
+                    % Throw an error for any other case
+                    else
                         error('Solver:getComponent:InvalidName', 'The %s was not found in the system when attempting to assemble the %s component of the problem. A type of mFEM.registry.MatrixKernelRegistry was expected but a %s was given', obj.options.(name), name, type{i});
                     end
                 end

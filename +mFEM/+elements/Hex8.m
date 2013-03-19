@@ -22,30 +22,26 @@ classdef Hex8 < mFEM.base.Element
     %----------------------------------------------------------------------
     
     % Define the inherited abstract properties
-    properties (SetAccess = protected, GetAccess = public)
-        n_sides = 6;                       % no. of sides
-        side_dof =...                      % define the side dofs 
+    properties (Constant)
+        side_ids =...                      % define the side dofs 
             [1,2,3,4; 5,6,7,8; 1,2,6,5; 2,3,7,6; 3,4,8,7; 4,1,5,8];
         side_type = 'Quad4';                % side is 4-node Quad element
-        quad = ...                          % quadrature rules
-            mFEM.Gauss('order', 2, 'type', 'hex');       
+        quad = mFEM.Gauss(2,'hex');         % quadrature rules
+        n_dim = 3;
+        n_nodes = 8;
+        node_plot_order = [1,2,3,4,8,7,6,5];
      end
     
     % Define the Quad4 constructor
     methods
-        function obj = Hex8(id, nodes, varargin)
+        function obj = Hex8(varargin)
            %HEX8 Class constructor; calls base class constructor
            
-           % Test that nodes is sized correctly
-           if ~all(size(nodes) == [8,3]);
-                error('Hex8:Hex8','Nodes not specified correctly; expected a [8x3] array, but recieved a [%d x %d] array.', size(nodes,1), size(nodes,2));
-           end
-           
            % Call the base class constructor
-           obj = obj@mFEM.base.Element(id, nodes, varargin{:}); 
+           obj = obj@mFEM.base.Element(varargin{:}); 
            
            % Set the node plotting order
-           obj.node_plot_order = [1,2,3,4,8,7,6,5];  
+%            obj.node_plot_order = [1,2,3,4,8,7,6,5];  
         end
     end
     
@@ -90,4 +86,44 @@ classdef Hex8 < mFEM.base.Element
             J = obj.localGradBasis(x)*obj.nodes;               
         end
     end
+    
+    methods (Static)
+        function node_map = buildNodeMap(x0,x1,y0,y1,z0,z1,xn,yn,zn)
+            spmd
+                x = codistributed(x0:(x1-x0)/xn:x1);
+                y = codistributed(y0:(y1-y0)/yn:y1);
+                z = codistributed(z0:(z1-z0)/zn:z1);
+                [X,Y,Z] = ndgrid(x,y,z); 
+                node_map = [reshape(X,numel(X),1),...
+                            reshape(Y,numel(Y),1),...
+                            reshape(Z,numel(Z),1)];
+            
+                if numlabs == 1;
+                    codist = codistributor1d(1,codistributor1d.unsetPartition,size(node_map));
+                    node_map = redistribute(node_map,codist);
+                end
+            end
+        end
+            
+        function elem_map = buildElementMap(~,~,~,~,~,~,xn,yn,zn)
+            spmd
+                n = (xn+1)*(yn+1)*(zn+1);
+                id = reshape(1:n,xn+1,yn+1,zn+1);
+                l = 0;
+                elem_map = zeros(xn*yn*zn,8,'uint32');
+                for k = 1:zn;
+                    for j = 1:yn;
+                        for i = 1:xn;
+                            l = l + 1;
+                            elem_map(l,:) = [id(i,j,k), id(i+1,j,k), id(i+1,j,k+1), id(i,j,k+1),...
+                                             id(i,j+1,k), id(i+1,j+1,k), id(i+1,j+1,k+1), id(i,j+1,k+1)];
+                        end
+                    end
+                end
+                
+                codist = codistributor1d(1,codistributor1d.unsetPartition,size(elem_map));
+                elem_map = codistributed(elem_map,codist);
+            end
+        end
+    end  
 end

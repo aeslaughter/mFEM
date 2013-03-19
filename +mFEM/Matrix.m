@@ -159,7 +159,7 @@ classdef Matrix < handle
            % Description
            %    init() creates and returns the sparse matrix from the 
            %    I,J,and Aij vectors.
-           A = sparse(obj.I, obj.J, obj.Aij);
+           A = sparse(obj.I, obj.J, obj.Aij, obj.m, obj.n);
        end
        
        function zero(obj)

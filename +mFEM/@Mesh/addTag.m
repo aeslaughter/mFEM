@@ -88,11 +88,11 @@ function addTag(obj,tag,type,varargin)
         end
 
         % Limit to ids to those on the boundary
-        if strcmpi(type, 'boundary');
+        if strcmpi(type,'boundary');
            n_idx(:,2) =  [nodes.on_boundary];
            n_idx = all(n_idx,2);
         end
-        
+      
         % Apply the nodal tags
         nodes(n_idx).addTag(tag);
         

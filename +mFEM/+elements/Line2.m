@@ -83,7 +83,7 @@ classdef Line2 < mFEM.base.Element
             end
         end
 
-        function elem_map = buildElementMap(~,~,~,xn)
+        function elem_map = buildElementMap(~,~,xn)
             spmd
                 id = 1:xn+1;
                 elem_map = zeros(xn,2,'uint32');

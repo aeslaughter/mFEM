@@ -44,6 +44,7 @@ classdef Element < mFEM.base.HideHandle
         quad;       % Gauss quadrature rules to utilize
         n_dim;      % no. of spacial dimensions
         n_nodes;    % no. of nodes per element
+%         node_plot_order; % order of nodes for plotting with patch
     end   
     
     % Basic read-only properties that are available for user
@@ -62,9 +63,9 @@ classdef Element < mFEM.base.HideHandle
     end
     
     % Protected properties used by mFEM.Mesh class
-    properties (Access = ?mFEM.Mesh)
+    properties (Access = {?mFEM.Mesh,?mFEM.base.Element})
         lab;                            % the processor of this element
-        node_plot_order = uint32([]); 	% node plotting order (see Tri6)
+%         node_plot_order = uint32([]); 	% node plotting order (see Tri6)
     end
     
     % Abstract Methods (protected)
@@ -88,6 +89,7 @@ classdef Element < mFEM.base.HideHandle
         N = shape(obj,x,varargin);
         B = shapeDeriv(obj,x);
         J = detJ(obj,x);
+
 %         delete(obj);
 
         function obj = Element(varargin)
@@ -122,7 +124,7 @@ classdef Element < mFEM.base.HideHandle
          findNeighbors(obj);
          update(obj);
          setDof(obj);
-         out = getPlotCoord(obj);
+         out = getNodePlotOrder(obj);
     end
 
     methods (Static)

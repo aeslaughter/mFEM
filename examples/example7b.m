@@ -5,7 +5,6 @@ function varargout = example7b(varargin)
 opt.debug = false;
 opt = gatherUserOptions(opt, varargin{:});
 
-
 % Create a FEmesh object, add the single element, and initialize it
 mesh = mFEM.Mesh('Space','vector');
 L = 10;
@@ -51,6 +50,12 @@ mesh.plot(u_exact,'-deform','Colorbar','y-disp. (m)','Component',2);
 title('Exact Solution');
 xlabel('x'); 
 xlim([-0.1,10]);
+
+% Test that solution is correct
+if ~opt.debug;
+    T = mFEM.Test('Name','Example 7b Solution Accuracy');
+    T.compare(u,u_exact, 'Exact Displacement', 'tol', 10^-2);
+end
 
 function u = exactSoln(sys)
 %EXACT_SOLN Specifies the analytical solution displacements

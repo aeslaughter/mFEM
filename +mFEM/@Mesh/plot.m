@@ -110,8 +110,19 @@ function h = plot(obj, data, varargin)
     % Collect the input 
     opt = parseInput(data, varargin{:});
 
-    %
-    FV.faces = gather(obj.elem_map);
+%     elements = obj.getElements();
+    
+%     for i = 1:length(elements);
+%         
+%     
+% %     order = elements.getNodePlotOrder();   
+%     
+    tmp = gather(obj.elem_map);
+    for i = 1:length(tmp);
+        faces(i,:) = tmp(i,[1,2,3,4]);
+    end
+    
+    FV.faces = faces;
     FV.vertices = gather(obj.node_map);
 
     if size(FV.vertices,2) == 1 && isempty(opt.data);
@@ -148,7 +159,11 @@ function h = plot(obj, data, varargin)
         end
     end
     
-    h = patch(FV,'FaceColor','interp');
+    if isempty(FV.FaceVertexCData);
+        h = patch(FV);
+    else
+        h = patch(FV,'FaceColor','interp');
+    end
     
     applyPlotOptions(obj, h, opt);
 %     

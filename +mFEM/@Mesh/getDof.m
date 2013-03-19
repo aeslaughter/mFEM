@@ -19,7 +19,7 @@ function dof = getDof(obj,varargin)
     %       ess(:,2) = getDof('Tag',2,'Component','y');   
     %       ess = any(ess,2);
     %
-    %       ess = getDof('Tag',[1,2],'Component',{'x','y'})
+    %       ess = getDof('Tag',{1,2},'Component',{'x','y'})
     %
     % GETDOF Property Descriptions
     %   Component
@@ -84,40 +84,40 @@ function dof = getDof(obj,varargin)
     opt.parallel = false;
     opt.index = false;
     opt = gatherUserOptions(opt,varargin{:});
-
+    
+    if ~iscell(opt.tag);
+        opt.tag = {opt.tag};
+        opt.component = {opt.component};
+    end
+    
     node_tag_map = obj.node_tag_map;
+    
     nodes = obj.nodes;
 %     dof_part = obj.dof_partition;
 
      all_tag = {obj.tag.name};
      tag = obj.getTag(opt.tag);
-%      if ischar(tag); tag = {tag}; end
-%      if isnumeric(tag); tag = num2cell(tag); end
-%      for i = 1:length(tag);
-%          if isnumeric(tag{i}); tag{i} = num2str(tag{i}); end
-%      end
-     
+
      cmp = opt.component;
      
     composite_flag = opt.composite;
     index_flag = opt.index;
 
     spmd
-        idx = true(length(nodes),length(tag)+1);
+        idx = true(length(nodes),length(tag));
         map = getLocalPart(node_tag_map);
         
         for i = 1:length(tag);
             c = strcmp(tag(i).name,all_tag);
-            idx(:,i+1) = map(:,c);
+            idx(:,i) = map(:,c);   
         end
-                
-        idx = any(idx,2);
         
+        dof = [];
         if any(idx); 
             for i = 1:length(cmp);
-                dof(:,i) = nodes(idx).getDof('Component',cmp); 
+                dof = [dof;nodes(idx(:,i)).getDof('Component',cmp{i})']; 
             end
-            dof = any(dof,2);
+            dof = unique(dof);
         else
             dof = uint32(0); % acts as empty value on this process
         end

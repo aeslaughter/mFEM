@@ -22,6 +22,10 @@ classdef Test < handle
     %       The name of the test, this is printed in the output as the test
     %       progresses.
     %
+    %   time
+    %       true | {false}
+    %       Flag for displaying the test execution time.
+    %
     %   type
     %       {'class'} | 'filename'
     %       A flag for determining if the test being run is being peformed
@@ -60,7 +64,7 @@ classdef Test < handle
         handle
         err = {};
         options = struct('throw',false,'name','','type','class',...
-            'handle',[]);
+            'handle',[],'time',false);
     end
     
     % Private properties
@@ -85,16 +89,21 @@ classdef Test < handle
             end
             
             % Display the message and start timer
-            disp(['Testing ', obj.options.name,' Class:']);
-            obj.ticID = tic;
+            disp(obj.options.name);
+            
+            if obj.options.time;
+                obj.ticID = tic;
+            end
         end
 
         function delete(obj)
             % Class destructor
             
             % Display the test time
-            msg = sprintf(' Completed in %f sec.',toc(obj.ticID));
-            disp(msg);    
+            if obj.options.time
+                msg = sprintf(' Completed in %f sec.',toc(obj.ticID));
+                disp(msg);    
+            end
         end
         
         function varargout = eval(obj,method,varargin)

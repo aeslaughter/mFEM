@@ -104,7 +104,7 @@ classdef Quad4 < mFEM.base.Element
             end
         end
             
-        function elem_map = buildElementMap(~,~,~,~,~,xn,yn)
+        function elem_map = buildElementMap(~,~,~,~,xn,yn)
             spmd
                 n = (xn+1)*(yn+1);
                 id = reshape(1:n,xn+1,yn+1);
